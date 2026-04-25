@@ -1,9 +1,9 @@
-// src/api/axiosInstance.ts
 import axios from 'axios'
+import { UI_ONLY_AUTH } from '../utils/authMode'
 import { clearAuthTokens, getAuthTokens, setAuthTokens } from './tokenVault'
 
 const RAW_API_BASE_URL = import.meta.env.VITE_API_URL
-const DEFAULT_API_BASE_URL = 'https://dolphin-main-production-4236.up.railway.app/api'
+const DEFAULT_API_BASE_URL = 'https://shipzilla-main-production.up.railway.app/api'
 
 const getApiBaseUrl = () => {
   const fallback = DEFAULT_API_BASE_URL.replace(/\/+$/, '')
@@ -13,17 +13,12 @@ const getApiBaseUrl = () => {
 
     const candidate = new URL(RAW_API_BASE_URL, window.location.origin)
     const currentHost = window.location.hostname
-    const isHostedFrontend =
-      currentHost.endsWith('netlify.app') ||
-      currentHost.endsWith('vercel.app')
+    const isHostedFrontend = currentHost.endsWith('netlify.app') || currentHost.endsWith('vercel.app')
     const isLocalhost =
-      currentHost === 'localhost' ||
-      currentHost === '127.0.0.1' ||
-      currentHost === '0.0.0.0'
+      currentHost === 'localhost' || currentHost === '127.0.0.1' || currentHost === '0.0.0.0'
     const pointsBackToFrontend = candidate.hostname === currentHost
 
-    // In preview/prod frontend hosting, sending API calls back to the same
-    // frontend origin often causes 405s on POST auth routes like request-otp.
+    // Hosted frontends often cannot proxy API posts back through the same origin.
     if (pointsBackToFrontend && (isHostedFrontend || !isLocalhost)) {
       return fallback
     }
@@ -44,27 +39,21 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-/* ----- attach access token to every request ----- */
 api.interceptors.request.use((cfg) => {
   const { accessToken } = getAuthTokens()
   if (accessToken) cfg.headers.Authorization = `Bearer ${accessToken}`
   return cfg
 })
 
-/* ----- silent‑refresh once per 401 ----- */
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config
 
-    // Skip refresh if:
-    // 1. Not a 401 error
-    // 2. Already retried
-    // 3. This is the refresh token endpoint itself (avoid infinite loop)
     if (
       err.response?.status !== 401 ||
-      original._retry ||
-      original.url?.includes('/auth/refresh-token')
+      original?._retry ||
+      original?.url?.includes('/auth/refresh-token')
     ) {
       return Promise.reject(err)
     }
@@ -73,20 +62,22 @@ api.interceptors.response.use(
 
     const { refreshToken } = getAuthTokens()
     if (!refreshToken) {
-      console.warn('⚠️ No refresh token available, redirecting to login')
+      if (UI_ONLY_AUTH) {
+        return Promise.reject(err)
+      }
+
       clearAuthTokens()
       window.location.href = '/login'
       return Promise.reject(err)
     }
 
     try {
-      console.log('🔄 Attempting to refresh access token...')
       const { data } = await axios.post(
         `${API_BASE_URL}/auth/refresh-token`,
         { refreshToken },
         {
           headers: {
-            'x-refresh-token': refreshToken, // ✅ Send in header for better security
+            'x-refresh-token': refreshToken,
           },
         },
       )
@@ -97,18 +88,18 @@ api.interceptors.response.use(
 
       setAuthTokens(data.accessToken, data.refreshToken)
       original.headers.Authorization = `Bearer ${data.accessToken}`
-      
-      console.log('✅ Token refreshed successfully, retrying original request')
-      return api(original) // retry original request with new token
-    } catch (e: unknown) {
-      const error = e as { response?: { data?: { error?: string } }; message?: string }
-      console.error('❌ Refresh token failed:', error?.response?.data?.error || error?.message || e)
+      return api(original)
+    } catch (e) {
+      if (UI_ONLY_AUTH) {
+        return Promise.reject(e)
+      }
+
       clearAuthTokens()
-      
-      // Only redirect if not already on login page
+
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login'
       }
+
       return Promise.reject(e)
     }
   },
