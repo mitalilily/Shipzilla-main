@@ -12,6 +12,13 @@ import { logoutApi } from '../../api/auth'
 import { clearAuthTokens, getAuthTokens, setAuthTokens } from '../../api/tokenVault'
 import { useUserProfile } from '../../hooks/User/useUserProfile'
 import type { IUserProfileDB } from '../../types/user.types'
+import {
+  clearUiSession,
+  createUiMockUser,
+  getStoredUiSession,
+  storeUiSession,
+  UI_ONLY_AUTH,
+} from '../../utils/authMode'
 import { emptyUserProfile } from '../../utils/utility'
 
 /* ---------- context shape ---------- */
@@ -23,6 +30,7 @@ interface AuthCtx {
   isAuthenticated: boolean
   setTokens: (access: string, refresh: string) => void
   clearTokens: () => void
+  mockLogin: (session?: { email?: string; name?: string }) => void
   logout: () => Promise<void>
   refetchUser: () => void
   walletBalance: number | null
@@ -37,18 +45,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const { accessToken, refreshToken } = getAuthTokens()
   const hasTokens = !!accessToken && !!refreshToken
+  const storedUiSession = getStoredUiSession()
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(hasTokens)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    UI_ONLY_AUTH ? Boolean(storedUiSession) : hasTokens,
+  )
   const [walletBalance, setWalletBalance] = useState<number | null>(null)
   const [userId, setUserId] = useState('')
+  const [uiUser, setUiUser] = useState<IUserProfileDB>(() => createUiMockUser(storedUiSession))
 
   const {
     data: user,
     isFetching: userFetching,
     refetch: refetchUser,
-  } = useUserProfile(isAuthenticated)
+  } = useUserProfile(UI_ONLY_AUTH ? false : isAuthenticated)
 
   useEffect(() => {
+    if (UI_ONLY_AUTH) return
     // If we successfully fetched a user, ensure auth is marked as true.
     if (user?.id) {
       setIsAuthenticated(true)
@@ -59,6 +72,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user])
 
   const setTokens = (access: string, refresh: string) => {
+    if (UI_ONLY_AUTH) {
+      const session = {
+        email: sessionStorage.getItem('activeEmail') || 'demo@shipzilla.app',
+        name: 'Shipzilla User',
+      }
+      storeUiSession(session)
+      setUiUser(createUiMockUser(session))
+      setIsAuthenticated(true)
+      return
+    }
+
     setAuthTokens(access, refresh)
     setIsAuthenticated(true)
     refetchUser()
@@ -66,13 +90,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const clearTokens = () => {
     clearAuthTokens()
+    clearUiSession()
     setIsAuthenticated(false)
+    setUiUser(createUiMockUser(null))
     queryClient.removeQueries({ queryKey: ['userInfo'] })
     queryClient.removeQueries({ queryKey: ['userProfile'] })
     queryClient.removeQueries({ queryKey: ['walletBalance'] })
   }
 
+  const mockLogin = (session?: { email?: string; name?: string }) => {
+    const nextSession = {
+      email: session?.email?.trim().toLowerCase() || 'demo@shipzilla.app',
+      name: session?.name?.trim() || 'Shipzilla User',
+    }
+
+    sessionStorage.setItem('activeEmail', nextSession.email)
+    storeUiSession(nextSession)
+    setUiUser(createUiMockUser(nextSession))
+    setUserId('ui-demo-user')
+    setIsAuthenticated(true)
+  }
+
   const logout = async () => {
+    if (UI_ONLY_AUTH) {
+      clearTokens()
+      window.location.href = '/login'
+      return
+    }
+
     try {
       await logoutApi()
     } catch (e) {
@@ -83,15 +128,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const value: AuthCtx = {
-    user: user ?? { ...emptyUserProfile },
-    loading: userFetching,
+    user: UI_ONLY_AUTH ? uiUser : user ?? { ...emptyUserProfile },
+    loading: UI_ONLY_AUTH ? false : userFetching,
     isAuthenticated,
     setUserId,
     setTokens,
     clearTokens,
+    mockLogin,
     userId,
     logout,
-    refetchUser,
+    refetchUser: UI_ONLY_AUTH ? () => undefined : refetchUser,
     walletBalance,
     setWalletBalance,
   }

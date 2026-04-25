@@ -7,6 +7,7 @@ import OtpLoginPanel from '../../components/auth/OtpLoginPanel'
 import FullScreenLoader from '../../components/UI/loader/FullScreenLoader'
 import { useAuth } from '../../context/auth/AuthContext'
 import { brand, brandGradients } from '../../theme/brand'
+import { UI_ONLY_AUTH } from '../../utils/authMode'
 
 export default function Login() {
   const { loading, isAuthenticated } = useAuth()
@@ -19,9 +20,17 @@ export default function Login() {
     <AuthShell
       eyebrow="Seller Login"
       title="Access the Shipzilla shipping workspace."
-      subtitle="Login now flows through a cleaner Shipzilla-branded interface while keeping the existing authentication, token storage, and onboarding logic intact."
+      subtitle={
+        UI_ONLY_AUTH
+          ? 'Login is now a UI-only demo experience, so you can move through Shipzilla without needing real authentication credentials.'
+          : 'Login now flows through a cleaner Shipzilla-branded interface while keeping the existing authentication, token storage, and onboarding logic intact.'
+      }
       helperTitle="Direct route into the app"
-      helperText="Landing page actions now send new users to signup, existing users to login, and authenticated users into the protected app entry route."
+      helperText={
+        UI_ONLY_AUTH
+          ? 'Both OTP and password tabs unlock the protected UI locally, making the auth layer ideal for demos and frontend QA.'
+          : 'Landing page actions now send new users to signup, existing users to login, and authenticated users into the protected app entry route.'
+      }
       showChrome={false}
     >
       <Stack spacing={2.4}>
@@ -30,7 +39,9 @@ export default function Login() {
             Login
           </Typography>
           <Typography sx={{ color: brand.inkSoft, lineHeight: 1.72 }}>
-            Choose OTP access or email plus password. If the backend exposes an OTP or verification token, the page will display it inline for you.
+            {UI_ONLY_AUTH
+              ? 'Choose OTP access or email plus password. Both options are local demo flows, and any generated code is only there to support the UI experience.'
+              : 'Choose OTP access or email plus password. If the backend exposes an OTP or verification token, the page will display it inline for you.'}
           </Typography>
         </Stack>
 

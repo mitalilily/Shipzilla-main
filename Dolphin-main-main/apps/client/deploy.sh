@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build and deploy script for dolphin client
+# Build and deploy script for Shipzilla client
 # Usage: ./deploy.sh [vps_user@vps_ip]
 # Example: ./deploy.sh user@your-server-ip
 # Note: You will be prompted for your VPS password during upload
@@ -10,7 +10,7 @@
 set +e
 
 # VPS configuration
-VPS_TARGET_PATH="/var/www/dolphin/client/dist"
+VPS_TARGET_PATH="/var/www/shipzilla/client/dist"
 
 # Get VPS connection details from argument or environment variables
 if [ -n "$1" ]; then
@@ -45,8 +45,8 @@ echo "ðŸ”¨ Running build with production environment variables..."
 
 # Set production environment variables
 # Vite uses VITE_ prefix for environment variables
-export VITE_API_URL="https://dolphin-main-production-4236.up.railway.app/api"
-export VITE_APP_SOCKET_URL="https://dolphin-main-production-4236.up.railway.app"
+export VITE_API_URL="${VITE_API_URL:-https://shipzilla-main-production.up.railway.app/api}"
+export VITE_APP_SOCKET_URL="${VITE_APP_SOCKET_URL:-https://shipzilla-main-production.up.railway.app}"
 
 # Keep other environment variables from .env if needed (Shopify, Google OAuth, etc.)
 # These can be overridden here if you have different production values
@@ -107,4 +107,3 @@ else
   exit 1
 fi
 echo ""
-

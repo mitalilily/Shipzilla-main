@@ -16,10 +16,11 @@ import AuthCodePreview from './AuthCodePreview'
 import CodeInput from './CodeInput'
 import { extractInlineCode } from './inlineCode'
 import { brand } from '../../theme/brand'
+import { UI_ONLY_AUTH } from '../../utils/authMode'
 
 export default function OtpLoginPanel() {
   const navigate = useNavigate()
-  const { setTokens, setUserId } = useAuth()
+  const { setTokens, setUserId, mockLogin } = useAuth()
   const [step, setStep] = useState<'request' | 'verify'>('request')
   const [email, setEmail] = useState(sessionStorage.getItem('activeEmail') ?? '')
   const [code, setCode] = useState('')
@@ -53,6 +54,18 @@ export default function OtpLoginPanel() {
       return
     }
 
+    if (UI_ONLY_AUTH) {
+      setError('')
+      setInlineOtp(String(Math.floor(100000 + Math.random() * 900000)))
+      setStep('verify')
+      setCode('')
+      toast.open({
+        message: 'Demo verification code generated. Enter any 6 digits to continue.',
+        severity: 'success',
+      })
+      return
+    }
+
     setError('')
     requestOtp(email.trim().toLowerCase(), {
       onSuccess: (response: any) => {
@@ -81,6 +94,13 @@ export default function OtpLoginPanel() {
       return
     }
 
+    if (UI_ONLY_AUTH) {
+      sessionStorage.setItem('activeEmail', email.trim().toLowerCase())
+      mockLogin({ email, name: email.split('@')[0] })
+      navigate('/app', { replace: true })
+      return
+    }
+
     setError('')
     verifyOtp(
       { email, otp: code },
@@ -105,14 +125,20 @@ export default function OtpLoginPanel() {
           Continue with email OTP
         </Typography>
         <Typography sx={{ color: brand.inkSoft, lineHeight: 1.7, fontSize: '0.92rem' }}>
-          Use your registered email for a passwordless login. Existing auth endpoints and token storage remain untouched.
+          {UI_ONLY_AUTH
+            ? 'This login is UI-only. Requesting a code generates a demo OTP preview and any 6 digits will open the app.'
+            : 'Use your registered email for a passwordless login. Existing auth endpoints and token storage remain untouched.'}
         </Typography>
       </Stack>
 
       <AuthCodePreview
         title="Console OTP preview"
         code={inlineOtp}
-        helper="When auth codes are exposed by the backend, the latest OTP appears here as well as in your console logs or email flow."
+        helper={
+          UI_ONLY_AUTH
+            ? 'In UI-only auth mode, a local demo OTP appears here. It is only for the interface and is not checked server-side.'
+            : 'When auth codes are exposed by the backend, the latest OTP appears here as well as in your console logs or email flow.'
+        }
       />
 
       {step === 'request' ? (

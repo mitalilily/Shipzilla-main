@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/auth/AuthContext'
 import { useRequestPasswordLogin, useVerifyEmailOtp } from '../../hooks/useRequestPasswordLogin'
 import { TERMS_AND_CONDITIONS } from '../../utils/constants'
+import { UI_ONLY_AUTH } from '../../utils/authMode'
 import { setOnboardingPrefill } from '../../utils/onboardingPrefill'
 import CustomIconLoadingButton from '../UI/button/CustomLoadingButton'
 import CustomCheckbox from '../UI/inputs/CustomCheckbox'
@@ -24,7 +25,7 @@ interface CredentialAuthFormProps {
 
 export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
   const navigate = useNavigate()
-  const { setTokens, setUserId } = useAuth()
+  const { mockLogin, setTokens, setUserId } = useAuth()
   const [step, setStep] = useState<'form' | 'verify'>('form')
   const [name, setName] = useState('')
   const [email, setEmail] = useState(sessionStorage.getItem('activeEmail') ?? '')
@@ -75,6 +76,21 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
     setError('')
     if (mode === 'signup') {
       setOnboardingPrefill(name)
+    }
+
+    if (UI_ONLY_AUTH) {
+      const verificationCode = Math.random().toString(36).slice(2, 10).toUpperCase()
+      setInlineCode(verificationCode)
+      setStep('verify')
+      setCode('')
+      toast.open({
+        message:
+          mode === 'signup'
+            ? 'Demo signup code generated locally. Enter any 8 characters to continue.'
+            : 'Demo login code generated locally. Enter any 8 characters to continue.',
+        severity: 'success',
+      })
+      return
     }
 
     requestPasswordAccess(
@@ -130,6 +146,17 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
     }
 
     setError('')
+    if (UI_ONLY_AUTH) {
+      const normalizedEmail = email.trim().toLowerCase()
+      sessionStorage.setItem('activeEmail', normalizedEmail)
+      mockLogin({
+        email: normalizedEmail,
+        name: mode === 'signup' ? name.trim() : normalizedEmail.split('@')[0],
+      })
+      navigate('/app', { replace: true })
+      return
+    }
+
     verifyEmailOtp(
       {
         email: email.trim().toLowerCase(),
@@ -153,9 +180,13 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
   const heading =
     mode === 'signup' ? 'Create your account with password access' : 'Sign in with email and password'
   const description =
-    mode === 'signup'
-      ? 'We keep the existing backend flow intact. Your name is used only to prefill onboarding after verification.'
-      : 'If this account needs email verification, the existing backend will issue a code and the UI will reveal it inline here.'
+    UI_ONLY_AUTH
+      ? mode === 'signup'
+        ? 'This signup flow is UI-only for demo use. Your name is kept locally to prefill onboarding after you continue.'
+        : 'This password login is UI-only for demo use. No real account verification happens before entering the app.'
+      : mode === 'signup'
+        ? 'We keep the existing backend flow intact. Your name is used only to prefill onboarding after verification.'
+        : 'If this account needs email verification, the existing backend will issue a code and the UI will reveal it inline here.'
 
   return (
     <Stack spacing={2.2}>
@@ -171,7 +202,11 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
       <AuthCodePreview
         title={mode === 'signup' ? 'Signup verification preview' : 'Password flow verification preview'}
         code={inlineCode}
-        helper="If the backend exposes verification tokens for this flow, the latest code appears here so you can continue without checking the console separately."
+        helper={
+          UI_ONLY_AUTH
+            ? 'A local demo code is generated here for convenience, but any 8 characters will unlock the UI-only auth flow.'
+            : 'If the backend exposes verification tokens for this flow, the latest code appears here so you can continue without checking the console separately.'
+        }
       />
 
       {step === 'form' ? (
@@ -275,7 +310,15 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
             }}
           >
             <Typography sx={{ color: brand.ink, lineHeight: 1.68, fontSize: '0.9rem' }}>
-              Enter the 8-character verification code for <strong>{email}</strong>.
+              {UI_ONLY_AUTH ? (
+                <>
+                  Enter any 8 characters for <strong>{email}</strong> to continue through the demo flow.
+                </>
+              ) : (
+                <>
+                  Enter the 8-character verification code for <strong>{email}</strong>.
+                </>
+              )}
             </Typography>
           </Box>
 
@@ -311,7 +354,9 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
       <Stack direction="row" spacing={1} alignItems="center">
         <FiShield size={14} color={brand.success} />
         <Typography sx={{ color: brand.inkSoft, fontSize: '0.82rem', lineHeight: 1.6 }}>
-          Password access reuses the current `/auth/request-password-login` and `/auth/verify-user-email` flow.
+          {UI_ONLY_AUTH
+            ? 'Password access is running in UI-only demo mode, so the login experience is local and does not require a real account.'
+            : 'Password access reuses the current `/auth/request-password-login` and `/auth/verify-user-email` flow.'}
         </Typography>
       </Stack>
 

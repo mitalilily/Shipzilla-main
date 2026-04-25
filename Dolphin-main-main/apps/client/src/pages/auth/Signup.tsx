@@ -5,6 +5,7 @@ import CredentialAuthForm from '../../components/auth/CredentialAuthForm'
 import FullScreenLoader from '../../components/UI/loader/FullScreenLoader'
 import { useAuth } from '../../context/auth/AuthContext'
 import { brand } from '../../theme/brand'
+import { UI_ONLY_AUTH } from '../../utils/authMode'
 
 export default function Signup() {
   const { loading, isAuthenticated } = useAuth()
@@ -16,9 +17,17 @@ export default function Signup() {
     <AuthShell
       eyebrow="Create Account"
       title="Start with a faster, cleaner seller onboarding flow."
-      subtitle="Signup is now wired directly from the landing page and still reuses the backend’s existing password setup and verification endpoints."
+      subtitle={
+        UI_ONLY_AUTH
+          ? 'Signup is running as a UI-only demo flow, so you can create a local session without needing a real account or email verification.'
+          : 'Signup is now wired directly from the landing page and still reuses the backend’s existing password setup and verification endpoints.'
+      }
       helperTitle="Name capture stays frontend-only"
-      helperText="The backend schema is unchanged, so your name is simply used to prefill onboarding after verification instead of changing any API contracts."
+      helperText={
+        UI_ONLY_AUTH
+          ? 'Your name is only used locally to personalize onboarding screens after you continue into the app.'
+          : 'The backend schema is unchanged, so your name is simply used to prefill onboarding after verification instead of changing any API contracts.'
+      }
       showChrome={false}
     >
       <Stack spacing={2.4}>
@@ -34,8 +43,9 @@ export default function Signup() {
             Create your account
           </Typography>
           <Typography sx={{ color: brand.inkSoft, lineHeight: 1.72 }}>
-            Enter your name, email, and password to create access using the current backend flow.
-            Verification codes will show inline when available.
+            {UI_ONLY_AUTH
+              ? 'Enter your name, email, and password to create a local demo session. The verification step is visual only and any 8 characters will continue.'
+              : 'Enter your name, email, and password to create access using the current backend flow. Verification codes will show inline when available.'}
           </Typography>
         </Stack>
 
