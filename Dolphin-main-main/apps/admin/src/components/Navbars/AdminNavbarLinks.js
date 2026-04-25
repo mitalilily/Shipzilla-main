@@ -127,7 +127,7 @@ export default function HeaderLinks({ variant, children, fixed, secondary, onOpe
                       Confirm Logout
                     </Text>
                     <Text fontSize="sm" color={styles.searchIcon}>
-                      You will leave the Dolphin admin workspace.
+                      You will leave the Shipzilla admin workspace.
                     </Text>
                   </Box>
                   <Flex justify="flex-end" gap="8px">
@@ -191,3 +191,4 @@ HeaderLinks.propTypes = {
   onOpen: PropTypes.func,
   logoText: PropTypes.string,
 }
+

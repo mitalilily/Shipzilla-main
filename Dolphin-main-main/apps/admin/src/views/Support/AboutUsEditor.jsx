@@ -50,8 +50,8 @@ const AboutUsEditor = () => {
 
   const handleLoadTemplate = () => {
     const templateHtml = `
-      <h2>About Dolphin Enterprise</h2>
-      <p><strong>Dolphin Enterprise</strong> is a modern shipping operations platform built for ecommerce sellers who want faster dispatch, lower courier costs, and a smoother post-purchase experience.</p>
+      <h2>About Shipzilla</h2>
+      <p><strong>Shipzilla</strong> is a modern shipping operations platform built for ecommerce sellers who want faster dispatch, lower courier costs, and a smoother post-purchase experience.</p>
 
       <h3>What We Do</h3>
       <ul>
@@ -127,7 +127,7 @@ const AboutUsEditor = () => {
     if (!validateForm()) return
 
     try {
-      await updatePageMutation.mutateAsync({ title: 'About Us - Dolphin Enterprise', content })
+      await updatePageMutation.mutateAsync({ title: 'About Us - Shipzilla', content })
       toast({
         title: 'About Us content saved',
         status: 'success',
@@ -175,7 +175,7 @@ const AboutUsEditor = () => {
             </HStack>
             <HStack spacing={3} mt={1}>
               <Text fontSize="sm" color="gray.500">
-                Manage the Dolphin Enterprise story shown on the customer support screen.
+                Manage the Shipzilla story shown on the customer support screen.
               </Text>
               {page?.updated_at && (
                 <Badge colorScheme="green" variant="subtle" fontSize="0.7rem">
@@ -193,7 +193,7 @@ const AboutUsEditor = () => {
               onClick={handleLoadTemplate}
               isDisabled={isLoading || updatePageMutation.isLoading}
             >
-              Load Dolphin Enterprise Copy
+              Load Shipzilla Copy
             </Button>
             <Button
               colorScheme="brand"
@@ -292,3 +292,4 @@ const AboutUsEditor = () => {
 }
 
 export default AboutUsEditor
+

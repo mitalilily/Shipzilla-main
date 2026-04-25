@@ -10,7 +10,7 @@ const PolicyPages = () => {
       <Box display={'flex'} justifyContent={'center'}>
         <PageHeading
           title="Legal & Policy Information"
-          subtitle="All policies, terms, and privacy information for Dolphin Enterprise"
+          subtitle="All policies, terms, and privacy information for Shipzilla"
         />{' '}
       </Box>
 
@@ -34,11 +34,11 @@ const PolicyPages = () => {
           invoice via email. Once that invoice has been paid, no further charges will apply.
         </Typography>
         <Typography paragraph>
-          • Dolphin Enterprise (Dolphin Enterprise Pvt Ltd) reserves the right to modify, suspend, or terminate
+          • Shipzilla (Shipzilla Pvt Ltd) reserves the right to modify, suspend, or terminate
           the Service for any reason, without prior notice at any time.
         </Typography>
         <Typography paragraph>
-          • Fraud Prevention: Without limiting any other remedies, Dolphin Enterprise may suspend or
+          • Fraud Prevention: Without limiting any other remedies, Shipzilla may suspend or
           terminate your account if we suspect that you (through conviction, settlement,
           investigation, or otherwise) have engaged in fraudulent or unlawful activity in connection
           with the Platform.
@@ -58,8 +58,8 @@ const PolicyPages = () => {
         </Box>
         <Typography paragraph>Last Updated: [Insert Date]</Typography>
         <Typography paragraph>
-          Dolphin Enterprise (Dolphin Enterprise Pvt Ltd) ("we," "our," or "us") operates the services offered
-          via our website and related platforms (collectively, the “Platform”). Please read this
+          Shipzilla (Shipzilla Pvt Ltd) ("we," "our," or "us") operates the services offered
+          via our website and related platforms (collectively, the "Platform"). Please read this
           Privacy Policy carefully before accessing or using our Platform, as continued use
           indicates your acceptance of this Policy.
         </Typography>
@@ -73,8 +73,8 @@ const PolicyPages = () => {
         <Typography paragraph>
           2. Definitions
           <br />
-          • “Personal Information”: Any information that can identify you, directly or indirectly.
-          <br />• “Sensitive Personal Data or Information”: Includes passwords, payment details,
+          • "Personal Information": Any information that can identify you, directly or indirectly.
+          <br />• "Sensitive Personal Data or Information": Includes passwords, payment details,
           health data, biometric information, etc., excluding publicly available information or data
           disclosed under legal obligations.
         </Typography>
@@ -165,7 +165,7 @@ const PolicyPages = () => {
           10. Third-Party Links
           <br />
           Our Platform may contain links to external sites. We are not responsible for their privacy
-          practices—please review their individual policies separately.
+          practices-please review their individual policies separately.
         </Typography>
         <Typography paragraph>
           11. Changes to this Policy
@@ -203,3 +203,4 @@ const PolicyPages = () => {
 }
 
 export default PolicyPages
+

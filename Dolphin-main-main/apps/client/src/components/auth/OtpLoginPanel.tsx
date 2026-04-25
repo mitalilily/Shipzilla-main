@@ -126,8 +126,8 @@ export default function OtpLoginPanel() {
         </Typography>
         <Typography sx={{ color: brand.inkSoft, lineHeight: 1.7, fontSize: '0.92rem' }}>
           {UI_ONLY_AUTH
-            ? 'This login is UI-only. Requesting a code generates a demo OTP preview and any 6 digits will open the app.'
-            : 'Use your registered email for a passwordless login. Existing auth endpoints and token storage remain untouched.'}
+            ? 'Use your work email to preview Shipzilla access. Requesting a code shows a local OTP preview, and any 6 digits will open the seller workspace for demo flows.'
+            : 'Use your registered work email for passwordless access to Shipzilla. Existing auth endpoints and token storage remain untouched.'}
         </Typography>
       </Stack>
 
@@ -136,7 +136,7 @@ export default function OtpLoginPanel() {
         code={inlineOtp}
         helper={
           UI_ONLY_AUTH
-            ? 'In UI-only auth mode, a local demo OTP appears here. It is only for the interface and is not checked server-side.'
+            ? 'In UI-only auth mode, the latest demo OTP appears here so local testing, reviews, and QA can move through the shipping workspace quickly.'
             : 'When auth codes are exposed by the backend, the latest OTP appears here as well as in your console logs or email flow.'
         }
       />

@@ -19,9 +19,9 @@ const MUTED = '#68758B'
 const DISPLAY_FONT = '"Plus Jakarta Sans", "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif'
 
 const commandNotes = [
-  'Sign in with your registered email to access your Shipzilla account.',
-  'Use OTP login or email and password based on your account access.',
-  'Access orders, billing, support, channels, and courier tools after sign in.',
+  'Sign in with your registered work email to open the Shipzilla shipping workspace.',
+  'Use OTP login or email and password based on how your operations team accesses the platform.',
+  'Manage orders, courier allocation, billing, tracking, channels, and support after sign in.',
 ]
 
 export default function LoginForm() {
@@ -98,7 +98,7 @@ export default function LoginForm() {
               />
 
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {['Shipzilla platform', 'Premium logistics UI', 'Secure login system'].map((chip) => (
+                {['Shipping aggregator', 'Courier orchestration', 'Secure seller access'].map((chip) => (
                   <Box
                     key={chip}
                     sx={{
@@ -126,7 +126,7 @@ export default function LoginForm() {
                     color: alpha(SKY, 0.62),
                   }}
                 >
-                  Courier command access
+                  Seller workspace access
                 </Typography>
                 <Typography
                   sx={{
@@ -151,8 +151,8 @@ export default function LoginForm() {
                     maxWidth: 620,
                   }}
                 >
-                  Access your account and continue with orders, billing, support,
-                  and shipping operations in Shipzilla.
+                  Access your account and continue with courier selection, order dispatch,
+                  tracking, billing, and shipping operations in Shipzilla.
                 </Typography>
               </Stack>
             </Stack>
@@ -191,7 +191,7 @@ export default function LoginForm() {
                       <TbShieldCheck size={18} />
                     </Box>
                     <Typography sx={{ fontSize: '1rem', fontWeight: 800 }}>
-                      Account access
+                      Shipping account access
                     </Typography>
                   </Stack>
 
@@ -264,7 +264,7 @@ export default function LoginForm() {
                     textTransform: 'uppercase',
                   }}
                 >
-                  Dolphin sign in
+                  Shipzilla sign in
                 </Typography>
               </Stack>
 
@@ -289,7 +289,7 @@ export default function LoginForm() {
                     maxWidth: 470,
                   }}
                 >
-                  Sign in with OTP or password to access your Shipzilla dashboard and account tools.
+                  Sign in with OTP or password to access your Shipzilla dashboard, order tools, and shipping controls.
                 </Typography>
               </Stack>
 
@@ -355,12 +355,12 @@ export default function LoginForm() {
               sx={{ mt: 2.2 }}
             >
               <Typography sx={{ color: MUTED, fontSize: '0.86rem', lineHeight: 1.6 }}>
-                Secure account access for orders, billing, support, and shipping tools.
+                Secure seller access for orders, billing, support, and courier operations.
               </Typography>
               <Stack direction="row" spacing={0.8} alignItems="center" justifyContent="flex-start">
                 <TbTruckDelivery size={16} color={CLAY} />
                 <Typography sx={{ color: SKY, fontSize: '0.84rem', fontWeight: 700 }}>
-                  Dolphin account access
+                  Shipzilla account access
                 </Typography>
               </Stack>
             </Stack>

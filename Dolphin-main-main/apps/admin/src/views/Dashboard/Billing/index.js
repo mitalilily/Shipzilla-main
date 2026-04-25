@@ -34,7 +34,7 @@ function Billing() {
             gap='26px'>
             <CreditCard
               backgroundImage={BackgroundCard1}
-              title={"Dolphin Enterprise"}
+              title={"Shipzilla"}
               number={"7812 2139 0823 XXXX"}
               validity={{
                 name: "VALID THRU",
@@ -94,3 +94,4 @@ function Billing() {
 }
 
 export default Billing;
+

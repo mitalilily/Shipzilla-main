@@ -53,7 +53,7 @@ const CarrierLogos: React.FC = () => {
             fontSize: '0.95rem',
           }}
         >
-          Connected carriers and commerce brands moving inside one Dolphin shipping flow.
+          Connected carriers and commerce brands moving inside one Shipzilla shipping flow.
         </Typography>
       </Stack>
 

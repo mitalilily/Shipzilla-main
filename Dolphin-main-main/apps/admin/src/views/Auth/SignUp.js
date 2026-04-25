@@ -91,7 +91,7 @@ function SignUp() {
               </Text>
             </Heading>
             <Text color={textSecondary} fontSize="sm" maxW="360px" lineHeight="1.8">
-              Create a Dolphin admin workspace for teams that need cleaner shipment control,
+              Create a Shipzilla admin workspace for teams that need cleaner shipment control,
               billing visibility, and faster daily operations.
             </Text>
           </VStack>
@@ -139,7 +139,7 @@ function SignUp() {
                   Create your admin workspace
                 </Heading>
                 <Text mt={2} color={textSecondary} fontSize="sm" lineHeight="1.8">
-                  Use this setup form to onboard your Dolphin operations team.
+                  Use this setup form to onboard your Shipzilla operations team.
                 </Text>
               </Box>
 
@@ -162,7 +162,7 @@ function SignUp() {
                     Company
                   </FormLabel>
                   <Input
-                    placeholder="Dolphin operations"
+                    placeholder="Shipzilla operations"
                     h="52px"
                     borderRadius="18px"
                     bg={inputBg}
@@ -217,7 +217,7 @@ function SignUp() {
                 _hover={{ bg: 'brand.600' }}
                 _active={{ bg: 'brand.700' }}
               >
-                Start with Dolphin
+                Start with Shipzilla
               </Button>
 
               <Text color={textSecondary} fontWeight="medium" textAlign="center">
@@ -235,3 +235,4 @@ function SignUp() {
 }
 
 export default SignUp
+

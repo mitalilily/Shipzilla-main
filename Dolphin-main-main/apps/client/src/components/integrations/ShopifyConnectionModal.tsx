@@ -404,7 +404,7 @@ const ShopifyConnectionModal = ({
                       },
                     }))
                   }
-                  helperText="Automatically cancel the order in Shopify when it’s marked as cancelled in the Dolphin workspace."
+                  helperText="Automatically cancel the order in Shopify when it’s marked as cancelled in the Shipzilla workspace."
                 />
 
                 {/* Mark COD Orders Paid */}

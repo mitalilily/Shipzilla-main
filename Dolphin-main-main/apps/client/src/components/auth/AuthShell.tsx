@@ -20,18 +20,18 @@ interface AuthShellProps {
 
 const authHighlights = [
   {
-    title: 'Smart shipping workspace',
-    text: 'Orders, couriers, tracking, billing, and support in one clean operations layer.',
+    title: 'Multi-courier control tower',
+    text: 'Compare courier options, release shipments faster, and keep every order moving from one central workspace.',
     icon: <TbTruckDelivery size={18} />,
   },
   {
-    title: 'Live verification preview',
-    text: 'Inline OTP and verification codes are surfaced on-screen for local and console-driven auth flows.',
+    title: 'Fast seller access',
+    text: 'Give operations teams a direct route into orders, tracking, billing, and support without slowing down daily dispatch.',
     icon: <FiShield size={18} />,
   },
   {
-    title: 'Actionable insights',
-    text: 'The app shell mirrors the Shipzilla landing style while preserving the current auth and dashboard logic.',
+    title: 'Built for growing brands',
+    text: 'Shipzilla brings storefronts, courier routing, tracking visibility, and post-shipment workflows into one platform.',
     icon: <TbChartBar size={18} />,
   },
 ]
@@ -158,7 +158,7 @@ export default function AuthShell({
               >
                 <Stack spacing={3.2} sx={{ position: 'relative', zIndex: 1 }}>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {['Built for ecommerce teams', 'Secure account access', 'Shipzilla dashboard'].map((pill) => (
+                    {['Built for D2C brands', 'Multi-courier shipping', 'Shipzilla control tower'].map((pill) => (
                       <Chip
                         key={pill}
                         label={pill}

@@ -1,6 +1,6 @@
 export const adminBrand = {
-  name: 'Dolphin Enterprise',
-  panelName: 'Dolphin Enterprise',
+  name: 'Shipzilla',
+  panelName: 'Shipzilla',
   logo: '/logo/dolphin-logo-transparent.png',
   shortLogo: '/logo/dolphin-logo.png',
   ink: '#10324A',
@@ -24,3 +24,4 @@ export const adminBrand = {
     'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,251,255,0.98) 100%)',
   buttonGradient: 'linear-gradient(135deg, #8FD8FF 0%, #FFD8A8 100%)',
 }
+

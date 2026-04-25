@@ -14,18 +14,18 @@ const TermsOfService = () => {
           other information needed in order to complete the signup process.
         </li>
         <li>
-          You are responsible for keeping your password secure. Dolphin Enterprise cannot and will not be
+          You are responsible for keeping your password secure. Shipzilla cannot and will not be
           liable for any loss or damage from your failure to maintain the security of your account
           and password.
         </li>
         <li>
-          You may not use the Dolphin Enterprise service for any illegal or unauthorized purpose nor may
+          You may not use the Shipzilla service for any illegal or unauthorized purpose nor may
           you violate any laws in your jurisdiction (including copyright laws) as well as the laws
           of India.
         </li>
         <li>
           You are responsible for all activity and content (data, graphics, photos, links) uploaded
-          under your Dolphin Enterprise account.
+          under your Shipzilla account.
         </li>
         <li>You must not transmit any worms or viruses or any code of a destructive nature.</li>
         <li>
@@ -41,7 +41,7 @@ const TermsOfService = () => {
       <ul>
         <li>
           You must read, agree with, and accept all terms and conditions contained in this User
-          Agreement and the Privacy Policy before becoming a member of Dolphin Enterprise.
+          Agreement and the Privacy Policy before becoming a member of Shipzilla.
         </li>
         <li>
           We reserve the right to modify or terminate the Service for any reason, without notice at
@@ -49,15 +49,15 @@ const TermsOfService = () => {
         </li>
         <li>We reserve the right to refuse service to anyone for any reason at any time.</li>
         <li>
-          Your use of the Service is at your sole risk. The Service is provided on an “as is” and
-          “as available” basis without any warranty or condition.
+          Your use of the Service is at your sole risk. The Service is provided on an "as is" and
+          "as available" basis without any warranty or condition.
         </li>
         <li>
-          Dolphin Enterprise does not warrant that the service will be uninterrupted, timely, secure, or
+          Shipzilla does not warrant that the service will be uninterrupted, timely, secure, or
           error-free.
         </li>
         <li>
-          Dolphin Enterprise does not warrant that the results obtained from the use of the service will
+          Shipzilla does not warrant that the results obtained from the use of the service will
           be accurate or reliable.
         </li>
         <li>
@@ -69,7 +69,7 @@ const TermsOfService = () => {
           Terms of Service.
         </li>
         <li>
-          Dolphin Enterprise shall not be liable for any direct, indirect, incidental, special, or
+          Shipzilla shall not be liable for any direct, indirect, incidental, special, or
           consequential damages.
         </li>
         <li>
@@ -85,13 +85,13 @@ const TermsOfService = () => {
           We do not claim intellectual property rights over your material uploaded to the Service.
         </li>
         <li>
-          By uploading content, you agree to allow other users to view and Dolphin Enterprise to store and
+          By uploading content, you agree to allow other users to view and Shipzilla to store and
           review it.
         </li>
         <li>Failure to exercise any right does not constitute a waiver of that right.</li>
-        <li>The Terms of Service constitute the entire agreement between you and Dolphin Enterprise.</li>
-        <li>You shall not purchase keywords or domains infringing on Dolphin Enterprise trademarks.</li>
-        <li>Dolphin Enterprise may refuse or remove any content at its discretion.</li>
+        <li>The Terms of Service constitute the entire agreement between you and Shipzilla.</li>
+        <li>You shall not purchase keywords or domains infringing on Shipzilla trademarks.</li>
+        <li>Shipzilla may refuse or remove any content at its discretion.</li>
         <li>
           Questions about Terms of Service should be sent to{' '}
           <Link href="mailto:support@dolphinenterprise.com">support@dolphinenterprise.com</Link>
@@ -112,7 +112,7 @@ const TermsOfService = () => {
           the online store.
         </li>
         <li>All fees are exclusive of applicable taxes, fees, or charges.</li>
-        <li>Dolphin Enterprise does not provide refunds.</li>
+        <li>Shipzilla does not provide refunds.</li>
       </ul>
 
       {/* Cancellation and Termination */}
@@ -133,10 +133,10 @@ const TermsOfService = () => {
         Modifications to the Service and Prices
       </Typography>
       <ul>
-        <li>Prices may change with 14 days’ notice via posting on the site or announcement.</li>
-        <li>Dolphin Enterprise reserves the right to modify or discontinue the Service at any time.</li>
+        <li>Prices may change with 14 days' notice via posting on the site or announcement.</li>
+        <li>Shipzilla reserves the right to modify or discontinue the Service at any time.</li>
         <li>
-          Dolphin Enterprise shall not be liable for any modification, price change, suspension, or
+          Shipzilla shall not be liable for any modification, price change, suspension, or
           discontinuance.
         </li>
       </ul>
@@ -151,10 +151,10 @@ const TermsOfService = () => {
           restricted items.
         </li>
         <li>
-          Dolphin Enterprise does not permit hosting of the following:
+          Shipzilla does not permit hosting of the following:
           <ul>
             <li>
-              “Securities” including shares, bonds, debentures, or other financial instruments.
+              "Securities" including shares, bonds, debentures, or other financial instruments.
             </li>
             <li>
               Living or dead creatures or parts thereof prohibited under Wildlife Protection Act,
@@ -163,7 +163,7 @@ const TermsOfService = () => {
             <li>Weapons of any description.</li>
             <li>Liquor, tobacco, drugs, narcotics, or medicines.</li>
             <li>Religious items affecting religious sentiments.</li>
-            <li>“Antiquities” and “Art Treasures” prohibited under law.</li>
+            <li>"Antiquities" and "Art Treasures" prohibited under law.</li>
             <li>Used cellular phone SIM Cards.</li>
           </ul>
         </li>
@@ -177,3 +177,4 @@ const TermsOfService = () => {
 }
 
 export default TermsOfService
+

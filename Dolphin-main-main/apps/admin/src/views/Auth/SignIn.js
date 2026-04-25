@@ -213,7 +213,7 @@ function SignIn() {
 
             <Text color={textSecondary} fontSize="sm" maxW="420px" lineHeight="1.8">
               Manage orders, track activity, and oversee daily operations through a streamlined
-              Dolphin admin dashboard designed to match your brand identity and seamlessly
+              Shipzilla admin dashboard designed to match your brand identity and seamlessly
               connected to the same backend as the client platform.
             </Text>
           </VStack>
@@ -360,3 +360,4 @@ function SignIn() {
 }
 
 export default SignIn
+

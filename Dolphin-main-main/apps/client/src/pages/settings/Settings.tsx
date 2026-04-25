@@ -173,22 +173,23 @@ const SettingCard = ({ item, tone }: { item: SettingItem; tone: string }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   return (
-    <ButtonBase sx={{ width: '100%', height: '100%', borderRadius: 4 }}>
+    <ButtonBase sx={{ width: '100%', height: '100%', borderRadius: 3, overflow: 'hidden' }}>
       <Box
         sx={{
           p: isMobile ? 2 : 2.25,
-          borderRadius: 4,
+          borderRadius: 3,
           bgcolor: alpha('#ffffff', 0.94),
           border: `1px solid ${alpha(INK, 0.08)}`,
           boxShadow: `0 14px 28px ${alpha(INK, 0.05)}`,
           height: '100%',
           width: '100%',
-          minHeight: isMobile ? 146 : 162,
+          minHeight: isMobile ? 138 : 152,
           transition: 'all .22s ease',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           textAlign: 'left',
+          overflow: 'hidden',
           '&:hover': {
             transform: 'translateY(-4px)',
             boxShadow: `0 22px 38px ${alpha(INK, 0.08)}`,
@@ -199,16 +200,21 @@ const SettingCard = ({ item, tone }: { item: SettingItem; tone: string }) => {
         <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1.5}>
           <Box
             sx={{
-              borderRadius: 3,
-              width: isMobile ? 40 : 44,
-              height: isMobile ? 40 : 44,
+              borderRadius: 2.5,
+              width: isMobile ? 38 : 42,
+              height: isMobile ? 38 : 42,
               display: 'grid',
               placeItems: 'center',
-              fontSize: isMobile ? 18 : 19,
+              fontSize: isMobile ? 17 : 18,
               color: tone,
               bgcolor: alpha(tone, 0.12),
               border: `1px solid ${alpha(tone, 0.18)}`,
               flexShrink: 0,
+              overflow: 'hidden',
+              '& svg': {
+                width: isMobile ? 16 : 18,
+                height: isMobile ? 16 : 18,
+              },
             }}
           >
             {item.icon}
@@ -216,17 +222,21 @@ const SettingCard = ({ item, tone }: { item: SettingItem; tone: string }) => {
 
           <Box
             sx={{
-              width: 28,
-              height: 28,
+              width: 26,
+              height: 26,
               borderRadius: 999,
               display: 'grid',
               placeItems: 'center',
               bgcolor: alpha(tone, 0.08),
               color: tone,
               flexShrink: 0,
+              '& svg': {
+                width: 14,
+                height: 14,
+              },
             }}
           >
-            <TbArrowRight size={15} />
+            <TbArrowRight />
           </Box>
         </Stack>
 
@@ -271,7 +281,7 @@ export default function SettingsPage() {
           <Box
             sx={{
               p: { xs: 2.3, md: 3.1 },
-              borderRadius: 5,
+              borderRadius: 4,
               border: `1px solid ${alpha(INK, 0.08)}`,
               background: `
                 radial-gradient(circle at 14% 18%, ${alpha(CLAY, 0.16)} 0%, transparent 24%),
@@ -402,7 +412,7 @@ export default function SettingsPage() {
                 key={section.title}
                 sx={{
                   p: { xs: 1.7, md: 2.2 },
-                  borderRadius: 5,
+                  borderRadius: 4,
                   bgcolor: alpha(SURFACE, 0.98),
                   border: `1px solid ${alpha(INK, 0.08)}`,
                   boxShadow: `0 16px 30px ${alpha(INK, 0.05)}`,
