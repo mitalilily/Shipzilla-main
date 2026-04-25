@@ -122,12 +122,12 @@ export default function OtpLoginPanel() {
     <Stack spacing={2.2}>
       <Stack spacing={0.8}>
         <Typography sx={{ color: brand.ink, fontWeight: 800, fontSize: '1.18rem' }}>
-          Continue with email OTP
+          Continue with Email Verification
         </Typography>
         <Typography sx={{ color: brand.inkSoft, lineHeight: 1.7, fontSize: '0.92rem' }}>
           {UI_ONLY_AUTH
-            ? 'Use your work email to preview Shipzilla access. Requesting a code shows a local OTP preview, and any 6 digits will open the seller workspace for demo flows.'
-            : 'Use your registered work email for passwordless access to Shipzilla. Existing auth endpoints and token storage remain untouched.'}
+            ? 'Use your registered business email to securely access the Shipzilla seller dashboard. Enter the 6-digit verification code sent to your inbox to continue and manage orders, shipping, billing, and operations seamlessly.'
+            : 'Use your registered business email to securely access the Shipzilla seller dashboard. Enter the 6-digit verification code sent to your inbox to continue and manage orders, shipping, billing, and operations seamlessly.'}
         </Typography>
       </Stack>
 
