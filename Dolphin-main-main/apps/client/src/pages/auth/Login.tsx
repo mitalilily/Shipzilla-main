@@ -161,8 +161,8 @@ export default function Login() {
             sx={{
               position: 'relative',
               zIndex: 2,
-              pt: { md: 5.8, lg: 6, xl: 6.5 },
-              pl: { md: 6.8, lg: 10.8, xl: 12.5 },
+              pt: { md: 5.2, lg: 5.2, xl: 5.8 },
+              pl: { md: 6.8, lg: 10.4, xl: 12.1 },
               '@media (max-height: 840px)': {
                 pt: { md: 3.6, lg: 4.2 },
               },
@@ -192,7 +192,7 @@ export default function Login() {
             </Typography>
             <Typography
               sx={{
-                mt: { md: 2.2, lg: 2.4 },
+                mt: { md: 1.7, lg: 1.8 },
                 color: brand.inkSoft,
                 fontSize: { md: '1.18rem', lg: '1.34rem' },
                 fontWeight: 500,
@@ -220,6 +220,35 @@ export default function Login() {
               maskImage: 'linear-gradient(to bottom, transparent 0%, transparent 14%, #000 26%, #000 100%)',
               pointerEvents: 'none',
               userSelect: 'none',
+            }}
+          />
+
+          <Box
+            sx={{
+              position: 'absolute',
+              zIndex: 2,
+              top: { md: '40.5%', lg: '40.5%' },
+              left: { md: '67%', lg: '67%' },
+              width: { md: '22%', lg: '22%' },
+              height: { md: '11%', lg: '11%' },
+              borderRadius: '42%',
+              background: '#f6eefb',
+              boxShadow: '0 0 34px 28px rgba(246,238,251,0.98)',
+              pointerEvents: 'none',
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              zIndex: 2,
+              top: { md: '37.5%', lg: '37.5%' },
+              left: { md: '82%', lg: '82%' },
+              width: { md: '19%', lg: '19%' },
+              height: { md: '14%', lg: '14%' },
+              borderRadius: '48%',
+              background: '#f3e5f8',
+              boxShadow: '0 0 38px 30px rgba(243,229,248,0.98)',
+              pointerEvents: 'none',
             }}
           />
 
@@ -286,7 +315,7 @@ export default function Login() {
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
-                px: { xs: 2.4, sm: 4.2, md: 4.8, lg: 5.3 },
+                px: { xs: 2.4, sm: 4.2, md: 5.55, lg: 5.55 },
                 py: { xs: 3.2, sm: 4.2, md: 4.8, lg: 5.3 },
                 pt: { xs: 3.2, sm: 4.2, md: 10.6, lg: 11.2 },
                 pb: { xs: 3.2, sm: 4.2, md: 4.8, lg: 5.3 },
@@ -349,7 +378,7 @@ export default function Login() {
                       color: brand.inkSoft,
                       lineHeight: 1.72,
                       fontSize: { xs: '0.98rem', md: '1.06rem', lg: '1.12rem' },
-                      maxWidth: 620,
+                      maxWidth: 590,
                     }}
                   >
                     {UI_ONLY_AUTH
