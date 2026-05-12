@@ -70,15 +70,16 @@ export const getKycDetails = async (req: any, res: Response): Promise<any> => {
   try {
     const added = await getUserKycService(userId);
 
+    if (!added) {
+      return res.status(200).json({ message: "No KYC details found", kyc: {} });
+    }
+
     return res.json({
       message: "KYC details fetched successfully",
       kyc: added,
     });
   } catch (err: any) {
     console.error("KYC Fetch error:", err);
-    if (err?.statusCode === 200) {
-      return res.status(200).json({ message: "No KYC details found", kyc: {} });
-    }
     return res.status(400).json({ message: (err as Error).message, kyc: {} });
   }
 };

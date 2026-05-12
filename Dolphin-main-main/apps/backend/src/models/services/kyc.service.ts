@@ -169,12 +169,11 @@ const resolveRequiredFields = (
   return []
 }
 
-export async function getUserKycService(userId: string) {
+export async function getUserKycService(userId: string): Promise<typeof kyc.$inferSelect | null> {
   const w = await db?.query.kyc.findFirst({
     where: eq(kyc.userId, userId),
   })
-  if (!w) throw new HttpError(200, 'KYC not found')
-  return w
+  return w ?? null
 }
 
 export const updateKycStatus = async (

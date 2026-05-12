@@ -68,6 +68,8 @@ services:
         sync: false
       - key: R2_SECRET_ACCESS_KEY
         sync: false
+      - key: PROD_BUCKET
+        sync: false
       - key: DEV_BUCKET
         sync: false
       - key: STAGING_BUCKET

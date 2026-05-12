@@ -2,7 +2,7 @@ import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import axios from 'axios'
 import { r2 } from '../../config/r2Client'
-import { getBucketName } from '../../utils/functions'
+import { getBucketName, StorageConfigurationError } from '../../utils/functions'
 
 import * as dotenv from 'dotenv'
 import path from 'path'
@@ -316,6 +316,14 @@ export const presignDownload = async (
     // Filter out null values
     return urls.filter((url): url is string => url !== null)
   } catch (error: any) {
+    if (error instanceof StorageConfigurationError) {
+      console.warn('⚠️ Skipping presigned download because storage is not configured:', {
+        keys: keyOrKeys,
+        error: error.message,
+      })
+      return typeof keyOrKeys === 'string' ? null : []
+    }
+
     // If it's a NoSuchKey error, log and return null instead of throwing
     if (error?.code === 'NoSuchKey' || error?.message?.includes('NoSuchKey')) {
       console.error('❌ File not found in S3/R2:', {

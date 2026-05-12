@@ -3,10 +3,7 @@ import {
   presignDownload,
   presignUpload,
 } from "../models/services/upload.service";
-import { getBucketName } from "../utils/functions";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { r2 } from "../config/r2Client";
+import { StorageConfigurationError } from "../utils/functions";
 
 export const createPresignedUrl = async (
   req: any,
@@ -28,6 +25,11 @@ export const createPresignedUrl = async (
     });
     return res.status(200).json(data);
   } catch (err) {
+    if (err instanceof StorageConfigurationError) {
+      console.warn("Presign skipped because storage is not configured:", err.message);
+      return res.status(503).json({ message: err.message });
+    }
+
     console.error("Presign error:", err);
     return res.status(500).json({ message: "Failed to presign URL" });
   }

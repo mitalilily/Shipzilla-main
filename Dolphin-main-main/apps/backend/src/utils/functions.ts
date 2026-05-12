@@ -68,15 +68,38 @@ export function buildPatch<T extends Record<string, unknown>>(existing: T, merge
   return patch
 }
 
-export const getBucketName = () => {
-  switch (process.env.NODE_ENV) {
-    case 'production':
-      return process.env.PROD_BUCKET!
-    case 'staging':
-      return process.env.STAGING_BUCKET!
-    default:
-      return process.env.DEV_BUCKET!
+export class StorageConfigurationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'StorageConfigurationError'
   }
+}
+
+const cleanEnvValue = (value?: string) => {
+  const trimmed = value?.trim()
+  return trimmed || undefined
+}
+
+export const getBucketName = () => {
+  const envName = process.env.NODE_ENV || 'development'
+  const envBucketKey =
+    envName === 'production' ? 'PROD_BUCKET' : envName === 'staging' ? 'STAGING_BUCKET' : 'DEV_BUCKET'
+
+  const bucket =
+    cleanEnvValue(process.env[envBucketKey]) ||
+    cleanEnvValue(process.env.R2_BUCKET) ||
+    cleanEnvValue(process.env.STORAGE_BUCKET) ||
+    cleanEnvValue(process.env.PROD_BUCKET) ||
+    cleanEnvValue(process.env.DEV_BUCKET) ||
+    cleanEnvValue(process.env.STAGING_BUCKET)
+
+  if (!bucket) {
+    throw new StorageConfigurationError(
+      `Storage bucket is not configured for ${envName}. Set ${envBucketKey} on the backend service.`,
+    )
+  }
+
+  return bucket
 }
 
 export const hash = (plain: string) => bcrypt.hash(plain, 10)
