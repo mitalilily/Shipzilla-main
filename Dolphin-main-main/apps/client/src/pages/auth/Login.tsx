@@ -15,32 +15,32 @@ const statCards = [
     value: '40K+',
     label: 'Daily Shipments',
     sx: {
-      left: { md: '15%', lg: '16%' },
-      top: { md: '47%', lg: '46.5%' },
+      left: { md: '13%', lg: '13.5%' },
+      top: { md: '45.1%', lg: '45.1%' },
     },
   },
   {
     value: '100+',
     label: 'Leading Brands',
     sx: {
-      left: { md: '5%', lg: '5%' },
-      top: { md: '65%', lg: '64%' },
+      left: { md: 0, lg: 0 },
+      top: { md: '61%', lg: '61%' },
     },
   },
   {
     value: '95%',
     label: 'SLA Adherence',
     sx: {
-      right: { md: '10%', lg: '12%' },
-      top: { md: '54%', lg: '54%' },
+      right: { md: '13%', lg: '15%' },
+      top: { md: '51.1%', lg: '51.1%' },
     },
   },
   {
     value: '2000+',
     label: 'Satisfied Users',
     sx: {
-      right: { md: '4%', lg: '6%' },
-      top: { md: '70%', lg: '70%' },
+      right: { md: '7%', lg: '8.5%' },
+      top: { md: '66%', lg: '66%' },
     },
   },
 ]
@@ -153,7 +153,7 @@ export default function Login() {
             overflow: 'hidden',
           }}
         >
-          <Box sx={{ position: 'relative', zIndex: 4 }}>
+          <Box sx={{ position: 'relative', zIndex: 4, mt: { md: 1.6, lg: 1.6 } }}>
             <ShipzillaLogo />
           </Box>
 
@@ -161,7 +161,7 @@ export default function Login() {
             sx={{
               position: 'relative',
               zIndex: 2,
-              pt: { md: 6.5, lg: 6.8, xl: 7.4 },
+              pt: { md: 5.8, lg: 6, xl: 6.5 },
               pl: { md: 6.8, lg: 10.8, xl: 12.5 },
               '@media (max-height: 840px)': {
                 pt: { md: 3.6, lg: 4.2 },
@@ -172,7 +172,7 @@ export default function Login() {
               component="h1"
               sx={{
                 color: '#171036',
-                fontSize: { md: 'clamp(3.1rem, 4.5vw, 4.6rem)', xl: '4.75rem' },
+                fontSize: { md: 'clamp(3rem, 4.15vw, 4.35rem)', xl: '4.35rem' },
                 fontWeight: 900,
                 lineHeight: 1.12,
                 letterSpacing: 0,
@@ -212,31 +212,14 @@ export default function Login() {
               position: 'absolute',
               zIndex: 1,
               left: { md: '-10%', lg: '-7%', xl: '-6%' },
-              bottom: { md: '-2%', lg: '-2.2%' },
+              bottom: { md: 0, lg: 0 },
               width: { md: '176%', lg: '170%', xl: '168%' },
               maxWidth: 'none',
               height: 'auto',
-              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, transparent 21%, #000 32%, #000 100%)',
-              maskImage: 'linear-gradient(to bottom, transparent 0%, transparent 21%, #000 32%, #000 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, transparent 14%, #000 26%, #000 100%)',
+              maskImage: 'linear-gradient(to bottom, transparent 0%, transparent 14%, #000 26%, #000 100%)',
               pointerEvents: 'none',
               userSelect: 'none',
-            }}
-          />
-
-          <Box
-            sx={{
-              position: 'absolute',
-              zIndex: 0,
-              left: { md: '11%', lg: '14%' },
-              bottom: { md: '10%', lg: '10%' },
-              width: { md: '70%', lg: '72%' },
-              aspectRatio: '1 / 1',
-              borderRadius: '50%',
-              background: 'rgba(126,78,190,0.07)',
-              pointerEvents: 'none',
-              '@media (max-height: 840px)': {
-                bottom: '6%',
-              },
             }}
           />
 
@@ -251,9 +234,9 @@ export default function Login() {
             sx={{
               position: 'absolute',
               zIndex: 4,
-              left: { md: '26%', lg: '28%', xl: '30%' },
-              bottom: { md: '4%', lg: '4.3%' },
-              px: { md: 1.8, lg: 2.2 },
+              left: { md: '26%', lg: '27%' },
+              bottom: { md: '4.8%', lg: '4.8%' },
+              px: { md: 2.2, lg: 2.8 },
               py: { md: 1.1, lg: 1.25 },
               borderRadius: '12px',
               backgroundColor: 'rgba(255,255,255,0.9)',
@@ -275,13 +258,14 @@ export default function Login() {
             alignItems: { xs: 'flex-start', md: 'center' },
             justifyContent: { xs: 'center', md: 'flex-end' },
             pt: { xs: 1.4, md: 0 },
+            pr: { md: 2.5 },
           }}
         >
           <Stack
             spacing={{ xs: 2.2, md: 0 }}
             sx={{
               width: { xs: 'calc(100vw - 32px)', sm: '100%' },
-              maxWidth: { xs: 'calc(100vw - 32px)', sm: 560, md: 710, xl: 735 },
+              maxWidth: { xs: 'calc(100vw - 32px)', sm: 560, md: 710, xl: 710 },
               minWidth: 0,
               minHeight: 0,
             }}
@@ -324,8 +308,7 @@ export default function Login() {
                 },
               }}
             >
-              <Stack
-                spacing={{ xs: 2.25, md: 5, lg: 5.7 }}
+              <Box
                 sx={{
                   minWidth: 0,
                   '& .MuiOutlinedInput-root': {
@@ -348,7 +331,7 @@ export default function Login() {
                   },
                 }}
               >
-                <Stack spacing={{ xs: 1.1, md: 1.55 }}>
+                <Stack spacing={{ xs: 1.1, md: 2.7 }}>
                   <Typography
                     component="h2"
                     sx={{
@@ -377,6 +360,7 @@ export default function Login() {
 
                 <Box
                   sx={{
+                    mt: { xs: 2.2, md: 4.35 },
                     p: 0.45,
                     minHeight: { xs: 58, md: 62 },
                     borderRadius: 999,
@@ -416,8 +400,10 @@ export default function Login() {
                   })}
                 </Box>
 
-                {mode === 'otp' ? <OtpLoginPanel /> : <CredentialAuthForm mode="login" />}
-              </Stack>
+                <Box sx={{ mt: { xs: 2.2, md: 4.6 } }}>
+                  {mode === 'otp' ? <OtpLoginPanel /> : <CredentialAuthForm mode="login" />}
+                </Box>
+              </Box>
             </Box>
           </Stack>
         </Box>
