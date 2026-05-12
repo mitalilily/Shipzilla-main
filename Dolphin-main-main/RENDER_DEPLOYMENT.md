@@ -24,6 +24,8 @@ Build command:
 npm install --include=dev && npm run build
 ```
 
+Do not use `npm run start` as the build command. `start` is only for the runtime phase after `dist/index.js` has been created.
+
 Start command:
 
 ```bash

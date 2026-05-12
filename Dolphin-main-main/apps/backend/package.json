@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "nodemon --watch src --exec ts-node src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node scripts/start-or-build.mjs",
+    "start:prod": "node dist/index.js",
+    "check:start": "node scripts/start-or-build.mjs --check",
     "check:rate-apis": "node -r ts-node/register src/scripts/checkRateCalculatorApis.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "drizzle-kit push",
