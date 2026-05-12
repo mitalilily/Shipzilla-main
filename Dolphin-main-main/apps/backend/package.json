@@ -44,6 +44,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
+    "drizzle-kit": "^0.31.1",
     "drizzle-orm": "^0.44.2",
     "express": "^5.1.0",
     "file-type": "^16.5.4",
@@ -67,7 +68,6 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.1",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.4"

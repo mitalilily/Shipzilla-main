@@ -12,8 +12,8 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 import { users } from './users'
+import { invoiceStatus } from './invoices'
 
-export const invoiceStatusEnum = pgEnum('invoice_status', ['pending', 'paid', 'disputed'])
 export const billingInvoiceTypeEnum = pgEnum('billingInvoiceTypeEnum', [
   'weekly',
   'monthly_summary',
@@ -40,7 +40,7 @@ export const billingInvoices = pgTable('billingInvoices', {
 
   gstRate: integer('gst_rate').default(18),
 
-  status: invoiceStatusEnum('status').default('pending').notNull(),
+  status: invoiceStatus('status').default('pending').notNull(),
   type: billingInvoiceTypeEnum('type').default('weekly').notNull(),
 
   pdfUrl: text('pdf_url').notNull(), // GST tax invoice (human readable)
