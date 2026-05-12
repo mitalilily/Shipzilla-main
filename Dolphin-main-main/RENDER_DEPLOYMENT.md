@@ -6,7 +6,13 @@ Use these values in Render. Do not add the PostgreSQL URL to the client or admin
 
 Service type: Web Service
 
-Root directory:
+Root directory if your Render service is connected to the repository root:
+
+```bash
+Dolphin-main-main/apps/backend
+```
+
+If your Render service is already pointed inside `Dolphin-main-main`, use:
 
 ```bash
 apps/backend
@@ -55,7 +61,13 @@ For temporary login testing without SMTP, set `EXPOSE_AUTH_CODES=true`. Turn it 
 
 Service type: Static Site
 
-Root directory:
+Root directory if your Render service is connected to the repository root:
+
+```bash
+Dolphin-main-main/apps/client
+```
+
+If your Render service is already pointed inside `Dolphin-main-main`, use:
 
 ```bash
 apps/client
@@ -72,6 +84,8 @@ Publish directory:
 ```bash
 dist
 ```
+
+If Render is currently serving `/src/main.tsx`, the publish directory is wrong. Set it to `dist`, or keep the build command above and redeploy after this commit; the Render-only postbuild also copies `dist` to the app root as a fallback.
 
 Rewrite rule:
 
@@ -95,7 +109,13 @@ VITE_PUBLIC_GEOAPIFY_KEY=<optional geoapify key>
 
 Service type: Static Site
 
-Root directory:
+Root directory if your Render service is connected to the repository root:
+
+```bash
+Dolphin-main-main/apps/admin
+```
+
+If your Render service is already pointed inside `Dolphin-main-main`, use:
 
 ```bash
 apps/admin
@@ -113,6 +133,8 @@ Publish directory:
 build
 ```
 
+If Render returns 404 at `/`, the publish directory is wrong. Set it to `build`, or redeploy after this commit; the Render-only postbuild also copies `build` to the app root as a fallback.
+
 Rewrite rule:
 
 ```text
@@ -124,4 +146,38 @@ Environment:
 ```bash
 REACT_APP_API_BASE_URL=https://shipzilla-backend.onrender.com/api
 REACT_APP_SOCKET_URL=https://shipzilla-backend.onrender.com
+```
+
+## Landing: `shipzilla-landing`
+
+Service type: Static Site
+
+Root directory if your Render service is connected to the repository root:
+
+```bash
+Dolphin-main-main/apps/landing
+```
+
+If your Render service is already pointed inside `Dolphin-main-main`, use:
+
+```bash
+apps/landing
+```
+
+Build command:
+
+```bash
+npm install && npm run build
+```
+
+Publish directory:
+
+```bash
+dist
+```
+
+Rewrite rule:
+
+```text
+/*  /index.html  200
 ```
