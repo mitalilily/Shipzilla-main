@@ -162,7 +162,7 @@ export default function OtpLoginPanel() {
           />
 
           <FormControlLabel
-            sx={{ mt: { xs: 1.2, md: 2 }, mb: { xs: 2.2, md: 4.3 }, alignItems: 'flex-start' }}
+            sx={{ mt: { xs: 1.2, md: 2 }, mb: { xs: 2.2, md: 6.7 }, alignItems: 'flex-start' }}
             control={
               <CustomCheckbox
                 checked={termsChecked}

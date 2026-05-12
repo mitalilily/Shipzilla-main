@@ -15,8 +15,8 @@ const statCards = [
     value: '40K+',
     label: 'Daily Shipments',
     sx: {
-      left: { md: '17%', lg: '17%' },
-      top: { md: '48%', lg: '47%' },
+      left: { md: '15%', lg: '16%' },
+      top: { md: '47%', lg: '46.5%' },
     },
   },
   {
@@ -162,7 +162,7 @@ export default function Login() {
               position: 'relative',
               zIndex: 2,
               pt: { md: 6.5, lg: 6.8, xl: 7.4 },
-              pl: { md: 5.8, lg: 8.2, xl: 10.2 },
+              pl: { md: 6.8, lg: 10.8, xl: 12.5 },
               '@media (max-height: 840px)': {
                 pt: { md: 3.6, lg: 4.2 },
               },
@@ -211,17 +211,31 @@ export default function Login() {
             sx={{
               position: 'absolute',
               zIndex: 1,
-              left: { md: '-6%', lg: '-4%', xl: '-2%' },
-              bottom: { md: '-2.5%', lg: '-2%' },
-              width: { md: '184%', lg: '176%', xl: '168%' },
+              left: { md: '-10%', lg: '-7%', xl: '-6%' },
+              bottom: { md: '-2%', lg: '-2.2%' },
+              width: { md: '176%', lg: '170%', xl: '168%' },
               maxWidth: 'none',
               height: 'auto',
-              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0) 3%, #000 17%, #000 100%)',
-              maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0) 3%, #000 17%, #000 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, transparent 21%, #000 32%, #000 100%)',
+              maskImage: 'linear-gradient(to bottom, transparent 0%, transparent 21%, #000 32%, #000 100%)',
               pointerEvents: 'none',
               userSelect: 'none',
+            }}
+          />
+
+          <Box
+            sx={{
+              position: 'absolute',
+              zIndex: 0,
+              left: { md: '11%', lg: '14%' },
+              bottom: { md: '10%', lg: '10%' },
+              width: { md: '70%', lg: '72%' },
+              aspectRatio: '1 / 1',
+              borderRadius: '50%',
+              background: 'rgba(126,78,190,0.07)',
+              pointerEvents: 'none',
               '@media (max-height: 840px)': {
-                width: { md: '170%', lg: '164%' },
+                bottom: '6%',
               },
             }}
           />
@@ -281,9 +295,9 @@ export default function Login() {
                 width: '100%',
                 maxWidth: '100%',
                 minWidth: 0,
+                height: { md: 'calc(100svh - 76px)' },
                 minHeight: { md: 'calc(100svh - 76px)' },
-                maxHeight: { md: 'calc(100svh - 76px)' },
-                overflowY: { xs: 'visible', md: 'auto' },
+                overflow: 'hidden',
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
@@ -297,7 +311,6 @@ export default function Login() {
                 border: `1px solid ${alpha(brand.ink, 0.08)}`,
                 boxShadow: '0 24px 64px rgba(41,22,70,0.16)',
                 backdropFilter: 'blur(18px)',
-                '&::-webkit-scrollbar': { width: 0 },
                 '@media (max-height: 840px)': {
                   py: { md: 3.1, lg: 3.2 },
                   pt: { md: 4.6, lg: 5 },
@@ -312,7 +325,7 @@ export default function Login() {
               }}
             >
               <Stack
-                spacing={{ xs: 2.25, md: 2.6, lg: 3 }}
+                spacing={{ xs: 2.25, md: 5, lg: 5.7 }}
                 sx={{
                   minWidth: 0,
                   '& .MuiOutlinedInput-root': {
