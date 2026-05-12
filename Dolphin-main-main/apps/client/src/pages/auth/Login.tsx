@@ -1,13 +1,119 @@
 import { Box, Button, Stack, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useState } from 'react'
-import { Navigate, Link as RouterLink } from 'react-router-dom'
-import AuthShell from '../../components/auth/AuthShell'
+import { FiCheckCircle } from 'react-icons/fi'
+import { Navigate } from 'react-router-dom'
 import CredentialAuthForm from '../../components/auth/CredentialAuthForm'
 import OtpLoginPanel from '../../components/auth/OtpLoginPanel'
 import FullScreenLoader from '../../components/UI/loader/FullScreenLoader'
 import { useAuth } from '../../context/auth/AuthContext'
 import { brand, brandGradients } from '../../theme/brand'
 import { UI_ONLY_AUTH } from '../../utils/authMode'
+
+const statCards = [
+  {
+    value: '40K+',
+    label: 'Daily Shipments',
+    sx: {
+      left: { md: '17%', lg: '17%' },
+      top: { md: '48%', lg: '47%' },
+    },
+  },
+  {
+    value: '100+',
+    label: 'Leading Brands',
+    sx: {
+      left: { md: '5%', lg: '5%' },
+      top: { md: '65%', lg: '64%' },
+    },
+  },
+  {
+    value: '95%',
+    label: 'SLA Adherence',
+    sx: {
+      right: { md: '10%', lg: '12%' },
+      top: { md: '54%', lg: '54%' },
+    },
+  },
+  {
+    value: '2000+',
+    label: 'Satisfied Users',
+    sx: {
+      right: { md: '4%', lg: '6%' },
+      top: { md: '70%', lg: '70%' },
+    },
+  },
+]
+
+function ShipzillaLogo() {
+  return (
+    <Stack direction="row" spacing={1.2} alignItems="center">
+      <Box
+        component="img"
+        src="/logo/shipzilla-tab-logo.png"
+        alt="Shipzilla"
+        sx={{
+          width: { xs: 40, md: 52 },
+          height: { xs: 40, md: 52 },
+          objectFit: 'contain',
+          flex: '0 0 auto',
+        }}
+      />
+      <Box>
+        <Typography
+          sx={{
+            color: brand.ink,
+            fontSize: { xs: '1.35rem', md: '1.55rem' },
+            fontWeight: 900,
+            lineHeight: 0.95,
+            letterSpacing: 0,
+          }}
+        >
+          ShipZilla
+        </Typography>
+        <Typography
+          sx={{
+            color: brand.ink,
+            fontSize: { xs: '0.56rem', md: '0.67rem' },
+            fontWeight: 800,
+            lineHeight: 1.2,
+            letterSpacing: 0,
+          }}
+        >
+          The King Of Shipping
+        </Typography>
+      </Box>
+    </Stack>
+  )
+}
+
+function StatCard({ value, label, sx }: (typeof statCards)[number]) {
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        zIndex: 3,
+        minWidth: { md: 118, lg: 140 },
+        px: { md: 1.6, lg: 2 },
+        py: { md: 1.1, lg: 1.25 },
+        borderRadius: '12px',
+        textAlign: 'center',
+        backgroundColor: 'rgba(255,255,255,0.86)',
+        border: `2px solid ${alpha('#7f41da', 0.58)}`,
+        boxShadow: '0 16px 30px rgba(70,27,132,0.22)',
+        backdropFilter: 'blur(10px)',
+        ...sx,
+      }}
+    >
+      <Typography sx={{ color: '#5b2aad', fontSize: { md: '1.45rem', lg: '1.8rem' }, fontWeight: 900, lineHeight: 1 }}>
+        {value}
+      </Typography>
+      <Typography sx={{ color: brand.inkSoft, fontSize: { md: '0.74rem', lg: '0.82rem' }, fontWeight: 600, mt: 0.45 }}>
+        {label}
+      </Typography>
+    </Box>
+  )
+}
 
 export default function Login() {
   const { loading, isAuthenticated } = useAuth()
@@ -17,74 +123,292 @@ export default function Login() {
   if (isAuthenticated) return <Navigate to="/app" replace />
 
   return (
-    <AuthShell
-      eyebrow="Seller Login"
-      title="Access the Shipzilla shipping workspace."
-      subtitle={
-        UI_ONLY_AUTH
-          ? 'Login is now a UI-only demo experience, so you can move through Shipzilla without needing real authentication credentials.'
-          : 'Login now flows through a cleaner Shipzilla-branded interface while keeping the existing authentication, token storage, and onboarding logic intact.'
-      }
-      helperTitle="Direct route into the app"
-      helperText={
-        UI_ONLY_AUTH
-          ? 'Both OTP and password tabs unlock the protected UI locally, making the auth layer ideal for demos and frontend QA.'
-          : 'Landing page actions now send new users to signup, existing users to login, and authenticated users into the protected app entry route.'
-      }
-      showChrome={false}
+    <Box
+      sx={{
+        minHeight: '100svh',
+        height: { md: '100svh' },
+        overflow: { xs: 'auto', md: 'hidden' },
+        overflowX: 'hidden',
+        background:
+          'radial-gradient(circle at 25% 45%, rgba(149,95,221,0.12) 0 20%, transparent 42%), linear-gradient(116deg, #fbf8ff 0%, #f7f0ff 48%, #efe1fb 100%)',
+      }}
     >
-      <Stack spacing={2.4}>
-        <Stack spacing={0.8}>
-          <Typography sx={{ color: brand.ink, fontSize: '2rem', fontWeight: 800, letterSpacing: 0 }}>
-            Login
-          </Typography>
-          <Typography sx={{ color: brand.inkSoft, lineHeight: 1.72 }}>
-            {UI_ONLY_AUTH
-              ? 'Choose OTP access or email plus password. Both options are local demo flows, and any generated code is only there to support the UI experience.'
-              : 'Choose OTP access or email plus password. If the backend exposes an OTP or verification token, the page will display it inline for you.'}
-          </Typography>
-        </Stack>
+      <Box
+        sx={{
+          minHeight: '100svh',
+          height: { md: '100svh' },
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '49% 51%', xl: '50% 50%' },
+          gap: { xs: 0, md: 2.5, lg: 3 },
+          px: { xs: 2, sm: 3, md: 3.6, lg: 4.6 },
+          py: { xs: 2.4, md: 3.5, lg: 4 },
+          boxSizing: 'border-box',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            display: { xs: 'none', md: 'block' },
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <Box sx={{ position: 'relative', zIndex: 4 }}>
+            <ShipzillaLogo />
+          </Box>
+
+          <Box
+            sx={{
+              position: 'relative',
+              zIndex: 2,
+              pt: { md: 6.5, lg: 6.8, xl: 7.4 },
+              pl: { md: 5.8, lg: 8.2, xl: 10.2 },
+              '@media (max-height: 840px)': {
+                pt: { md: 3.6, lg: 4.2 },
+              },
+            }}
+          >
+            <Typography
+              component="h1"
+              sx={{
+                color: '#171036',
+                fontSize: { md: 'clamp(3.1rem, 4.5vw, 4.6rem)', xl: '4.75rem' },
+                fontWeight: 900,
+                lineHeight: 1.12,
+                letterSpacing: 0,
+                maxWidth: 580,
+              }}
+            >
+              Ship Smarter,
+              <Box
+                component="span"
+                sx={{
+                  display: 'block',
+                  color: '#6530b6',
+                }}
+              >
+                Deliver Better.
+              </Box>
+            </Typography>
+            <Typography
+              sx={{
+                mt: { md: 2.2, lg: 2.4 },
+                color: brand.inkSoft,
+                fontSize: { md: '1.18rem', lg: '1.34rem' },
+                fontWeight: 500,
+                lineHeight: 1.45,
+                maxWidth: 430,
+              }}
+            >
+              Power your e-commerce business with fast, reliable, and simple shipping.
+            </Typography>
+          </Box>
+
+          <Box
+            component="img"
+            src="/images/shipzilla-login-courier.png"
+            alt="Shipzilla courier partner"
+            sx={{
+              position: 'absolute',
+              zIndex: 1,
+              left: { md: '-6%', lg: '-4%', xl: '-2%' },
+              bottom: { md: '-2.5%', lg: '-2%' },
+              width: { md: '184%', lg: '176%', xl: '168%' },
+              maxWidth: 'none',
+              height: 'auto',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0) 3%, #000 17%, #000 100%)',
+              maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0) 3%, #000 17%, #000 100%)',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              '@media (max-height: 840px)': {
+                width: { md: '170%', lg: '164%' },
+              },
+            }}
+          />
+
+          {statCards.map((stat) => (
+            <StatCard key={stat.value} {...stat} />
+          ))}
+
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{
+              position: 'absolute',
+              zIndex: 4,
+              left: { md: '26%', lg: '28%', xl: '30%' },
+              bottom: { md: '4%', lg: '4.3%' },
+              px: { md: 1.8, lg: 2.2 },
+              py: { md: 1.1, lg: 1.25 },
+              borderRadius: '12px',
+              backgroundColor: 'rgba(255,255,255,0.9)',
+              border: `1px solid ${alpha('#7f41da', 0.18)}`,
+              boxShadow: '0 16px 28px rgba(70,27,132,0.2)',
+            }}
+          >
+            <FiCheckCircle size={28} color={brand.success} />
+            <Typography sx={{ color: '#4f279c', fontWeight: 900, fontSize: { md: '0.98rem', lg: '1.1rem' } }}>
+              Your order is arriving today
+            </Typography>
+          </Stack>
+        </Box>
 
         <Box
           sx={{
-            p: 0.6,
-            borderRadius: 999,
-            backgroundColor: 'rgba(93,35,148,0.08)',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 0.6,
+            display: 'flex',
+            minHeight: 0,
+            alignItems: { xs: 'flex-start', md: 'center' },
+            justifyContent: { xs: 'center', md: 'flex-end' },
+            pt: { xs: 1.4, md: 0 },
           }}
         >
-          {[
-            { value: 'otp', label: 'Email OTP' },
-            { value: 'password', label: 'Password' },
-          ].map((item) => (
-            <Button
-              key={item.value}
-              type="button"
-              onClick={() => setMode(item.value as 'otp' | 'password')}
+          <Stack
+            spacing={{ xs: 2.2, md: 0 }}
+            sx={{
+              width: { xs: 'calc(100vw - 32px)', sm: '100%' },
+              maxWidth: { xs: 'calc(100vw - 32px)', sm: 560, md: 710, xl: 735 },
+              minWidth: 0,
+              minHeight: 0,
+            }}
+          >
+            <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 0.5 }}>
+              <ShipzillaLogo />
+            </Box>
+
+            <Box
               sx={{
-                borderRadius: 999,
-                py: 1.2,
-                background: mode === item.value ? brandGradients.button : 'transparent',
-                color: brand.ink,
-                fontWeight: 700,
+                width: '100%',
+                maxWidth: '100%',
+                minWidth: 0,
+                minHeight: { md: 'calc(100svh - 76px)' },
+                maxHeight: { md: 'calc(100svh - 76px)' },
+                overflowY: { xs: 'visible', md: 'auto' },
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                px: { xs: 2.4, sm: 4.2, md: 4.8, lg: 5.3 },
+                py: { xs: 3.2, sm: 4.2, md: 4.8, lg: 5.3 },
+                pt: { xs: 3.2, sm: 4.2, md: 10.6, lg: 11.2 },
+                pb: { xs: 3.2, sm: 4.2, md: 4.8, lg: 5.3 },
+                borderRadius: { xs: '24px', md: '26px' },
+                background: 'rgba(255,255,255,0.94)',
+                border: `1px solid ${alpha(brand.ink, 0.08)}`,
+                boxShadow: '0 24px 64px rgba(41,22,70,0.16)',
+                backdropFilter: 'blur(18px)',
+                '&::-webkit-scrollbar': { width: 0 },
+                '@media (max-height: 840px)': {
+                  py: { md: 3.1, lg: 3.2 },
+                  pt: { md: 4.6, lg: 5 },
+                  pb: { md: 3.1, lg: 3.2 },
+                  px: { md: 4, lg: 4.2 },
+                },
+                '@media (max-height: 760px)': {
+                  py: { md: 2.5, lg: 2.6 },
+                  pt: { md: 3, lg: 3.2 },
+                  pb: { md: 2.5, lg: 2.6 },
+                },
               }}
             >
-              {item.label}
-            </Button>
-          ))}
+              <Stack
+                spacing={{ xs: 2.25, md: 2.6, lg: 3 }}
+                sx={{
+                  minWidth: 0,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '14px',
+                    '& fieldset': {
+                      borderColor: `${alpha('#5f23a6', 0.7)} !important`,
+                      borderWidth: '1.5px',
+                    },
+                  },
+                  '& .MuiInputBase-input': {
+                    py: { xs: 1.15, md: 1.22 },
+                  },
+                  '& button[type="submit"]': {
+                    minHeight: { xs: 54, md: 62 },
+                    boxShadow: 'none',
+                    fontSize: '0.98rem',
+                    '& .MuiTypography-root': {
+                      fontSize: '0.98rem',
+                    },
+                  },
+                }}
+              >
+                <Stack spacing={{ xs: 1.1, md: 1.55 }}>
+                  <Typography
+                    component="h2"
+                    sx={{
+                      color: '#171036',
+                      fontSize: { xs: '2.25rem', md: '2.7rem', lg: '3rem' },
+                      fontWeight: 900,
+                      lineHeight: 1.08,
+                      letterSpacing: 0,
+                    }}
+                  >
+                    Login
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: brand.inkSoft,
+                      lineHeight: 1.72,
+                      fontSize: { xs: '0.98rem', md: '1.06rem', lg: '1.12rem' },
+                      maxWidth: 620,
+                    }}
+                  >
+                    {UI_ONLY_AUTH
+                      ? 'Choose OTP access or email plus password. Both options are local demo flows, and any generated code is only there to support the UI experience.'
+                      : 'Choose OTP access or email plus password. If the backend exposes an OTP or verification token, the page will display it inline for you.'}
+                  </Typography>
+                </Stack>
+
+                <Box
+                  sx={{
+                    p: 0.45,
+                    minHeight: { xs: 58, md: 62 },
+                    borderRadius: 999,
+                    backgroundColor: 'rgba(93,35,148,0.09)',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: 0.45,
+                  }}
+                >
+                  {[
+                    { value: 'otp', label: 'Email OTP' },
+                    { value: 'password', label: 'Password' },
+                  ].map((item) => {
+                    const active = mode === item.value
+
+                    return (
+                      <Button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setMode(item.value as 'otp' | 'password')}
+                        sx={{
+                          borderRadius: 999,
+                          textTransform: 'none',
+                          background: active ? brandGradients.button : 'transparent',
+                          color: active ? '#FFFFFF' : brand.ink,
+                          fontWeight: 800,
+                          fontSize: { xs: '0.88rem', md: '0.98rem' },
+                          boxShadow: active ? '0 16px 32px rgba(93,35,166,0.24)' : 'none',
+                          '&:hover': {
+                            background: active ? brandGradients.button : alpha('#FFFFFF', 0.5),
+                          },
+                        }}
+                      >
+                        {item.label}
+                      </Button>
+                    )
+                  })}
+                </Box>
+
+                {mode === 'otp' ? <OtpLoginPanel /> : <CredentialAuthForm mode="login" />}
+              </Stack>
+            </Box>
+          </Stack>
         </Box>
-
-        {mode === 'otp' ? <OtpLoginPanel /> : <CredentialAuthForm mode="login" />}
-
-        <Typography sx={{ color: brand.inkSoft, textAlign: 'center', fontSize: '0.88rem' }}>
-          New to Shipzilla?{' '}
-          <Box component={RouterLink} to="/signup" sx={{ color: brand.ink, fontWeight: 700 }}>
-            Create an account
-          </Box>
-        </Typography>
-      </Stack>
-    </AuthShell>
+      </Box>
+    </Box>
   )
 }

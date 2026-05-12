@@ -119,12 +119,12 @@ export default function OtpLoginPanel() {
   }
 
   return (
-    <Stack spacing={2.2}>
-      <Stack spacing={0.8}>
-        <Typography sx={{ color: brand.ink, fontWeight: 800, fontSize: '1.18rem' }}>
+    <Stack spacing={{ xs: 2.2, md: 5.5 }} sx={{ mt: { md: 2.2 }, minWidth: 0 }}>
+      <Stack spacing={{ xs: 0.8, md: 1.05 }}>
+        <Typography sx={{ color: brand.ink, fontWeight: 800, fontSize: { xs: '1.18rem', md: '1.28rem' } }}>
           Continue with Email Verification
         </Typography>
-        <Typography sx={{ color: brand.inkSoft, lineHeight: 1.7, fontSize: '0.92rem' }}>
+        <Typography sx={{ color: brand.inkSoft, lineHeight: { xs: 1.7, md: 1.82 }, fontSize: { xs: '0.92rem', md: '1rem' } }}>
           {UI_ONLY_AUTH
             ? 'Use your registered business email to securely access the Shipzilla seller dashboard. Enter the 6-digit verification code sent to your inbox to continue and manage orders, shipping, billing, and operations seamlessly.'
             : 'Use your registered business email to securely access the Shipzilla seller dashboard. Enter the 6-digit verification code sent to your inbox to continue and manage orders, shipping, billing, and operations seamlessly.'}
@@ -142,7 +142,7 @@ export default function OtpLoginPanel() {
       />
 
       {step === 'request' ? (
-        <Box component="form" onSubmit={handleRequest}>
+        <Box component="form" onSubmit={handleRequest} sx={{ pt: { md: 3 } }}>
           <CustomInput
             type="email"
             label="Work Email"
@@ -162,7 +162,7 @@ export default function OtpLoginPanel() {
           />
 
           <FormControlLabel
-            sx={{ mt: 1.2, mb: 2.2, alignItems: 'flex-start' }}
+            sx={{ mt: { xs: 1.2, md: 2 }, mb: { xs: 2.2, md: 4.3 }, alignItems: 'flex-start' }}
             control={
               <CustomCheckbox
                 checked={termsChecked}
@@ -238,10 +238,25 @@ export default function OtpLoginPanel() {
         </Stack>
       )}
 
-      <Stack direction="row" spacing={1} alignItems="center">
-        <FiShield size={14} color={brand.success} />
-        <Typography sx={{ color: brand.inkSoft, fontSize: '0.82rem', lineHeight: 1.6 }}>
-    </Typography>
+      <Stack direction="row" spacing={1.2} alignItems="flex-start">
+        <Box
+          sx={{
+            mt: 0.25,
+            display: 'grid',
+            placeItems: 'center',
+            color: brand.success,
+          }}
+        >
+          <FiShield size={15} />
+        </Box>
+        <Box>
+          <Typography sx={{ color: brand.inkSoft, fontSize: '0.8rem', fontWeight: 700, lineHeight: 1.45 }}>
+            Secure & Protected
+          </Typography>
+          <Typography sx={{ color: brand.inkSoft, fontSize: '0.78rem', lineHeight: 1.45 }}>
+            Your data is safe with us.
+          </Typography>
+        </Box>
       </Stack>
 
       <CustomModal
