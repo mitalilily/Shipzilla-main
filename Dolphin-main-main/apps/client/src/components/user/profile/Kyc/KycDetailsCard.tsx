@@ -72,7 +72,7 @@ const getRejection = (kyc: any, key: string) =>
 
 const StatusChip = ({ status }: { status?: string }) => {
   const config = {
-    verified: { bg: '#3DD598', color: '#FFFFFF', label: 'VERIFIED' },
+    verified: { bg: '#56E813', color: '#FFFFFF', label: 'VERIFIED' },
     rejected: { bg: '#E74C3C', color: '#FFFFFF', label: 'REJECTED' },
     verification_in_progress: { bg: '#FFA726', color: '#FFFFFF', label: 'IN PROGRESS' },
     pending: { bg: '#4A5568', color: '#FFFFFF', label: 'PENDING' },
@@ -131,8 +131,8 @@ const PreviewBlock = ({
     <Grid size={{ md: 4, sm: 12 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
         <Box display="flex" alignItems="center" gap={1}>
-          <Box sx={{ color: '#333369', display: 'flex', alignItems: 'center' }}>{icon}</Box>
-          <Typography variant="subtitle2" fontWeight={700} color="#1A1A1A">
+          <Box sx={{ color: '#5D2394', display: 'flex', alignItems: 'center' }}>{icon}</Box>
+          <Typography variant="subtitle2" fontWeight={700} color="#1D1730">
             {label}
           </Typography>
         </Box>
@@ -144,7 +144,7 @@ const PreviewBlock = ({
           mt: 1,
           p: 1.5,
           borderRadius: 2,
-          border: '1px solid #E0E6ED',
+          border: '1px solid #E5DCF3',
           bgcolor: '#FFFFFF',
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           transition: 'all 0.3s ease',
@@ -180,7 +180,7 @@ const PreviewBlock = ({
               maxHeight: 220,
               borderRadius: 2,
               objectFit: 'cover',
-              border: '1px solid #E0E6ED',
+              border: '1px solid #E5DCF3',
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               transition: 'transform 0.3s ease',
               '&:hover': { transform: 'scale(1.05)' },
@@ -261,7 +261,7 @@ const LabelValue = ({
       {loading ? (
         <Skeleton width="70%" sx={{ bgcolor: '#F5F7FA' }} />
       ) : (
-        <Typography variant="body1" fontWeight={600} color="#1A1A1A">
+        <Typography variant="body1" fontWeight={600} color="#1D1730">
           {value || '-'}
         </Typography>
       )}
@@ -346,7 +346,7 @@ const KycDetailsCard = ({
         py: 3,
         borderRadius: 3,
         bgcolor: '#FFFFFF',
-        border: '1px solid #E0E6ED',
+        border: '1px solid #E5DCF3',
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         position: 'relative',
         '&::before': {
@@ -371,7 +371,7 @@ const KycDetailsCard = ({
           mb={2}
         >
           <Box display="flex" alignItems="center" gap={2}>
-            <Typography variant="h6" fontWeight={700} color="#333369">
+            <Typography variant="h6" fontWeight={700} color="#5D2394">
               {loading ? <Skeleton width={120} /> : 'KYC Details'}
             </Typography>
             {!loading && (
@@ -383,14 +383,14 @@ const KycDetailsCard = ({
           <StatusChip status={kyc?.status} />
         </Box>
 
-        <Divider sx={{ mb: 3, borderColor: '#E0E6ED' }} />
+        <Divider sx={{ mb: 3, borderColor: '#E5DCF3' }} />
 
         <Typography
           variant="h6"
           fontWeight={700}
           sx={{
             mb: 2.5,
-            color: '#333369',
+            color: '#5D2394',
             display: 'flex',
             alignItems: 'center',
             gap: 1,
@@ -398,7 +398,7 @@ const KycDetailsCard = ({
               content: '""',
               width: 4,
               height: 24,
-              bgcolor: '#3DD598',
+              bgcolor: '#56E813',
               borderRadius: 1,
             },
           }}
@@ -420,13 +420,13 @@ const KycDetailsCard = ({
 
         {fileFieldsToShow.length > 0 && (
           <>
-            <Divider sx={{ my: 4, borderColor: '#E0E6ED' }} />
+            <Divider sx={{ my: 4, borderColor: '#E5DCF3' }} />
             <Typography
               variant="h6"
               fontWeight={700}
               sx={{
                 mb: 2.5,
-                color: '#333369',
+                color: '#5D2394',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
@@ -434,7 +434,7 @@ const KycDetailsCard = ({
                   content: '""',
                   width: 4,
                   height: 24,
-                  bgcolor: '#3DD598',
+                  bgcolor: '#56E813',
                   borderRadius: 1,
                 },
               }}
@@ -457,13 +457,13 @@ const KycDetailsCard = ({
 
         {textFieldsToShow.length > 0 && (
           <>
-            <Divider sx={{ my: 4, borderColor: '#E0E6ED' }} />
+            <Divider sx={{ my: 4, borderColor: '#E5DCF3' }} />
             <Typography
               variant="h6"
               fontWeight={700}
               sx={{
                 mb: 2.5,
-                color: '#333369',
+                color: '#5D2394',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1,
@@ -471,7 +471,7 @@ const KycDetailsCard = ({
                   content: '""',
                   width: 4,
                   height: 24,
-                  bgcolor: '#3DD598',
+                  bgcolor: '#56E813',
                   borderRadius: 1,
                 },
               }}
@@ -491,7 +491,7 @@ const KycDetailsCard = ({
           </>
         )}
 
-        <Divider sx={{ my: 4, borderColor: '#E0E6ED' }} />
+        <Divider sx={{ my: 4, borderColor: '#E5DCF3' }} />
         <Grid container spacing={3}>
           <LabelValue
             labelKey="createdAt"

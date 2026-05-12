@@ -3,21 +3,21 @@ import { MdOutlineFactCheck, MdVerifiedUser } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/auth/AuthContext'
 
-const DE_BLUE = '#0C3B80'
-const DE_AMBER = '#F57C00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 const TEXT_PRIMARY = '#241A1B'
 const TEXT_SECONDARY = '#6A5E59'
 
 const cardSx = {
   borderRadius: 4,
   p: { xs: 2, md: 2.3 },
-  border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+  border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
   bgcolor: '#fffdf8',
   boxShadow: `0 12px 26px ${alpha(TEXT_PRIMARY, 0.05)}`,
   transition: 'all 0.2s ease',
   '&:hover': {
     boxShadow: `0 16px 34px ${alpha(TEXT_PRIMARY, 0.08)}`,
-    borderColor: alpha(DE_BLUE, 0.15),
+    borderColor: alpha(SHIPZILLA_PRIMARY, 0.15),
   },
 }
 
@@ -47,10 +47,10 @@ const GettingStarted = () => {
                 <Typography sx={{ fontWeight: 800, color: TEXT_PRIMARY, fontSize: '0.9rem' }}>
                   Billing Wallet
                 </Typography>
-                <MdOutlineFactCheck size={20} color={DE_BLUE} />
+                <MdOutlineFactCheck size={20} color={SHIPZILLA_PRIMARY} />
               </Stack>
 
-              <Typography sx={{ fontSize: '1.5rem', fontWeight: 900, color: DE_BLUE, letterSpacing: -0.5 }}>
+              <Typography sx={{ fontSize: '1.5rem', fontWeight: 900, color: SHIPZILLA_PRIMARY, letterSpacing: 0 }}>
                 INR {(walletBalance ?? 0).toLocaleString('en-IN')}
               </Typography>
 
@@ -64,7 +64,7 @@ const GettingStarted = () => {
                   size="small"
                   onClick={() => navigate('/billing/wallet_transactions')}
                   sx={{
-                    bgcolor: DE_BLUE,
+                    bgcolor: SHIPZILLA_PRIMARY,
                     '&:hover': { bgcolor: '#082A57' },
                     borderRadius: 999,
                     textTransform: 'none',
@@ -87,7 +87,7 @@ const GettingStarted = () => {
                 <Typography sx={{ fontWeight: 800, color: TEXT_PRIMARY, fontSize: '0.9rem' }}>
                   KYC Details
                 </Typography>
-                <MdVerifiedUser size={20} color={isKycDone ? '#178A68' : DE_AMBER} />
+                <MdVerifiedUser size={20} color={isKycDone ? '#36B309' : SHIPZILLA_ACCENT} />
               </Stack>
 
               <Typography sx={{ fontSize: '0.88rem', color: TEXT_SECONDARY, fontWeight: 500 }}>
@@ -103,10 +103,10 @@ const GettingStarted = () => {
                   sx={{
                     height: 6,
                     borderRadius: 1,
-                    bgcolor: alpha(DE_BLUE, 0.1),
+                    bgcolor: alpha(SHIPZILLA_PRIMARY, 0.1),
                     '& .MuiLinearProgress-bar': {
                       borderRadius: 1,
-                      bgcolor: isKycDone ? '#178A68' : DE_AMBER,
+                      bgcolor: isKycDone ? '#36B309' : SHIPZILLA_ACCENT,
                     },
                   }}
                 />

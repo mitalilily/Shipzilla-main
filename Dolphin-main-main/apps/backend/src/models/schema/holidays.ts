@@ -9,7 +9,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
-const createTable = pgTableCreator((name) => `meracourierwala_${name}`)
+const createTable = pgTableCreator((name) => `shipzilla_${name}`)
 
 /**
  * Holidays table for B2B holiday charge calculation

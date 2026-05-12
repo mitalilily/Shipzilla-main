@@ -11,10 +11,11 @@ export default function BrandLogo({ compact = false, sx, ...rest }: BrandLogoPro
       src="/logo/shipzilla-logo.png"
       alt="Shipzilla"
       sx={{
-        width: compact ? 42 : { xs: 126, sm: 142 },
+        width: compact ? 42 : { xs: 136, sm: 158 },
         height: 'auto',
         objectFit: 'contain',
         display: 'block',
+        filter: 'drop-shadow(0 14px 28px rgba(93, 35, 148, 0.12))',
         ...sx,
       }}
       {...rest}

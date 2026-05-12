@@ -31,7 +31,7 @@ const PageHeading: React.FC<PageHeadingProps> = ({
         background: brandGradients.surface,
         px: { xs: 1.8, sm: 2.4 },
         py: { xs: 1.8, sm: 2.1 },
-        boxShadow: '0 20px 42px rgba(15,44,67,0.08)',
+        boxShadow: '0 20px 42px rgba(67,22,109,0.08)',
       }}
     >
       <Stack spacing={1} textAlign={center ? 'center' : 'left'} position="relative" zIndex={1}>
@@ -83,7 +83,7 @@ const PageHeading: React.FC<PageHeadingProps> = ({
               lineHeight={1.08}
               sx={{
                 color: brand.ink,
-                letterSpacing: '-0.04em',
+                letterSpacing: 0,
               }}
             >
               {title}

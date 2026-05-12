@@ -19,7 +19,7 @@ export const glassStyles = {
   border: `1px solid ${alpha(BRAND_PRIMARY, 0.12)}`,
   boxShadow: `0 4px 14px ${alpha(BRAND_PRIMARY, 0.06)}`,
   overflow: 'hidden',
-  color: '#1a1a1a',
+  color: '#1D1730',
   '&:before': {
     display: 'none',
   },

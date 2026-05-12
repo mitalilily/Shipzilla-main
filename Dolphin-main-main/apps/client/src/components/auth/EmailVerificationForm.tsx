@@ -9,23 +9,23 @@ import CustomIconLoadingButton from '../UI/button/CustomLoadingButton'
 import { toast } from '../UI/Toast'
 import { getAuthErrorMessage } from './getAuthErrorMessage'
 
-const DE_BLUE = '#171310'
+const SHIPZILLA_PRIMARY = '#5D2394'
 const OTP_LENGTH = 8
 const RESEND_DELAY_SECONDS = 30
 
 const primaryButtonStyles = {
   width: '100%',
   borderRadius: 1,
-  bgcolor: DE_BLUE,
-  boxShadow: `0 8px 24px ${alpha(DE_BLUE, 0.3)}`,
+  bgcolor: SHIPZILLA_PRIMARY,
+  boxShadow: `0 8px 24px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
   '&:hover': { bgcolor: '#0D0A08' },
 }
 
 const secondaryButtonStyles = {
   width: '100%',
-  border: `1px solid ${alpha(DE_BLUE, 0.2)}`,
-  color: DE_BLUE,
-  backgroundColor: alpha(DE_BLUE, 0.04),
+  border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.2)}`,
+  color: SHIPZILLA_PRIMARY,
+  backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.04),
   borderRadius: 1,
 }
 
@@ -167,7 +167,7 @@ export default function EmailVerificationForm({
         sx={{
           p: { xs: 2, sm: 2.4 },
           borderRadius: 3,
-          border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
           background:
             'linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,246,238,0.92) 100%)',
           boxShadow: '0 18px 40px rgba(23,19,16,0.06)',
@@ -182,14 +182,14 @@ export default function EmailVerificationForm({
                 borderRadius: '14px',
                 display: 'grid',
                 placeItems: 'center',
-                bgcolor: alpha(DE_BLUE, 0.08),
-                color: DE_BLUE,
+                bgcolor: alpha(SHIPZILLA_PRIMARY, 0.08),
+                color: SHIPZILLA_PRIMARY,
               }}
             >
               <FiMail size={18} />
             </Box>
             <Box>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: DE_BLUE, lineHeight: 1.1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: SHIPZILLA_PRIMARY, lineHeight: 1.1 }}>
                 Enter verification code
               </Typography>
               <Typography variant="body2" sx={{ color: '#6A616A', fontWeight: 600 }}>
@@ -208,10 +208,10 @@ export default function EmailVerificationForm({
                 px: 1.2,
                 py: 0.8,
                 borderRadius: 999,
-                bgcolor: alpha(DE_BLUE, 0.05),
-                color: DE_BLUE,
+                bgcolor: alpha(SHIPZILLA_PRIMARY, 0.05),
+                color: SHIPZILLA_PRIMARY,
                 cursor: 'pointer',
-                border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+                border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
               }}
             >
               <FiEdit2 size={13} />
@@ -244,24 +244,24 @@ export default function EmailVerificationForm({
                 fontSize: '1.12rem',
                 textTransform: 'uppercase',
                 padding: '14px 0',
-                color: DE_BLUE,
+                color: SHIPZILLA_PRIMARY,
               },
             }}
             sx={{
               width: { xs: 48, sm: 54 },
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2.5,
-                bgcolor: alpha(DE_BLUE, 0.02),
-                boxShadow: digit ? `0 10px 18px ${alpha(DE_BLUE, 0.1)}` : 'none',
+                bgcolor: alpha(SHIPZILLA_PRIMARY, 0.02),
+                boxShadow: digit ? `0 10px 18px ${alpha(SHIPZILLA_PRIMARY, 0.1)}` : 'none',
                 '& fieldset': {
-                  borderColor: digit ? DE_BLUE : alpha(DE_BLUE, 0.14),
+                  borderColor: digit ? SHIPZILLA_PRIMARY : alpha(SHIPZILLA_PRIMARY, 0.14),
                   borderWidth: digit ? 2 : 1,
                 },
                 '&:hover fieldset': {
-                  borderColor: DE_BLUE,
+                  borderColor: SHIPZILLA_PRIMARY,
                 },
                 '&.Mui-focused fieldset': {
-                  borderColor: DE_BLUE,
+                  borderColor: SHIPZILLA_PRIMARY,
                 },
               },
             }}

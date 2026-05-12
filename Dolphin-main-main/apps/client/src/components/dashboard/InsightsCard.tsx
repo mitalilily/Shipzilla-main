@@ -22,8 +22,8 @@ interface InsightsCardProps {
 
 type InsightType = 'good' | 'warning' | 'notice'
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 export default function InsightsCard({ operational, trends, actions }: InsightsCardProps) {
   const insights: Array<{
@@ -77,9 +77,9 @@ export default function InsightsCard({ operational, trends, actions }: InsightsC
   }
 
   const palette: Record<InsightType, { bg: string; border: string; color: string }> = {
-    good: { bg: alpha('#36B37E', 0.08), border: alpha('#36B37E', 0.2), color: '#00875A' },
+    good: { bg: alpha('#56E813', 0.08), border: alpha('#56E813', 0.2), color: '#00875A' },
     warning: { bg: alpha('#DE350B', 0.08), border: alpha('#DE350B', 0.2), color: '#DE350B' },
-    notice: { bg: alpha(DE_BLUE, 0.06), border: alpha(DE_BLUE, 0.2), color: DE_BLUE },
+    notice: { bg: alpha(SHIPZILLA_PRIMARY, 0.06), border: alpha(SHIPZILLA_PRIMARY, 0.2), color: SHIPZILLA_PRIMARY },
   }
 
   return (
@@ -87,8 +87,8 @@ export default function InsightsCard({ operational, trends, actions }: InsightsC
       sx={{
         height: '100%',
         borderRadius: 1,
-        border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-        boxShadow: `0 8px 20px ${alpha(DE_BLUE, 0.05)}`,
+        border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+        boxShadow: `0 8px 20px ${alpha(SHIPZILLA_PRIMARY, 0.05)}`,
       }}
     >
       <CardContent sx={{ p: 2.2 }}>
@@ -97,14 +97,14 @@ export default function InsightsCard({ operational, trends, actions }: InsightsC
             sx={{
               p: 0.9,
               borderRadius: 1,
-              bgcolor: alpha(DE_AMBER, 0.1),
-              color: DE_AMBER,
+              bgcolor: alpha(SHIPZILLA_ACCENT, 0.1),
+              color: SHIPZILLA_ACCENT,
               display: 'flex',
             }}
           >
             <MdLightbulb size="20" />
           </Box>
-          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#172B4D', letterSpacing: -0.2 }}>
+          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#1D1730', letterSpacing: 0 }}>
             Performance Insights
           </Typography>
         </Stack>
@@ -124,7 +124,7 @@ export default function InsightsCard({ operational, trends, actions }: InsightsC
             >
               <Stack direction="row" spacing={1.2} alignItems="flex-start">
                 <Box sx={{ color: palette[insight.type].color, mt: 0.2 }}>{insight.icon}</Box>
-                <Typography sx={{ fontSize: '0.82rem', color: '#172B4D', fontWeight: 600, lineHeight: 1.4 }}>
+                <Typography sx={{ fontSize: '0.82rem', color: '#1D1730', fontWeight: 600, lineHeight: 1.4 }}>
                   {insight.message}
                 </Typography>
               </Stack>

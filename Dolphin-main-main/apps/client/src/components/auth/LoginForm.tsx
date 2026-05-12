@@ -133,7 +133,7 @@ export default function LoginForm() {
                     fontFamily: DISPLAY_FONT,
                     fontSize: { xs: '2.2rem', sm: '2.9rem', lg: '4.35rem' },
                     lineHeight: { xs: 1.02, lg: 0.94 },
-                    letterSpacing: '-0.05em',
+                    letterSpacing: 0,
                     fontWeight: 800,
                     maxWidth: 760,
                   }}
@@ -276,7 +276,7 @@ export default function LoginForm() {
                     fontWeight: 800,
                     color: TEXT,
                     lineHeight: 1.02,
-                    letterSpacing: '-0.04em',
+                    letterSpacing: 0,
                   }}
                 >
                   Welcome back.

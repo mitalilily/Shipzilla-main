@@ -38,8 +38,8 @@ interface DropdownMenuProps {
   searchable?: boolean
 }
 
-const NAVY = '#0C3B80'
-const ORANGE = '#F57C00'
+const NAVY = '#5D2394'
+const ORANGE = '#56E813'
 const TEXT = '#241A1B'
 const MUTED = '#6A5E59'
 

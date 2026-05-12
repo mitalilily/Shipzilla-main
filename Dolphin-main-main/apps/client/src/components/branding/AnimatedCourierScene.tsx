@@ -1,11 +1,11 @@
 import { alpha, Box, Stack, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
 
-const NAVY = '#171310'
+const NAVY = '#5D2394'
 const BLUE = '#C8A989'
 const ORANGE = '#D97943'
 const CREAM = '#F7EFE5'
-const TEXT = '#171310'
+const TEXT = '#5D2394'
 
 const MotionGroup = motion.g
 const MotionCircle = motion.circle
@@ -77,11 +77,11 @@ export function RollingVanScene({ compact = false }: { compact?: boolean }) {
       >
         <svg viewBox="0 0 360 210" width="100%" height={compact ? 152 : 174} role="img" aria-label="Animated delivery van">
           <defs>
-            <linearGradient id="skyrush-van-body" x1="0%" x2="100%" y1="0%" y2="100%">
+            <linearGradient id="shipzilla-van-body" x1="0%" x2="100%" y1="0%" y2="100%">
               <stop offset="0%" stopColor="#4A3C34" />
-              <stop offset="100%" stopColor="#171310" />
+              <stop offset="100%" stopColor="#5D2394" />
             </linearGradient>
-            <linearGradient id="skyrush-van-cargo" x1="0%" x2="100%" y1="0%" y2="100%">
+            <linearGradient id="shipzilla-van-cargo" x1="0%" x2="100%" y1="0%" y2="100%">
               <stop offset="0%" stopColor="#EAA972" />
               <stop offset="100%" stopColor="#D97943" />
             </linearGradient>
@@ -104,11 +104,11 @@ export function RollingVanScene({ compact = false }: { compact?: boolean }) {
           >
             <path
               d="M88 122h122c7 0 13 6 13 13v17H64v-10c0-11 9-20 20-20h4z"
-              fill="url(#skyrush-van-cargo)"
+              fill="url(#shipzilla-van-cargo)"
             />
             <path
               d="M217 110h44c13 0 21 7 28 20l18 22h17v-1c0-16-12-29-28-29h-6l-10-15c-5-7-13-11-21-11h-42z"
-              fill="url(#skyrush-van-body)"
+              fill="url(#shipzilla-van-body)"
             />
             <rect x="116" y="128" width="84" height="16" rx="8" fill={alpha('#ffffff', 0.18)} />
             <path

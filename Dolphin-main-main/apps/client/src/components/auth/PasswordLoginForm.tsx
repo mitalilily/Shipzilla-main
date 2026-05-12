@@ -14,14 +14,14 @@ import { toast } from '../UI/Toast'
 import EmailVerificationForm from './EmailVerificationForm'
 import { getAuthErrorMessage } from './getAuthErrorMessage'
 
-const DE_BLUE = '#171310'
-const DE_AMBER = '#2D7A63'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#36B309'
 
 const primaryButtonStyles = {
   width: '100%',
   borderRadius: 1,
-  bgcolor: DE_BLUE,
-  boxShadow: `0 8px 24px ${alpha(DE_BLUE, 0.3)}`,
+  bgcolor: SHIPZILLA_PRIMARY,
+  boxShadow: `0 8px 24px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
   '&:hover': { bgcolor: '#0D0A08' },
 }
 
@@ -89,7 +89,7 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
         component="button"
         underline="hover"
         onClick={() => setOpenTerms(true)}
-        sx={{ cursor: 'pointer', color: DE_BLUE, fontWeight: 700 }}
+        sx={{ cursor: 'pointer', color: SHIPZILLA_PRIMARY, fontWeight: 700 }}
       >
         Terms and Conditions
       </Link>
@@ -162,8 +162,8 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
         sx={{
           p: 1.5,
           borderRadius: 1,
-          border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-          backgroundColor: alpha(DE_BLUE, 0.04),
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+          backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.04),
         }}
       >
         <Typography variant="body2" sx={{ color: '#6A616A', lineHeight: 1.6, fontWeight: 500 }}>
@@ -174,7 +174,7 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
 
       <Stack spacing={1.1}>
         <CustomInput
-          prefix={<FiMail color={DE_BLUE} size={15} />}
+          prefix={<FiMail color={SHIPZILLA_PRIMARY} size={15} />}
           type="email"
           name="email"
           id="email"
@@ -192,7 +192,7 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
           name="password"
           id="password"
           type="password"
-          prefix={<MdPassword color={DE_BLUE} size={16} />}
+          prefix={<MdPassword color={SHIPZILLA_PRIMARY} size={16} />}
           postfix={
             <Tooltip
               title={
@@ -202,7 +202,7 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
               }
               arrow
             >
-              <Box sx={{ display: 'inline-flex', alignItems: 'center', color: '#FFAB00' }}>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', color: '#56E813' }}>
                 <MdInfoOutline size={17} />
               </Box>
             </Tooltip>
@@ -244,7 +244,7 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
       />
 
       <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-        <FiShield size={13} color={DE_AMBER} />
+        <FiShield size={13} color={SHIPZILLA_ACCENT} />
         <Typography variant="caption" sx={{ color: '#6A616A', fontWeight: 600 }}>
           Verification safeguards are applied for suspicious login attempts.
         </Typography>

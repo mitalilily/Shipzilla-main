@@ -18,21 +18,21 @@ import { getAuthErrorMessage } from './getAuthErrorMessage'
 
 const OTP_LENGTH = 6
 const OTP_RESEND_DELAY_MS = 30000
-const DE_BLUE = '#171310'
+const SHIPZILLA_PRIMARY = '#5D2394'
 
 const primaryButtonStyles = {
   width: '100%',
   borderRadius: 1,
-  bgcolor: DE_BLUE,
-  boxShadow: `0 8px 24px ${alpha(DE_BLUE, 0.3)}`,
+  bgcolor: SHIPZILLA_PRIMARY,
+  boxShadow: `0 8px 24px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
   '&:hover': { bgcolor: '#0D0A08' },
 }
 
 const ghostButtonStyles = {
   width: '100%',
-  border: `1px solid ${alpha(DE_BLUE, 0.2)}`,
-  color: DE_BLUE,
-  backgroundColor: alpha(DE_BLUE, 0.04),
+  border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.2)}`,
+  color: SHIPZILLA_PRIMARY,
+  backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.04),
   borderRadius: 1,
 }
 
@@ -216,13 +216,13 @@ export default function OtpForm({ email, onEditEmail }: Props) {
         sx={{
           p: 1.5,
           borderRadius: 1,
-          backgroundColor: alpha(DE_BLUE, 0.04),
-          border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
+          backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.04),
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
         }}
       >
         <Typography variant="body2" sx={{ color: '#6A616A', lineHeight: 1.6, fontWeight: 500 }}>
           Enter the 6-digit code sent to <strong>{email}</strong>.
-          <Box component="span" sx={{ ml: 0.7, display: 'inline-flex', alignItems: 'center', cursor: 'pointer', color: DE_BLUE }} onClick={onEditEmail}>
+          <Box component="span" sx={{ ml: 0.7, display: 'inline-flex', alignItems: 'center', cursor: 'pointer', color: SHIPZILLA_PRIMARY }} onClick={onEditEmail}>
             <FiEdit2 size={13} style={{ marginRight: 4 }} />
             Edit
           </Box>
@@ -247,23 +247,23 @@ export default function OtpForm({ email, onEditEmail }: Props) {
                 fontWeight: 800,
                 fontSize: '1.25rem',
                 padding: '12px 0',
-                color: DE_BLUE,
+                color: SHIPZILLA_PRIMARY,
               },
             }}
             sx={{
               width: { xs: 42, sm: 54 },
               '& .MuiOutlinedInput-root': {
                 borderRadius: 1,
-                bgcolor: alpha(DE_BLUE, 0.02),
+                bgcolor: alpha(SHIPZILLA_PRIMARY, 0.02),
                 '& fieldset': {
-                  borderColor: digit ? DE_BLUE : alpha(DE_BLUE, 0.15),
+                  borderColor: digit ? SHIPZILLA_PRIMARY : alpha(SHIPZILLA_PRIMARY, 0.15),
                   borderWidth: digit ? 2 : 1,
                 },
                 '&:hover fieldset': {
-                  borderColor: DE_BLUE,
+                  borderColor: SHIPZILLA_PRIMARY,
                 },
                 '&.Mui-focused fieldset': {
-                  borderColor: DE_BLUE,
+                  borderColor: SHIPZILLA_PRIMARY,
                 },
               },
             }}
@@ -294,7 +294,7 @@ export default function OtpForm({ email, onEditEmail }: Props) {
               type="button"
               onClick={handleResendOtp}
               styles={ghostButtonStyles}
-              textColor={DE_BLUE}
+              textColor={SHIPZILLA_PRIMARY}
               text="Resend code"
               loading={resending}
               loadingText="Sending..."

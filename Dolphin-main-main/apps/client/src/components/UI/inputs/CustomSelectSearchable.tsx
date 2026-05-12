@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import CustomInput from "./CustomInput";
 
-const DE_BLUE = '#0052CC'
+const SHIPZILLA_PRIMARY = '#5D2394'
 
 export interface DropdownItem {
   key: string;
@@ -105,14 +105,14 @@ export default function CustomSelectSearchable({
                       overflowY: 'auto',
                       borderRadius: 1,
                       mt: 1,
-                      border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-                      boxShadow: `0 12px 32px ${alpha(DE_BLUE, 0.12)}`,
+                      border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+                      boxShadow: `0 12px 32px ${alpha(SHIPZILLA_PRIMARY, 0.12)}`,
                     }}
                   >
                     <List disablePadding>
                       {filteredItems.length === 0 ? (
                         <Box sx={{ p: 2, textAlign: 'center' }}>
-                          <Typography variant="body2" sx={{ color: '#6B778C' }}>
+                          <Typography variant="body2" sx={{ color: '#6E6483' }}>
                             No options found
                           </Typography>
                         </Box>
@@ -126,13 +126,13 @@ export default function CustomSelectSearchable({
                               sx={{
                                 py: 1.2,
                                 px: 1.8,
-                                borderBottom: `1px solid ${alpha(DE_BLUE, 0.05)}`,
+                                borderBottom: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.05)}`,
                                 '&:last-child': { borderBottom: 'none' },
-                                bgcolor: isSelected ? alpha(DE_BLUE, 0.06) : 'transparent',
-                                color: isSelected ? DE_BLUE : 'inherit',
+                                bgcolor: isSelected ? alpha(SHIPZILLA_PRIMARY, 0.06) : 'transparent',
+                                color: isSelected ? SHIPZILLA_PRIMARY : 'inherit',
                                 '&:hover': {
-                                  bgcolor: alpha(DE_BLUE, 0.04),
-                                  '& .MuiListItemText-primary': { color: DE_BLUE },
+                                  bgcolor: alpha(SHIPZILLA_PRIMARY, 0.04),
+                                  '& .MuiListItemText-primary': { color: SHIPZILLA_PRIMARY },
                                 },
                               }}
                             >
@@ -140,7 +140,7 @@ export default function CustomSelectSearchable({
                                 <ListItemIcon
                                   sx={{
                                     minWidth: 32,
-                                    color: isSelected ? DE_BLUE : '#42526E',
+                                    color: isSelected ? SHIPZILLA_PRIMARY : '#6E6483',
                                   }}
                                 >
                                   {item.icon}
@@ -152,11 +152,11 @@ export default function CustomSelectSearchable({
                                 primaryTypographyProps={{
                                   fontSize: '0.88rem',
                                   fontWeight: isSelected ? 800 : 600,
-                                  color: isSelected ? DE_BLUE : '#172B4D',
+                                  color: isSelected ? SHIPZILLA_PRIMARY : '#1D1730',
                                 }}
                                 secondaryTypographyProps={{
                                   fontSize: '0.75rem',
-                                  color: alpha('#42526E', 0.7),
+                                  color: alpha('#6E6483', 0.7),
                                   mt: 0.2,
                                 }}
                               />

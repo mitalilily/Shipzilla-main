@@ -47,7 +47,7 @@ class ErrorBoundaryCore extends React.Component<InnerProps, State> {
             borderRadius: 3,
             textAlign: 'center',
             background: '#FFFFFF',
-            border: '1px solid #E0E6ED',
+            border: '1px solid #E5DCF3',
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
             maxWidth: { xs: '90%', sm: 600 },
             width: '100%',
@@ -83,7 +83,7 @@ class ErrorBoundaryCore extends React.Component<InnerProps, State> {
             variant="h5"
             sx={{
               fontWeight: 600,
-              color: '#1A1A1A',
+              color: '#1D1730',
               mb: 0.5,
             }}
           >
@@ -114,7 +114,7 @@ class ErrorBoundaryCore extends React.Component<InnerProps, State> {
               variant="contained"
               onClick={this.handleReload}
               sx={{
-                background: 'linear-gradient(135deg, #333369 0%, #2F3B5F 100%)',
+                background: 'linear-gradient(135deg, #5D2394 0%, #43166D 100%)',
                 color: '#FFFFFF',
                 fontWeight: 600,
                 px: 4,
@@ -123,7 +123,7 @@ class ErrorBoundaryCore extends React.Component<InnerProps, State> {
                 textTransform: 'none',
                 boxShadow: '0 4px 12px rgba(51, 51, 105, 0.2)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #2F3B5F 0%, #1A1A4A 100%)',
+                  background: 'linear-gradient(135deg, #43166D 0%, #43166D 100%)',
                   boxShadow: '0 6px 16px rgba(51, 51, 105, 0.3)',
                   transform: 'translateY(-2px)',
                 },

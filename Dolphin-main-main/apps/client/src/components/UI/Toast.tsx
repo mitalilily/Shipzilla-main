@@ -10,6 +10,7 @@ import {
 } from '@mui/material'
 import React from 'react'
 import { MdCheckCircle, MdClose, MdError, MdInfo, MdWarning } from 'react-icons/md'
+import { brand } from '../../theme/brand'
 
 let openToastFn: (options: ToastOptions) => void = () => {}
 
@@ -30,15 +31,15 @@ export const toast = {
 const bgMap: Record<AlertColor, string> = {
   success: 'linear-gradient(135deg, #D6F5EC 0%, #FFFFFF 100%)',
   error: 'linear-gradient(135deg, #FDE2E2 0%, #FFFFFF 100%)',
-  warning: 'linear-gradient(135deg, #FDE7C5 0%, #FFFFFF 100%)',
-  info: 'linear-gradient(135deg, #D4F6FF 0%, #FFFFFF 100%)',
+  warning: 'linear-gradient(135deg, #FFF3C4 0%, #FFFFFF 100%)',
+  info: 'linear-gradient(135deg, #EFE8F8 0%, #FFFFFF 100%)',
 }
 
 const accentMap: Record<AlertColor, string> = {
-  success: '#56C0A5',
-  error: '#D14343',
-  warning: '#F59E0B',
-  info: '#4E90CA',
+  success: brand.success,
+  error: brand.danger,
+  warning: brand.warning,
+  info: brand.primary,
 }
 
 const iconMap: Record<AlertColor, React.ReactNode> = {
@@ -50,11 +51,11 @@ const iconMap: Record<AlertColor, React.ReactNode> = {
 
 const GlassAlert = styled(Alert)<{ severity: AlertColor }>(({ severity }) => ({
   background: bgMap[severity] ?? bgMap.info,
-  boxShadow: '0 20px 42px rgba(15,44,67,0.12)',
+  boxShadow: '0 20px 42px rgba(67,22,109,0.12)',
   borderRadius: 24,
   padding: '10px 16px',
   border: '1px solid rgba(255,255,255,0.72)',
-  color: '#10324A',
+  color: brand.ink,
   fontSize: '0.9rem',
   display: 'flex',
   alignItems: 'center',
@@ -144,7 +145,7 @@ export const ToastProvider: React.FC = () => {
               size="small"
               onClick={() => setOpen(false)}
               sx={{
-                color: '#10324A',
+                color: brand.ink,
               }}
             >
               <MdClose size={18} />

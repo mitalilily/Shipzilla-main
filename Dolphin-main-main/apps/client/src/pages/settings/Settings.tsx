@@ -42,9 +42,9 @@ type Section = {
   items: SettingItem[]
 }
 
-const INK = '#171310'
+const INK = '#5D2394'
 const CLAY = '#D97943'
-const TEAL = '#2D7A63'
+const TEAL = '#36B309'
 const TEXT_MUTED = '#74685D'
 const SURFACE = '#FFFDF8'
 
@@ -329,7 +329,7 @@ export default function SettingsPage() {
                       fontSize: { xs: '2rem', md: '3rem' },
                       lineHeight: 0.98,
                       fontWeight: 800,
-                      letterSpacing: '-0.05em',
+                      letterSpacing: 0,
                       color: INK,
                     }}
                   >

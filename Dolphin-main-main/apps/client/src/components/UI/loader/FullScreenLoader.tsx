@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material'
 import React from 'react'
 import './loader.css'
 import Logo from '/logo/shipzilla-logo.png'
+import { brand } from '../../../theme/brand'
 
 type Props = {
   night?: boolean
@@ -16,9 +17,9 @@ const FullScreenLoader: React.FC<Props> = ({ night = false }) => {
         </div>
         <Typography
           sx={{
-            color: '#001D67',
+            color: brand.primary,
             fontWeight: 800,
-            letterSpacing: '0.18em',
+            letterSpacing: 0,
             fontSize: '0.72rem',
             textTransform: 'uppercase',
           }}

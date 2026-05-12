@@ -4,7 +4,7 @@ import type React from 'react'
 import { FaWhatsapp } from 'react-icons/fa'
 import { FcGoogle } from 'react-icons/fc'
 
-const DE_BLUE = '#0052CC'
+const SHIPZILLA_PRIMARY = '#5D2394'
 
 interface ISocialLoginOptions {
   onSelect: (method: 'phone' | 'whatsapp' | 'google' | 'shopify') => void
@@ -22,19 +22,19 @@ export default function SocialLoginOptions({ onSelect, googleLoading }: ISocialL
     {
       aria: googleLoading ? 'Connecting to Google' : 'Continue with Google',
       icon: googleLoading ? (
-        <CircularProgress size={20} sx={{ color: DE_BLUE }} />
+        <CircularProgress size={20} sx={{ color: SHIPZILLA_PRIMARY }} />
       ) : (
         <FcGoogle size={20} />
       ),
       method: 'google',
       sx: {
-        color: DE_BLUE,
-        borderColor: alpha(DE_BLUE, 0.2),
+        color: SHIPZILLA_PRIMARY,
+        borderColor: alpha(SHIPZILLA_PRIMARY, 0.2),
         backgroundColor: '#ffffff',
         '&:hover': {
-          borderColor: DE_BLUE,
+          borderColor: SHIPZILLA_PRIMARY,
           boxShadow: '0 8px 24px rgba(0, 82, 204, 0.12)',
-          backgroundColor: alpha(DE_BLUE, 0.02),
+          backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.02),
         },
       },
     },
@@ -60,7 +60,7 @@ export default function SocialLoginOptions({ onSelect, googleLoading }: ISocialL
       <Divider sx={{ my: 1, width: '100%' }}>
         <Typography
           variant="subtitle2"
-          color={alpha(DE_BLUE, 0.6)}
+          color={alpha(SHIPZILLA_PRIMARY, 0.6)}
           sx={{ userSelect: 'none', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 1 }}
         >
           or

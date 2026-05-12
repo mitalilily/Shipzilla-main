@@ -1,8 +1,8 @@
 export const adminBrand = {
   name: 'Shipzilla',
   panelName: 'Shipzilla',
-  logo: '/logo/dolphin-logo-transparent.png',
-  shortLogo: '/logo/dolphin-logo.png',
+  logo: '/logo/shipzilla-logo-transparent.png',
+  shortLogo: '/logo/shipzilla-logo.png',
   ink: '#10324A',
   inkSoft: '#5F7A8F',
   page: '#FBFBFB',

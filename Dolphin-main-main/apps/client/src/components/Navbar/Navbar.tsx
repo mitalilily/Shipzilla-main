@@ -104,7 +104,7 @@ export default function Navbar({ handleDrawerToggle, pinned }: NavbarProps) {
                 sx={{
                   fontSize: { xs: '1rem', sm: '1.08rem' },
                   fontWeight: 800,
-                  letterSpacing: '-0.04em',
+                  letterSpacing: 0,
                   color: brand.ink,
                   lineHeight: 1.12,
                 }}
@@ -143,7 +143,7 @@ export default function Navbar({ handleDrawerToggle, pinned }: NavbarProps) {
                   fontSize: '0.84rem',
                   background: brandGradients.button,
                   color: '#FFFFFF',
-                  boxShadow: '0 16px 32px rgba(0,29,103,0.24)',
+                  boxShadow: '0 16px 32px rgba(93,35,148,0.24)',
                 }}
                 endIcon={<FiArrowUpRight size={16} />}
               >

@@ -27,7 +27,7 @@ import Projects from "../Dashboard/components/Projects";
 import SalesOverview from "../Dashboard/components/SalesOverview";
 import WorkWithTheRockets from "../Dashboard/components/WorkWithTheRockets";
 
-const logoChakra = '/logo/dolphin-logo-transparent.png'
+const logoChakra = '/logo/shipzilla-logo-transparent.png'
 
 export default function Dashboard() {
   // Chakra Color Mode

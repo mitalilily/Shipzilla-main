@@ -164,7 +164,7 @@ export default function Home() {
                     fontSize: { xs: '2rem', md: '3.15rem' },
                     lineHeight: 0.98,
                     fontWeight: 800,
-                    letterSpacing: '-0.05em',
+                    letterSpacing: 0,
                     color: INK,
                     maxWidth: 820,
                   }}

@@ -8,7 +8,7 @@ const CustomTick = ({ checked }: { checked?: boolean }) => (
     height="28"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#3DD598" // Green accent color
+    stroke="#56E813" // Green accent color
     strokeWidth="3"
     strokeLinecap="round"
     strokeLinejoin="round"
@@ -38,7 +38,7 @@ export default function CustomCheckbox(props: CheckboxProps) {
             width: 20,
             height: 20,
             borderRadius: '6px',
-            border: '2px solid #E0E6ED',
+            border: '2px solid #E5DCF3',
             boxSizing: 'border-box',
             display: 'inline-flex',
             alignItems: 'center',
@@ -47,7 +47,7 @@ export default function CustomCheckbox(props: CheckboxProps) {
             backgroundColor: '#FFFFFF',
             transition: 'all 0.2s ease',
             '&:hover': {
-              borderColor: '#333369',
+              borderColor: '#5D2394',
               boxShadow: '0 0 0 3px rgba(51, 51, 105, 0.08)',
             },
           }}
@@ -59,7 +59,7 @@ export default function CustomCheckbox(props: CheckboxProps) {
             width: 20,
             height: 20,
             borderRadius: '6px',
-            border: '2px solid #333369',
+            border: '2px solid #5D2394',
             boxSizing: 'border-box',
             display: 'inline-flex',
             alignItems: 'center',
@@ -69,7 +69,7 @@ export default function CustomCheckbox(props: CheckboxProps) {
             transition: 'all 0.2s ease',
             overflow: 'visible', // Allow tick to extend outside
             '&:hover': {
-              borderColor: '#2F3B5F',
+              borderColor: '#43166D',
               boxShadow: '0 0 0 3px rgba(51, 51, 105, 0.12)',
             },
           }}
@@ -84,7 +84,7 @@ export default function CustomCheckbox(props: CheckboxProps) {
           backgroundColor: 'rgba(51, 51, 105, 0.04)',
         },
         '&.Mui-focusVisible': {
-          outline: '2px solid #333369',
+          outline: '2px solid #5D2394',
           outlineOffset: '2px',
           borderRadius: '4px',
         },

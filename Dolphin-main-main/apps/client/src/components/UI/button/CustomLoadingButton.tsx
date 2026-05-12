@@ -55,7 +55,7 @@ export default function CustomIconLoadingButton({
         boxShadow:
           variant === 'solid'
             ? '0 16px 32px rgba(130,194,255,0.24)'
-            : '0 10px 20px rgba(15,44,67,0.05)',
+            : '0 10px 20px rgba(67,22,109,0.05)',
         '&:hover': {
           background:
             variant === 'solid'

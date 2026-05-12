@@ -3,9 +3,9 @@ import { MdLocationOn } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import type { TopDestination } from '../../api/dashboard.api'
 
-const DE_BLUE = '#0052CC'
-const TEXT_PRIMARY = '#172B4D'
-const TEXT_SECONDARY = '#42526E'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const TEXT_PRIMARY = '#1D1730'
+const TEXT_SECONDARY = '#6E6483'
 
 type TopDestinationsProps = {
   data?: TopDestination[]
@@ -45,11 +45,11 @@ const TopDestinations = ({ data: overrideData, isLoading: overrideLoading, error
             textAlign: 'center',
             py: 4,
             borderRadius: 1,
-            border: `1px dashed ${alpha(DE_BLUE, 0.2)}`,
-            bgcolor: alpha(DE_BLUE, 0.02),
+            border: `1px dashed ${alpha(SHIPZILLA_PRIMARY, 0.2)}`,
+            bgcolor: alpha(SHIPZILLA_PRIMARY, 0.02),
           }}
         >
-          <MdLocationOn size={34} style={{ color: DE_BLUE, opacity: 0.5 }} />
+          <MdLocationOn size={34} style={{ color: SHIPZILLA_PRIMARY, opacity: 0.5 }} />
           <Typography sx={{ mt: 0.8, fontSize: '0.88rem', color: TEXT_SECONDARY, fontWeight: 600 }}>
             No destination data available
           </Typography>
@@ -65,13 +65,13 @@ const TopDestinations = ({ data: overrideData, isLoading: overrideLoading, error
                 gap: 1.5,
                 p: 1.4,
                 borderRadius: 1,
-                border: `1px solid ${alpha(DE_BLUE, index === 0 ? 0.24 : 0.08)}`,
-                bgcolor: index === 0 ? alpha(DE_BLUE, 0.04) : '#ffffff',
+                border: `1px solid ${alpha(SHIPZILLA_PRIMARY, index === 0 ? 0.24 : 0.08)}`,
+                bgcolor: index === 0 ? alpha(SHIPZILLA_PRIMARY, 0.04) : '#ffffff',
                 transition: 'all .2s ease',
                 '&:hover': {
                   transform: 'translateX(4px)',
-                  borderColor: DE_BLUE,
-                  bgcolor: alpha(DE_BLUE, 0.02),
+                  borderColor: SHIPZILLA_PRIMARY,
+                  bgcolor: alpha(SHIPZILLA_PRIMARY, 0.02),
                 },
               }}
             >
@@ -84,8 +84,8 @@ const TopDestinations = ({ data: overrideData, isLoading: overrideLoading, error
                   placeItems: 'center',
                   fontWeight: 900,
                   fontSize: '0.78rem',
-                  color: index < 3 ? '#ffffff' : DE_BLUE,
-                  bgcolor: index < 3 ? DE_BLUE : alpha(DE_BLUE, 0.1),
+                  color: index < 3 ? '#ffffff' : SHIPZILLA_PRIMARY,
+                  bgcolor: index < 3 ? SHIPZILLA_PRIMARY : alpha(SHIPZILLA_PRIMARY, 0.1),
                   flexShrink: 0,
                 }}
               >
@@ -102,7 +102,7 @@ const TopDestinations = ({ data: overrideData, isLoading: overrideLoading, error
               </Box>
 
               <Box sx={{ textAlign: 'right' }}>
-                <Typography sx={{ fontSize: '0.9rem', fontWeight: 900, color: DE_BLUE }}>
+                <Typography sx={{ fontSize: '0.9rem', fontWeight: 900, color: SHIPZILLA_PRIMARY }}>
                   {destination.count}
                 </Typography>
                 <Typography sx={{ fontSize: '10px', color: TEXT_SECONDARY, fontWeight: 700, textTransform: 'uppercase' }}>
@@ -121,16 +121,16 @@ const TopDestinations = ({ data: overrideData, isLoading: overrideLoading, error
         onClick={() => navigate('/orders/list')}
         sx={{
           mt: 1,
-          borderColor: alpha(DE_BLUE, 0.2),
-          color: DE_BLUE,
+          borderColor: alpha(SHIPZILLA_PRIMARY, 0.2),
+          color: SHIPZILLA_PRIMARY,
           borderRadius: 0.5,
           fontWeight: 800,
           fontSize: '11px',
           py: 1,
           textTransform: 'uppercase',
           '&:hover': {
-            borderColor: DE_BLUE,
-            bgcolor: alpha(DE_BLUE, 0.04),
+            borderColor: SHIPZILLA_PRIMARY,
+            bgcolor: alpha(SHIPZILLA_PRIMARY, 0.04),
           },
         }}
       >

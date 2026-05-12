@@ -24,18 +24,18 @@ const variantStyles: Record<BrandSurfaceVariant, SxProps<Theme>> = {
   hero: {
     background: brandGradients.hero,
     border: `1px solid ${alpha('#FFFFFF', 0.76)}`,
-    boxShadow: '0 28px 80px rgba(0, 29, 103, 0.14)',
+    boxShadow: '0 28px 80px rgba(67, 22, 109, 0.14)',
   },
   soft: {
     background: brandGradients.softSurface,
-    border: `1px solid ${alpha(brand.ink, 0.08)}`,
-    boxShadow: '0 18px 38px rgba(0, 29, 103, 0.07)',
+    border: `1px solid ${alpha(brand.primary, 0.08)}`,
+    boxShadow: '0 18px 38px rgba(67, 22, 109, 0.07)',
   },
   dark: {
     background: brandGradients.darkPanel,
     color: '#FFFFFF',
     border: `1px solid ${alpha('#FFFFFF', 0.16)}`,
-    boxShadow: '0 28px 60px rgba(0, 29, 103, 0.22)',
+    boxShadow: '0 28px 60px rgba(67, 22, 109, 0.22)',
   },
 }
 

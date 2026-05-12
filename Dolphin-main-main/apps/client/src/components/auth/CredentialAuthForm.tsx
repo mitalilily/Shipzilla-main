@@ -306,7 +306,7 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
               p: 1.5,
               borderRadius: '24px',
               border: `1px solid rgba(16,50,74,0.08)`,
-              backgroundColor: 'rgba(198,231,255,0.18)',
+              backgroundColor: 'rgba(93,35,148,0.08)',
             }}
           >
             <Typography sx={{ color: brand.ink, lineHeight: 1.68, fontSize: '0.9rem' }}>

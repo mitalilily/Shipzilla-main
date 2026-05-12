@@ -104,7 +104,7 @@ export default function Dashboard(props) {
 					<Portal>
 						<AdminNavbar
 							onOpen={onOpen}
-							logoText={'SKYRUSH EXPRESS COURIER ADMIN'}
+							logoText={'SHIPZILLA EXPRESS COURIER ADMIN'}
 							brandText={getActiveRoute(routes)}
 							secondary={getActiveNavbar(routes)}
 							fixed={fixed}

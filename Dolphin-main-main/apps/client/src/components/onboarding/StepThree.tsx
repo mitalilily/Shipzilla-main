@@ -17,8 +17,8 @@ interface IStepThree {
   setErrors: React.Dispatch<React.SetStateAction<FormErrors>>
 }
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 export default function StepThree({ formData, errors, onChange, setErrors }: IStepThree) {
   return (
@@ -28,7 +28,7 @@ export default function StepThree({ formData, errors, onChange, setErrors }: ISt
           variant="h5"
           sx={{
             fontWeight: 800,
-            color: DE_BLUE,
+            color: SHIPZILLA_PRIMARY,
             mb: 0.8,
             fontSize: { xs: '1.2rem', sm: '1.45rem', md: '1.65rem' },
           }}
@@ -44,15 +44,15 @@ export default function StepThree({ formData, errors, onChange, setErrors }: ISt
         sx={{
           p: { xs: 2, md: 2.6 },
           borderRadius: 1,
-          border: `1px solid ${alpha(DE_AMBER, 0.25)}`,
-          background: `linear-gradient(180deg, ${alpha(DE_AMBER, 0.12)} 0%, ${alpha(
-            DE_AMBER,
+          border: `1px solid ${alpha(SHIPZILLA_ACCENT, 0.25)}`,
+          background: `linear-gradient(180deg, ${alpha(SHIPZILLA_ACCENT, 0.12)} 0%, ${alpha(
+            SHIPZILLA_ACCENT,
             0.04,
           )} 100%)`,
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center" mb={1.1}>
-          <FiTool size={16} color={DE_AMBER} />
+          <FiTool size={16} color={SHIPZILLA_ACCENT} />
           <Typography sx={{ fontWeight: 700, color: '#9b4d00', fontSize: '0.95rem' }}>
             Channel integrations are currently unavailable
           </Typography>
@@ -82,8 +82,8 @@ export default function StepThree({ formData, errors, onChange, setErrors }: ISt
         sx={{
           p: { xs: 2, md: 2.6 },
           borderRadius: 1,
-          border: `1px solid ${alpha(DE_BLUE, 0.14)}`,
-          backgroundColor: alpha(DE_BLUE, 0.02),
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.14)}`,
+          backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.02),
         }}
       >
         <CustomInput
@@ -109,7 +109,7 @@ export default function StepThree({ formData, errors, onChange, setErrors }: ISt
           error={!!errors.basicInfo?.personalWebsite}
           helperText={errors.basicInfo?.personalWebsite}
           fullWidth
-          prefix={<FiLink color={DE_BLUE} />}
+          prefix={<FiLink color={SHIPZILLA_PRIMARY} />}
         />
       </Box>
     </Stack>

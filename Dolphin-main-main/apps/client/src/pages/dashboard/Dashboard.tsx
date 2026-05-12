@@ -86,7 +86,7 @@ export default function Dashboard() {
           placeItems: 'center',
           border: `1px solid ${alpha(brand.ink, 0.08)}`,
           bgcolor: '#ffffff',
-          boxShadow: '0 20px 42px rgba(15,44,67,0.08)',
+          boxShadow: '0 20px 42px rgba(67,22,109,0.08)',
         }}
       >
         <Box textAlign="center">
@@ -323,7 +323,7 @@ export default function Dashboard() {
           '& .MuiCard-root': {
             borderRadius: '30px',
             border: `1px solid ${alpha('#FFFFFF', 0.7)}`,
-            boxShadow: '0 20px 42px rgba(15,44,67,0.08)',
+            boxShadow: '0 20px 42px rgba(67,22,109,0.08)',
           },
         }}
       >

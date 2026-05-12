@@ -14,7 +14,7 @@ const HelpfulResources = () => {
       title: 'Explore Our Blog',
       description: 'Get insights, product updates, and how-to guides to stay̦ ahead.',
       buttonText: 'Read Blogs',
-      onClick: () => window.open('https://www.dolphinenterprise.com/blogs', '_blank'),
+      onClick: () => window.open('https://www.shipzilla.in/blogs', '_blank'),
     },
     {
       image: '/images/keyboard.png',
@@ -43,15 +43,15 @@ const HelpfulResources = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,
-                color: '#333369',
+                color: '#5D2394',
                 height: '100%',
-                border: '1px solid #3DD598',
+                border: '1px solid #56E813',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                 transition: 'transform 0.25s ease, box-shadow 0.25s ease',
                 '&:hover': {
                   transform: 'translateY(-4px)',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                  border: '1px solid #333369',
+                  border: '1px solid #5D2394',
                 },
               }}
             >
@@ -88,7 +88,7 @@ const HelpfulResources = () => {
                     width: '100%',
                     height: '100%',
                     background:
-                      'radial-gradient(circle at center, rgba(59, 74, 116, 0.15), transparent 70%)',
+                      'radial-gradient(circle at center, rgba(93, 35, 148, 0.15), transparent 70%)',
                     filter: 'blur(40px)',
                     zIndex: 1,
                   }}
@@ -110,14 +110,14 @@ const HelpfulResources = () => {
               </Box>
 
               {/* Title */}
-              <Typography fontWeight={600} fontSize="16px" sx={{ color: '#333369' }}>
+              <Typography fontWeight={600} fontSize="16px" sx={{ color: '#5D2394' }}>
                 {card.title}
               </Typography>
 
               {/* Description */}
               <Typography
                 variant="body2"
-                sx={{ color: '#333369', fontSize: '13px', lineHeight: 1.6, opacity: 0.8 }}
+                sx={{ color: '#5D2394', fontSize: '13px', lineHeight: 1.6, opacity: 0.8 }}
               >
                 {card.description}
               </Typography>
@@ -129,11 +129,11 @@ const HelpfulResources = () => {
                 sx={{
                   mt: 'auto',
                   alignSelf: isMobile ? 'center' : 'flex-start',
-                  bgcolor: '#333369',
+                  bgcolor: '#5D2394',
                   color: '#FFFFFF',
                   fontWeight: 600,
                   '&:hover': {
-                    bgcolor: '#2F3B5F',
+                    bgcolor: '#43166D',
                   },
                 }}
               >

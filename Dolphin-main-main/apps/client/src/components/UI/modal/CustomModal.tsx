@@ -10,7 +10,7 @@ import {
 import React from 'react'
 import { FiX } from 'react-icons/fi'
 
-const INK = '#171310'
+const INK = '#5D2394'
 const CLAY = '#C96A3C'
 const TEXT = '#241A1B'
 const SURFACE = '#FFFDFC'
@@ -146,7 +146,7 @@ const CustomDialog: React.FC<CustomDialogProps> = ({
               sx={{
                 fontWeight: 800,
                 fontSize: { xs: '1.04rem', sm: '1.2rem' },
-                letterSpacing: '-0.03em',
+                letterSpacing: 0,
                 lineHeight: 1.15,
               }}
             >

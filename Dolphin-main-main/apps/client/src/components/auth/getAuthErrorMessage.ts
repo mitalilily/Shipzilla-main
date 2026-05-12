@@ -38,6 +38,6 @@ export const getAuthErrorMessage = (err: unknown, fallback: string) => {
   if (!isNetwork) return message
 
   const base =
-    import.meta.env.VITE_API_URL || 'https://dolphin-main-production-4236.up.railway.app/api'
+    import.meta.env.VITE_API_URL || 'https://shipzilla-backend.onrender.com/api'
   return `Cannot reach API (${base}). Start backend or set VITE_API_URL.`
 }

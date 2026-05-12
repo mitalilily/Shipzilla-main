@@ -136,7 +136,7 @@ export default function OrderTrackingForm() {
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 4, ...cardStyles }}>
         {/* Header */}
         <Typography variant="h5" fontWeight={700} gutterBottom>
-          Track Your <span style={{ color: '#333369' }}>Order</span>
+          Track Your <span style={{ color: '#5D2394' }}>Order</span>
         </Typography>
         <Typography variant="body2" color="text.secondary" mb={3}>
           Enter your AWB number or order details to track shipment.
@@ -340,9 +340,9 @@ export default function OrderTrackingForm() {
                       <ListItem alignItems="flex-start" sx={{ px: 0 }}>
                         <ListItemIcon sx={{ minWidth: 36 }}>
                           {idx === 0 ? (
-                            <FaBoxOpen color="#333369" size={20} />
+                            <FaBoxOpen color="#5D2394" size={20} />
                           ) : (
-                            <MdLocationOn color="#6B7280" size={20} />
+                            <MdLocationOn color="#6E6483" size={20} />
                           )}
                         </ListItemIcon>
                         <ListItemText

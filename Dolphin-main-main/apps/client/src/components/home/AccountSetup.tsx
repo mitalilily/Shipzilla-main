@@ -2,8 +2,8 @@ import { alpha, Box, Grid, LinearProgress, Stack, Typography } from '@mui/materi
 import { useNavigate } from 'react-router-dom'
 import { useMerchantReadiness } from '../../hooks/useMerchantReadiness'
 
-const DE_BLUE = '#0C3B80'
-const DE_AMBER = '#F57C00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 const TEXT_PRIMARY = '#241A1B'
 const TEXT_SECONDARY = '#6A5E59'
 
@@ -40,7 +40,7 @@ const AccountSetup = () => {
           >
             Complete these panel checks before order creation is enabled.
           </Typography>
-          <Typography sx={{ fontSize: '0.82rem', color: DE_BLUE, mt: 0.55, fontWeight: 800 }}>
+          <Typography sx={{ fontSize: '0.82rem', color: SHIPZILLA_PRIMARY, mt: 0.55, fontWeight: 800 }}>
             Assigned Plan: {assignedPlanLabel}
           </Typography>
         </Box>
@@ -53,9 +53,9 @@ const AccountSetup = () => {
             fontWeight: 800,
             letterSpacing: 0.5,
             textTransform: 'uppercase',
-            bgcolor: isReady ? alpha('#178A68', 0.1) : alpha(DE_AMBER, 0.12),
+            bgcolor: isReady ? alpha('#36B309', 0.1) : alpha(SHIPZILLA_ACCENT, 0.12),
             color: isReady ? '#0D5D45' : '#9A4B00',
-            border: `1px solid ${isReady ? alpha('#178A68', 0.2) : alpha(DE_AMBER, 0.22)}`,
+            border: `1px solid ${isReady ? alpha('#36B309', 0.2) : alpha(SHIPZILLA_ACCENT, 0.22)}`,
           }}
         >
           {completedCount}/{totalCount} checks complete
@@ -66,7 +66,7 @@ const AccountSetup = () => {
         sx={{
           p: 1.5,
           borderRadius: 4,
-          border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
           bgcolor: '#fffdf8',
         }}
       >
@@ -76,10 +76,10 @@ const AccountSetup = () => {
           sx={{
             height: 6,
             borderRadius: 1,
-            bgcolor: alpha(DE_BLUE, 0.1),
+            bgcolor: alpha(SHIPZILLA_PRIMARY, 0.1),
             '& .MuiLinearProgress-bar': {
               borderRadius: 1,
-              bgcolor: DE_BLUE,
+              bgcolor: SHIPZILLA_PRIMARY,
             },
           }}
         />
@@ -96,13 +96,13 @@ const AccountSetup = () => {
               sx={{
                 p: 1.8,
                 borderRadius: 4,
-                border: `1px solid ${step.done ? alpha('#178A68', 0.15) : alpha(DE_BLUE, 0.08)}`,
-                bgcolor: step.done ? alpha('#178A68', 0.04) : '#fffdf8',
+                border: `1px solid ${step.done ? alpha('#36B309', 0.15) : alpha(SHIPZILLA_PRIMARY, 0.08)}`,
+                bgcolor: step.done ? alpha('#36B309', 0.04) : '#fffdf8',
                 cursor: step.done ? 'default' : 'pointer',
                 transition: 'all 0.2s ease',
                 '&:hover': {
-                  borderColor: step.done ? alpha('#178A68', 0.3) : DE_BLUE,
-                  boxShadow: step.done ? 'none' : `0 4px 12px ${alpha(DE_BLUE, 0.08)}`,
+                  borderColor: step.done ? alpha('#36B309', 0.3) : SHIPZILLA_PRIMARY,
+                  boxShadow: step.done ? 'none' : `0 4px 12px ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
                 },
               }}
             >
@@ -115,8 +115,8 @@ const AccountSetup = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    bgcolor: step.done ? '#178A68' : alpha(DE_BLUE, 0.1),
-                    color: step.done ? '#ffffff' : DE_BLUE,
+                    bgcolor: step.done ? '#36B309' : alpha(SHIPZILLA_PRIMARY, 0.1),
+                    color: step.done ? '#ffffff' : SHIPZILLA_PRIMARY,
                     fontSize: '0.72rem',
                     fontWeight: 800,
                   }}

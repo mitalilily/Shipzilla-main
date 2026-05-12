@@ -105,7 +105,7 @@ export default function CodeInput({
               '& .MuiOutlinedInput-root': {
                 borderRadius: '20px',
                 bgcolor: active ? alpha('#FFFFFF', 0.95) : alpha('#FFFFFF', 0.78),
-                boxShadow: active ? '0 12px 22px rgba(15, 44, 67, 0.08)' : 'none',
+                boxShadow: active ? '0 12px 22px rgba(67, 22, 109, 0.08)' : 'none',
                 '& fieldset': {
                   borderColor: active ? alpha(brand.ink, 0.26) : alpha(brand.line, 0.9),
                   borderWidth: active ? 1.5 : 1,

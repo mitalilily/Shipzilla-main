@@ -12,7 +12,7 @@ const RibbonGlass: React.FC<RibbonGlassProps> = ({
   label,
   count,
   position = 'top-right',
-  color = '#333369',
+  color = '#5D2394',
 }) => {
   return (
     <div className={`glass-ribbon-container ${position}`}>

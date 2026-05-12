@@ -63,7 +63,7 @@ const ImageCaptureStep: React.FC<Props> = ({ onCapture, img }) => {
 
   return (
     <Box textAlign="center">
-      <Typography variant="h6" mb={3} fontWeight={700} color="#333369">
+      <Typography variant="h6" mb={3} fontWeight={700} color="#5D2394">
         Align your face and take a selfie
       </Typography>
 
@@ -148,7 +148,7 @@ const ImageCaptureStep: React.FC<Props> = ({ onCapture, img }) => {
                 py: 1,
                 fontWeight: 600,
                 borderRadius: 2,
-                borderColor: '#E0E6ED',
+                borderColor: '#E5DCF3',
                 color: '#E74C3C',
                 '&:hover': {
                   bgcolor: 'rgba(231, 76, 60, 0.1)',
@@ -167,9 +167,9 @@ const ImageCaptureStep: React.FC<Props> = ({ onCapture, img }) => {
             sx={{
               bgcolor: 'rgba(61, 213, 152, 0.1)',
               border: '1px solid rgba(61, 213, 152, 0.3)',
-              color: '#1A1A1A',
+              color: '#1D1730',
               '& .MuiAlert-icon': {
-                color: '#3DD598',
+                color: '#56E813',
               },
             }}
           >

@@ -101,13 +101,13 @@ const WalletTransactions = () => {
         }}
       >
         <CardContent>
-          <Typography variant="subtitle2" color="#333369" sx={{ fontWeight: 600 }}>
+          <Typography variant="subtitle2" color="#5D2394" sx={{ fontWeight: 600 }}>
             Current Wallet Balance
           </Typography>
           {isLoading ? (
             <Skeleton variant="text" width={120} height={48} />
           ) : (
-            <Typography variant="h4" fontWeight="bold" color="#1A1A1A">
+            <Typography variant="h4" fontWeight="bold" color="#1D1730">
               ₹{Number(data?.wallet?.balance)?.toFixed(2)}
             </Typography>
           )}
@@ -154,8 +154,8 @@ const WalletTransactions = () => {
                           txn.type === 'credit'
                             ? 'rgba(61, 213, 152, 0.1)'
                             : 'rgba(231, 76, 60, 0.1)',
-                        color: txn.type === 'credit' ? '#3DD598' : '#E74C3C',
-                        border: txn.type === 'credit' ? '1px solid #3DD598' : '1px solid #E74C3C',
+                        color: txn.type === 'credit' ? '#56E813' : '#E74C3C',
+                        border: txn.type === 'credit' ? '1px solid #56E813' : '1px solid #E74C3C',
                       }}
                     >
                       {txn.type === 'credit' ? <FaArrowDown /> : <FaArrowUp />}
@@ -165,7 +165,7 @@ const WalletTransactions = () => {
                   <ListItemText
                     primary={
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography fontWeight="medium" fontSize={15} color="#1A1A1A">
+                        <Typography fontWeight="medium" fontSize={15} color="#1D1730">
                           {txn.reason || 'Transaction'}
                         </Typography>
                         <Chip
@@ -179,9 +179,9 @@ const WalletTransactions = () => {
                               txn.type === 'credit'
                                 ? 'rgba(61, 213, 152, 0.1)'
                                 : 'rgba(231, 76, 60, 0.1)',
-                            color: txn.type === 'credit' ? '#3DD598' : '#E74C3C',
+                            color: txn.type === 'credit' ? '#56E813' : '#E74C3C',
                             border:
-                              txn.type === 'credit' ? '1px solid #3DD598' : '1px solid #E74C3C',
+                              txn.type === 'credit' ? '1px solid #56E813' : '1px solid #E74C3C',
                           }}
                         />
                       </Stack>
@@ -189,18 +189,18 @@ const WalletTransactions = () => {
                     secondary={
                       <Stack mt={0.5} gap={0.5}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Typography variant="body2" color="#6B7280">
+                          <Typography variant="body2" color="#6E6483">
                             {txn.meta?.order_number
                               ? `Order: ${txn.meta.order_number}`
                               : txn.ref
                                 ? `Ref: ${txn.ref}`
                                 : '—'}
                           </Typography>
-                          <Typography variant="caption" color="#6B7280">
+                          <Typography variant="caption" color="#6E6483">
                             {new Date(txn.created_at).toLocaleString()}
                           </Typography>
                         </Stack>
-                        <Typography variant="caption" color="#6B7280">
+                        <Typography variant="caption" color="#6E6483">
                           {txn.meta?.order_number
                             ? `Breakdown: Freight ₹${Number(txn.meta?.freight_charges || 0).toFixed(2)} | Other ₹${Number(txn.meta?.other_charges || 0).toFixed(2)} | COD ₹${Number(txn.meta?.cod_charges || 0).toFixed(2)}`
                             : ' '}
@@ -214,7 +214,7 @@ const WalletTransactions = () => {
             ))}
           </List>
         ) : (
-          <Typography textAlign="center" p={4} color="#6B7280">
+          <Typography textAlign="center" p={4} color="#6E6483">
             No transactions found.
           </Typography>
         )}

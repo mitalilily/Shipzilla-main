@@ -23,21 +23,21 @@ import OtpForm from './OtpForm'
 import PasswordLoginForm from './PasswordLoginForm'
 import { getAuthErrorMessage } from './getAuthErrorMessage'
 
-const DE_BLUE = '#171310'
+const SHIPZILLA_PRIMARY = '#5D2394'
 
 const primaryButtonStyles = {
   width: '100%',
   borderRadius: 1,
-  bgcolor: DE_BLUE,
-  boxShadow: `0 8px 24px ${alpha(DE_BLUE, 0.3)}`,
+  bgcolor: SHIPZILLA_PRIMARY,
+  boxShadow: `0 8px 24px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
   '&:hover': { bgcolor: '#0D0A08' },
 }
 
 const secondaryButtonStyles = {
   width: '100%',
-  border: `1px solid ${alpha(DE_BLUE, 0.2)}`,
-  backgroundColor: alpha(DE_BLUE, 0.04),
-  color: DE_BLUE,
+  border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.2)}`,
+  backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.04),
+  color: SHIPZILLA_PRIMARY,
   borderRadius: 1,
 }
 
@@ -109,7 +109,7 @@ export default function PhoneForm() {
         component="button"
         underline="hover"
         onClick={() => setOpenTerms(true)}
-        sx={{ cursor: 'pointer', color: DE_BLUE, fontWeight: 700 }}
+        sx={{ cursor: 'pointer', color: SHIPZILLA_PRIMARY, fontWeight: 700 }}
       >
         Terms and Conditions
       </Link>
@@ -130,7 +130,7 @@ export default function PhoneForm() {
           error={email.length > 0 && !isValidEmail}
           helperText={email.length > 0 && !isValidEmail ? 'Enter a valid email address.' : ''}
           autoFocus
-          prefix={<FiMail color={DE_BLUE} size={15} />}
+          prefix={<FiMail color={SHIPZILLA_PRIMARY} size={15} />}
         />
 
         <FormControlLabel
@@ -171,7 +171,7 @@ export default function PhoneForm() {
   return (
     <Stack spacing={2.2} alignItems="stretch">
       <Stack spacing={1.2}>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: DE_BLUE }}>
+        <Typography variant="h6" sx={{ fontWeight: 800, color: SHIPZILLA_PRIMARY }}>
           Secure Authentication
         </Typography>
         <Typography variant="body2" sx={{ color: '#6A616A', lineHeight: 1.6, fontWeight: 500 }}>
@@ -186,7 +186,7 @@ export default function PhoneForm() {
           sx={{
             alignSelf: 'flex-start',
             mt: 0.2,
-            backgroundColor: alpha('#36B37E', 0.1),
+            backgroundColor: alpha('#56E813', 0.1),
             color: '#00875A',
             fontWeight: 700,
             borderRadius: 1,
@@ -207,8 +207,8 @@ export default function PhoneForm() {
         sx={{
           p: 0.5,
           borderRadius: 1,
-          backgroundColor: alpha(DE_BLUE, 0.04),
-          border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+          backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.04),
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
           '& .MuiToggleButton-root': {
             textTransform: 'none',
             fontWeight: 800,
@@ -217,7 +217,7 @@ export default function PhoneForm() {
             color: alpha(TEXT, 0.6),
             '&.Mui-selected': {
               backgroundColor: '#FFFFFF',
-              color: DE_BLUE,
+              color: SHIPZILLA_PRIMARY,
               boxShadow: '0 4px 12px rgba(138, 31, 67, 0.12)',
               '&:hover': {
                 backgroundColor: '#FFFFFF',

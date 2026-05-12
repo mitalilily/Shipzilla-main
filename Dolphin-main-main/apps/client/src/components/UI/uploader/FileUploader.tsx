@@ -61,7 +61,7 @@ interface FileUploaderProps {
 /* ---------------------------------------------------------------- style */
 const cleanBox = (error?: boolean) => ({
   background: '#FFFFFF',
-  border: error ? `2px solid #E74C3C` : `1px solid #E0E6ED`,
+  border: error ? `2px solid #E74C3C` : `1px solid #E5DCF3`,
   boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
 })
 
@@ -75,7 +75,7 @@ const GlassDropZone = styled(Paper, {
   shouldForwardProp: (prop) => prop !== 'active' && prop !== 'dragging',
 })<{ active: boolean; dragging: boolean }>(({ active, dragging }) => ({
   background: active || dragging ? 'rgba(51, 51, 105, 0.05)' : '#F5F7FA',
-  border: `2px dashed ${active || dragging ? '#333369' : '#E0E6ED'}`,
+  border: `2px dashed ${active || dragging ? '#5D2394' : '#E5DCF3'}`,
   borderRadius: 12,
   padding: '24px',
   width: '100%',
@@ -83,13 +83,13 @@ const GlassDropZone = styled(Paper, {
   cursor: 'pointer',
   transition: 'all .3s ease',
   '&:hover': {
-    borderColor: '#333369',
+    borderColor: '#5D2394',
     background: 'rgba(51, 51, 105, 0.03)',
     boxShadow: '0 4px 12px rgba(51, 51, 105, 0.12)',
   },
   ...(dragging && {
     background: 'rgba(61, 213, 152, 0.1)',
-    borderColor: '#3DD598',
+    borderColor: '#56E813',
     boxShadow: '0 4px 12px rgba(61, 213, 152, 0.2)',
   }),
 }))
@@ -109,11 +109,11 @@ const GlassButton = styled(Button, {
   textTransform: 'none',
   fontWeight: 600,
   fontSize: '0.875rem',
-  color: error ? '#E74C3C' : '#333369',
+  color: error ? '#E74C3C' : '#5D2394',
   [theme.breakpoints.down('sm')]: { width: '100%' },
   '&:hover': {
     background: error ? 'rgba(231, 76, 60, 0.1)' : 'rgba(51, 51, 105, 0.08)',
-    borderColor: error ? '#E74C3C' : '#333369',
+    borderColor: error ? '#E74C3C' : '#5D2394',
     transform: 'translateY(-1px)',
     boxShadow: error ? '0 4px 12px rgba(231, 76, 60, 0.2)' : '0 4px 12px rgba(51, 51, 105, 0.15)',
   },
@@ -124,7 +124,7 @@ const PreviewImg = styled('img')(({ theme }) => ({
   maxWidth: 140,
   borderRadius: 8,
   objectFit: 'contain',
-  border: '1px solid #E0E6ED',
+  border: '1px solid #E5DCF3',
   boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
   [theme.breakpoints.down('sm')]: { maxWidth: 100 },
 }))
@@ -331,11 +331,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               position: 'relative',
               mx: 'auto',
               background: '#FFFFFF',
-              border: '2px solid #E0E6ED',
+              border: '2px solid #E5DCF3',
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               ...(uploading && {
                 animation: `${pulse} 1.6s ease-in-out infinite`,
-                borderColor: '#333369',
+                borderColor: '#5D2394',
               }),
             }}
           >
@@ -414,18 +414,18 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               right: 27,
               transform: 'translate(50%, 50%)',
               zIndex: 2,
-              bgcolor: '#333369',
+              bgcolor: '#5D2394',
               color: '#FFFFFF',
               width: 28,
               height: 28,
               boxShadow: '0 2px 8px rgba(51, 51, 105, 0.3)',
               '&:hover': {
-                bgcolor: '#2F3B5F',
+                bgcolor: '#43166D',
                 transform: 'translate(50%, 50%) scale(1.1)',
               },
               transition: 'all 0.3s ease',
               '&:disabled': {
-                bgcolor: '#E0E6ED',
+                bgcolor: '#E5DCF3',
                 color: '#A0AEC0',
               },
             }}
@@ -468,8 +468,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             </Stack>
           ) : (
             <Stack alignItems="center" spacing={2}>
-              <IoCloudUploadOutline size={46} color="#333369" />
-              <Typography variant="subtitle1" fontWeight={600} color="#1A1A1A">
+              <IoCloudUploadOutline size={46} color="#5D2394" />
+              <Typography variant="subtitle1" fontWeight={600} color="#1D1730">
                 Drag files here or click to upload
               </Typography>{' '}
               {showPlaceholderImgByDefault &&
@@ -513,7 +513,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                       style={{
                         maxWidth: '140px',
                         borderRadius: '8px',
-                        border: '1px solid #E0E6ED',
+                        border: '1px solid #E5DCF3',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                       }}
                     />
@@ -527,7 +527,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                         py: 1,
                         borderRadius: 2,
                         backgroundColor: '#F5F7FA',
-                        border: '1px solid #E0E6ED',
+                        border: '1px solid #E5DCF3',
                         minWidth: 160,
                         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                       }}
@@ -538,7 +538,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                       <Typography
                         fontSize={12}
                         fontWeight={600}
-                        color="#1A1A1A"
+                        color="#1D1730"
                         noWrap
                         maxWidth={160}
                       >
@@ -589,7 +589,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                           style={{
                             maxWidth: '140px',
                             borderRadius: '8px',
-                            border: '1px solid #E0E6ED',
+                            border: '1px solid #E5DCF3',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                           }}
                         />
@@ -603,7 +603,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                             py: 1,
                             borderRadius: 2,
                             backgroundColor: '#F5F7FA',
-                            border: '1px solid #E0E6ED',
+                            border: '1px solid #E5DCF3',
                             minWidth: 160,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                           }}
@@ -614,7 +614,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                           <Typography
                             fontSize={12}
                             fontWeight={600}
-                            color="#1A1A1A"
+                            color="#1D1730"
                             noWrap
                             maxWidth={160}
                           >

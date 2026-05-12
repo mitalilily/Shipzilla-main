@@ -261,7 +261,7 @@ export default function CourierRateList({
                         sx={{
                           p: 1.5,
                           borderRadius: 1.5,
-                          background: '#F8FAFC',
+                          background: '#FAF9FC',
                           border: `1px solid ${BORDER}`,
                         }}
                       >
@@ -302,7 +302,7 @@ export default function CourierRateList({
                         sx={{
                           p: 1.5,
                           borderRadius: 1.5,
-                          background: '#F8FAFC',
+                          background: '#FAF9FC',
                           border: `1px solid ${BORDER}`,
                         }}
                       >

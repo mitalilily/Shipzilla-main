@@ -107,7 +107,7 @@ export const AddBankAccountDialog: React.FC<DialogProps> = ({
               fullWidth
               sx={{
                 background: '#F5F7FA',
-                border: '1px solid #E0E6ED',
+                border: '1px solid #E5DCF3',
                 borderRadius: 2,
                 p: 0.5,
                 '& .MuiToggleButton-root': {
@@ -124,7 +124,7 @@ export const AddBankAccountDialog: React.FC<DialogProps> = ({
                     boxShadow: '0 4px 12px rgba(51, 51, 105, 0.2)',
                   },
                   '&:hover': {
-                    backgroundColor: '#E0E6ED',
+                    backgroundColor: '#E5DCF3',
                   },
                   '&.Mui-selected:hover': {
                     background: BRAND_GRADIENT,
@@ -208,7 +208,7 @@ export const AddBankAccountDialog: React.FC<DialogProps> = ({
               />
 
               <Box>
-                <Typography variant="body2" fontWeight={600} mb={1.5} color="#1A1A1A">
+                <Typography variant="body2" fontWeight={600} mb={1.5} color="#1D1730">
                   Account Type
                 </Typography>
                 <Controller
@@ -221,15 +221,15 @@ export const AddBankAccountDialog: React.FC<DialogProps> = ({
                         control={
                           <Radio
                             sx={{
-                              color: '#333369',
+                              color: '#5D2394',
                               '&.Mui-checked': {
-                                color: '#3DD598',
+                                color: '#56E813',
                               },
                             }}
                           />
                         }
                         label={
-                          <Typography variant="body2" color="#1A1A1A" fontWeight={500}>
+                          <Typography variant="body2" color="#1D1730" fontWeight={500}>
                             Savings
                           </Typography>
                         }
@@ -239,15 +239,15 @@ export const AddBankAccountDialog: React.FC<DialogProps> = ({
                         control={
                           <Radio
                             sx={{
-                              color: '#333369',
+                              color: '#5D2394',
                               '&.Mui-checked': {
-                                color: '#3DD598',
+                                color: '#56E813',
                               },
                             }}
                           />
                         }
                         label={
-                          <Typography variant="body2" color="#1A1A1A" fontWeight={500}>
+                          <Typography variant="body2" color="#1D1730" fontWeight={500}>
                             Current
                           </Typography>
                         }
@@ -258,7 +258,7 @@ export const AddBankAccountDialog: React.FC<DialogProps> = ({
               </Box>
 
               <Stack gap={1.5}>
-                <Typography variant="body2" fontWeight={600} color="#1A1A1A">
+                <Typography variant="body2" fontWeight={600} color="#1D1730">
                   Upload Cancelled Cheque{' '}
                   <Typography component="span" color="#E74C3C" fontWeight={700}>
                     *

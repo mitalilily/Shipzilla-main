@@ -12,8 +12,8 @@ import { TbTruckDelivery } from 'react-icons/tb'
 import { useNavigate } from 'react-router-dom'
 import { useMerchantReadiness } from '../../hooks/useMerchantReadiness'
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 export default function QuickActionsCard() {
   const navigate = useNavigate()
@@ -33,8 +33,8 @@ export default function QuickActionsCard() {
       sx={{
         height: '100%',
         borderRadius: 1,
-        border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-        boxShadow: `0 8px 20px ${alpha(DE_BLUE, 0.05)}`,
+        border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+        boxShadow: `0 8px 20px ${alpha(SHIPZILLA_PRIMARY, 0.05)}`,
       }}
     >
       <CardContent sx={{ p: 2.2 }}>
@@ -43,14 +43,14 @@ export default function QuickActionsCard() {
             sx={{
               p: 0.9,
               borderRadius: 1,
-              bgcolor: alpha(DE_BLUE, 0.08),
-              color: DE_BLUE,
+              bgcolor: alpha(SHIPZILLA_PRIMARY, 0.08),
+              color: SHIPZILLA_PRIMARY,
               display: 'flex',
             }}
           >
             <MdLocalShipping size={20} />
           </Box>
-          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#172B4D', letterSpacing: -0.2 }}>
+          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#1D1730', letterSpacing: 0 }}>
             Quick Actions
           </Typography>
         </Stack>
@@ -66,13 +66,13 @@ export default function QuickActionsCard() {
                   sx={{
                     p: 1.4,
                     borderRadius: 1,
-                    border: `1px solid ${alpha(DE_BLUE, 0.12)}`,
-                    bgcolor: locked ? alpha(DE_AMBER, 0.04) : '#fff',
+                    border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.12)}`,
+                    bgcolor: locked ? alpha(SHIPZILLA_ACCENT, 0.04) : '#fff',
                     cursor: 'pointer',
                     transition: 'all .2s ease',
                     '&:hover': {
-                      bgcolor: locked ? alpha(DE_AMBER, 0.08) : alpha(DE_BLUE, 0.06),
-                      borderColor: locked ? DE_AMBER : DE_BLUE,
+                      bgcolor: locked ? alpha(SHIPZILLA_ACCENT, 0.08) : alpha(SHIPZILLA_PRIMARY, 0.06),
+                      borderColor: locked ? SHIPZILLA_ACCENT : SHIPZILLA_PRIMARY,
                       transform: 'translateY(-1.5px)',
                     },
                   }}
@@ -85,8 +85,8 @@ export default function QuickActionsCard() {
                         borderRadius: 0.8,
                         display: 'grid',
                         placeItems: 'center',
-                        color: locked ? DE_AMBER : DE_BLUE,
-                        bgcolor: locked ? alpha(DE_AMBER, 0.1) : alpha(DE_BLUE, 0.08),
+                        color: locked ? SHIPZILLA_ACCENT : SHIPZILLA_PRIMARY,
+                        bgcolor: locked ? alpha(SHIPZILLA_ACCENT, 0.1) : alpha(SHIPZILLA_PRIMARY, 0.08),
                       }}
                     >
                       {locked ? <MdLockOutline size={18} /> : action.icon}
@@ -95,7 +95,7 @@ export default function QuickActionsCard() {
                       sx={{
                         fontSize: '0.78rem',
                         fontWeight: 800,
-                        color: locked ? DE_AMBER : '#172B4D',
+                        color: locked ? SHIPZILLA_ACCENT : '#1D1730',
                         lineHeight: 1.2,
                       }}
                     >

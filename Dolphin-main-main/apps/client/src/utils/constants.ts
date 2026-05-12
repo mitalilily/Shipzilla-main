@@ -22,7 +22,7 @@ General Conditions
 • Shipzilla does not warrant that the quality of any products, services, information, or other material purchased or obtained by you through the Service will meet your expectations, or that any errors in the Service will be corrected.
 • You expressly understand and agree that Shipzilla shall not be liable for any direct, indirect, incidental, special, consequential or exemplary damages, including but not limited to, damages for loss of profits, goodwill, use, data or other intangible losses resulting from the use of or inability to use the service.
 • In no event shall Shipzilla or our suppliers be liable for lost profits or any special, incidental or consequential damages arising out of or in connection with our site, our services or this agreement (however arising including negligence). You agree to indemnify and hold us and (as applicable) our parent, subsidiaries, affiliates, Shipzilla partners, officers, directors, agents, and employees, harmless from any claim or demand, including reasonable attorneys' fees, made by any third party due to or arising out of your breach of this Agreement or the documents it incorporates by reference, or your violation of any law or the rights of a third party.
-• Technical support is only provided to paying account holders and is only available via email (support@dolphinenterprise.com) and if agreed upon earlier via phone (9217553934) and request ticketing system.
+• Technical support is only provided to paying account holders and is only available via email (support@shipzilla.in) and if agreed upon earlier via phone (9217553934) and request ticketing system.
 • You agree not to reproduce, duplicate, copy, sell, resell or exploit any portion of the Service, use of the Service, or access to the Service without the express written permission by Shipzilla.
 • Verbal or written abuse of any kind (including threats of abuse or retribution) of any Shipzilla customer, employee, member, or officer will result in immediate account termination.
 • We do not claim any intellectual property rights over the material you provide to the Shipzilla service.
@@ -30,7 +30,7 @@ General Conditions
 • The failure of Shipzilla to exercise or enforce any right or provision of the Terms of Service shall not constitute a waiver of such right or provision. The Terms of Service constitutes the entire agreement between you and Shipzilla and govern your use of the Service, superseding any prior agreements between you and Shipzilla (including, but not limited to, any prior versions of the Terms of Service).
 • You shall not purchase search engine or other pay per click keywords (such as Google AdWords), or domain names that use Shipzilla trademarks and/or variations and misspellings thereof.
 • Shipzilla does not pre-screen Content and it is in their sole discretion to refuse or remove any Content that is available via the Service.
-• Questions about the Terms of Service should be sent to: support@dolphinenterprise.com
+• Questions about the Terms of Service should be sent to: support@shipzilla.in
 
 Payment of Fees
 • There are different payment term options available, and depending on the payment term decided with Shipzilla, the merchant has to pay on the pre-decided monthly, quarterly, half-yearly or yearly terms.
@@ -62,11 +62,11 @@ Banned Restricted Products and Services
 
 ðŸ“ Company Details
 Shipzilla (Shipzilla Pvt Ltd)
-ðŸ“§ Email: support@dolphinenterprise.com
+ðŸ“§ Email: support@shipzilla.in
 ðŸ“ž Contact: 9217553934
 
 Refund & Cancellation Policy
-• You may cancel your account at any time by emailing us at support@dolphinenterprise.com.
+• You may cancel your account at any time by emailing us at support@shipzilla.in.
 • Once your account is cancelled, all of your data and content will be permanently deleted from our Service. Since deletion is final and irreversible, please ensure you truly wish to cancel your account before proceeding.
 • If you cancel the Service in the middle of a billing cycle, you will receive a final invoice via email. Once that invoice has been paid, no further charges will apply.
 • Shipzilla (Shipzilla Pvt Ltd) reserves the right to modify, suspend, or terminate the Service for any reason, without prior notice at any time.
@@ -79,7 +79,7 @@ export const DRAWER_WIDTH = 280
 export const NAVBAR_HEIGHT = 80
 export const RADIUS = 8 // master corner radius
 export const ACTIVE_BG = 'rgba(10, 78, 163, 0.08)' // background behind selected item
-export const ACTIVE_BAR = '#F57C00' // primary brand color bar at far left
+export const ACTIVE_BAR = '#56E813' // primary brand color bar at far left
 export const ACCENT = '#0A4EA3' // primary brand color accent
 
 export const requiredKycDetails: Record<

@@ -53,10 +53,10 @@ const CreateOrderWrapper = () => {
                   minHeight: 48,
                 },
                 '& .Mui-selected': {
-                  color: '#333369',
+                  color: '#5D2394',
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#333369',
+                  backgroundColor: '#5D2394',
                   height: 3,
                 },
               }}

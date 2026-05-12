@@ -12,8 +12,8 @@ export default function PublicFooter() {
         mt: 8,
         px: 2,
         background:
-          'radial-gradient(circle at 100% 0%, rgba(246,126,20,0.12), transparent 24%), linear-gradient(180deg, #f4f9ff 0%, #f7f4ff 100%)',
-        borderTop: `1px solid ${alpha(brand.ink, 0.08)}`,
+          'radial-gradient(circle at top right, rgba(122,61,180,0.12), transparent 24%), linear-gradient(180deg, #f4effb 0%, #f1ebfa 100%)',
+        borderTop: `1px solid ${alpha(brand.primary, 0.08)}`,
       }}
     >
       <Container maxWidth="lg">
@@ -52,7 +52,7 @@ export default function PublicFooter() {
                   fontWeight: 600,
                   fontSize: '0.9rem',
                   '&:hover': {
-                    color: brand.inkSoft,
+                    color: brand.primary,
                   },
                 }}
               >

@@ -18,7 +18,7 @@ export default function BrandTopBar({
         top: 0,
         zIndex: 1200,
         px: { xs: 2, sm: 3 },
-        py: { xs: 1.25, sm: 1.5 },
+        py: { xs: 1.1, sm: 1.35 },
         ...sx,
       }}
       {...rest}
@@ -27,7 +27,8 @@ export default function BrandTopBar({
         variant="glass"
         sx={{
           px: { xs: 2, sm: 2.75, lg: 3.25 },
-          py: { xs: 1.15, sm: 1.35 },
+          py: { xs: 1.05, sm: 1.25 },
+          borderRadius: 999,
           ...innerSx,
         }}
       >

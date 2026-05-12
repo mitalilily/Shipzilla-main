@@ -24,8 +24,8 @@ interface QuickStatsCardsProps {
   formatCurrency: (amount: number) => string
 }
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 export default function QuickStatsCards({
   todayOps,
@@ -40,7 +40,7 @@ export default function QuickStatsCards({
       value: todayOps.orders?.toLocaleString() || '0',
       subtitle: `${todayOps.delivered || 0} delivered today`,
       icon: <MdShoppingCart size={20} />,
-      color: DE_BLUE,
+      color: SHIPZILLA_PRIMARY,
       onClick: () => navigate('/orders/list'),
     },
     {
@@ -48,7 +48,7 @@ export default function QuickStatsCards({
       value: todayOps.inTransit?.toLocaleString() || '0',
       subtitle: `${todayOps.pending || 0} pending pickup`,
       icon: <MdLocalShipping size={20} />,
-      color: '#0747A6',
+      color: '#43166D',
       onClick: () => navigate('/orders/list'),
     },
     {
@@ -56,7 +56,7 @@ export default function QuickStatsCards({
       value: formatCurrency(financial.walletBalance || 0),
       subtitle: financial.walletBalance < 500 ? 'Recharge required' : 'Sufficient funds',
       icon: <MdAccountBalanceWallet size={20} />,
-      color: DE_AMBER,
+      color: SHIPZILLA_ACCENT,
       onClick: () => navigate('/billing/wallet_transactions'),
     },
     {
@@ -64,7 +64,7 @@ export default function QuickStatsCards({
       value: formatCurrency(financial.codRemittanceDue || 0),
       subtitle: 'Awaiting bank transfer',
       icon: <MdAccountBalance size={20} />,
-      color: '#42526E',
+      color: '#6E6483',
       onClick: () => navigate('/cod-remittance'),
     },
   ]
@@ -77,13 +77,13 @@ export default function QuickStatsCards({
             onClick={stat.onClick}
             sx={{
               borderRadius: 1,
-              border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-              boxShadow: `0 4px 12px ${alpha(DE_BLUE, 0.05)}`,
+              border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+              boxShadow: `0 4px 12px ${alpha(SHIPZILLA_PRIMARY, 0.05)}`,
               cursor: 'pointer',
               transition: 'all .2s ease',
               '&:hover': {
                 transform: 'translateY(-2px)',
-                boxShadow: `0 8px 24px ${alpha(DE_BLUE, 0.1)}`,
+                boxShadow: `0 8px 24px ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
                 borderColor: alpha(stat.color, 0.4),
               },
             }}
@@ -97,7 +97,7 @@ export default function QuickStatsCards({
                       fontWeight: 800,
                       letterSpacing: 1,
                       textTransform: 'uppercase',
-                      color: alpha('#172B4D', 0.6),
+                      color: alpha('#1D1730', 0.6),
                     }}
                   >
                     {stat.title}
@@ -120,8 +120,8 @@ export default function QuickStatsCards({
                     variant="h5"
                     sx={{
                       fontWeight: 900,
-                      color: '#172B4D',
-                      letterSpacing: -0.5,
+                      color: '#1D1730',
+                      letterSpacing: 0,
                       lineHeight: 1,
                     }}
                   >
@@ -132,7 +132,7 @@ export default function QuickStatsCards({
                     sx={{
                       color: stat.subtitle.includes('Recharge') || stat.subtitle.includes('pending')
                         ? '#DE350B'
-                        : '#36B37E',
+                        : '#56E813',
                       fontWeight: 700,
                       mt: 0.5,
                       display: 'block',

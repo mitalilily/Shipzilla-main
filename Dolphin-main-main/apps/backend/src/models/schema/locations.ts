@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { jsonb, pgTableCreator, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
 
-const createTable = pgTableCreator((name) => `meracourierwala_${name}`)
+const createTable = pgTableCreator((name) => `shipzilla_${name}`)
 
 export const locations = createTable(
   'locations',

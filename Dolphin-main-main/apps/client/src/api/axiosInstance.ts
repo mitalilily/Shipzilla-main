@@ -3,7 +3,7 @@ import { UI_ONLY_AUTH } from '../utils/authMode'
 import { clearAuthTokens, getAuthTokens, setAuthTokens } from './tokenVault'
 
 const RAW_API_BASE_URL = import.meta.env.VITE_API_URL
-const DEFAULT_API_BASE_URL = 'https://shipzilla-main-production.up.railway.app/api'
+const DEFAULT_API_BASE_URL = 'https://shipzilla-backend.onrender.com/api'
 
 const getApiBaseUrl = () => {
   const fallback = DEFAULT_API_BASE_URL.replace(/\/+$/, '')

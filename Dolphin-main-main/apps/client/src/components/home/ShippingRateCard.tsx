@@ -28,7 +28,7 @@ const ShippingRateCard = () => {
         justifyContent: 'space-between',
         gap: 3,
         boxShadow: '0 6px 20px rgba(0,0,0,0.3)',
-        background: 'linear-gradient(135deg, #333369 0%, #2F3B5F 100%)',
+        background: 'linear-gradient(135deg, #5D2394 0%, #43166D 100%)',
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -65,7 +65,7 @@ const ShippingRateCard = () => {
               mt: 0.5,
             }}
           >
-            <FaShippingFast style={{ color: '#333369', fontSize: 28 }} />
+            <FaShippingFast style={{ color: '#5D2394', fontSize: 28 }} />
           </Box>
 
           <Box>
@@ -125,7 +125,7 @@ const ShippingRateCard = () => {
           position: 'relative',
           zIndex: 1,
           backgroundColor: '#FFFFFF',
-          color: '#333369',
+          color: '#5D2394',
           fontWeight: 600,
           px: 3,
           py: 1,

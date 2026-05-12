@@ -119,7 +119,7 @@ export default function LandingPage() {
                       fontSize: { xs: '2.7rem', sm: '4.1rem', lg: '5.45rem' },
                       lineHeight: { xs: 1.02, lg: 0.96 },
                       fontWeight: 800,
-                      letterSpacing: '-0.06em',
+                      letterSpacing: 0,
                     }}
                   >
                     <span style={{ display: 'block' }}>Smart Shipping</span>
@@ -199,7 +199,7 @@ export default function LandingPage() {
                             width: '100%',
                             maxWidth: 280,
                             objectFit: 'contain',
-                            filter: 'drop-shadow(0 20px 30px rgba(15, 44, 67, 0.12))',
+                            filter: 'drop-shadow(0 20px 30px rgba(67, 22, 109, 0.12))',
                           }}
                         />
                       </BrandSurface>
@@ -240,7 +240,7 @@ export default function LandingPage() {
                     fontSize: { xs: '2rem', md: '2.7rem' },
                     lineHeight: 1.02,
                     fontWeight: 800,
-                    letterSpacing: '-0.05em',
+                    letterSpacing: 0,
                     maxWidth: 460,
                   }}
                 >
@@ -308,7 +308,7 @@ export default function LandingPage() {
                       color: brand.ink,
                       fontSize: { xs: '1.9rem', md: '2.45rem' },
                       fontWeight: 800,
-                      letterSpacing: '-0.05em',
+                      letterSpacing: 0,
                     }}
                   >
                     Everything you need to streamline your shipping operations and grow your business
@@ -352,7 +352,7 @@ export default function LandingPage() {
                       fontSize: { xs: '1.9rem', md: '2.35rem' },
                       fontWeight: 800,
                       lineHeight: 1.02,
-                      letterSpacing: '-0.05em',
+                      letterSpacing: 0,
                     }}
                   >
                     Everything you need to streamline your shipping operations in one powerful platform.
@@ -403,7 +403,7 @@ export default function LandingPage() {
                       fontSize: { xs: '2rem', md: '2.7rem' },
                       lineHeight: 1.02,
                       fontWeight: 800,
-                      letterSpacing: '-0.05em',
+                      letterSpacing: 0,
                     }}
                   >
                     Make data-driven decisions with real-time shipping intelligence.

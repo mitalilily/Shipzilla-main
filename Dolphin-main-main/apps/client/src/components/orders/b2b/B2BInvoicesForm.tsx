@@ -86,7 +86,7 @@ export default function B2BInvoicesForm() {
               key={invoice.id}
               sx={{
                 p: 3,
-                border: '1px solid #E0E6ED',
+                border: '1px solid #E5DCF3',
                 borderRadius: 2,
                 background: '#FAFBFC',
                 position: 'relative',
@@ -94,7 +94,7 @@ export default function B2BInvoicesForm() {
               elevation={0}
             >
               <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6" fontWeight={600} color="#333369">
+                <Typography variant="h6" fontWeight={600} color="#5D2394">
                   Invoice {index + 1}
                 </Typography>
                 {invoiceFields.length > 1 && (
@@ -495,7 +495,7 @@ export default function B2BInvoicesForm() {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: 0.5,
-                                color: '#333369',
+                                color: '#5D2394',
                                 textDecoration: 'none',
                                 fontSize: '0.875rem',
                                 '&:hover': {
@@ -540,7 +540,7 @@ export default function B2BInvoicesForm() {
               p: 2,
               borderRadius: 2,
               background: '#F5F7FA',
-              border: '1px solid #E0E6ED',
+              border: '1px solid #E5DCF3',
             }}
             elevation={0}
           >
@@ -548,7 +548,7 @@ export default function B2BInvoicesForm() {
               <Typography variant="body2" fontWeight={600} color="#4A5568">
                 Total Invoice Value:
               </Typography>
-              <Typography variant="h6" fontWeight={700} color="#333369">
+              <Typography variant="h6" fontWeight={700} color="#5D2394">
                 ₹{totalInvoiceValue.toFixed(2)}
               </Typography>
             </Stack>

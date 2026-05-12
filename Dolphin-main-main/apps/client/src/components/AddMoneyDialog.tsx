@@ -20,9 +20,9 @@ import { toast } from './UI/Toast'
 import CustomIconLoadingButton from './UI/button/CustomLoadingButton'
 import CustomDialog from './UI/modal/CustomModal'
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
-const BRAND_GRADIENT = `linear-gradient(135deg, ${DE_BLUE} 0%, ${DE_AMBER} 100%)`
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
+const BRAND_GRADIENT = `linear-gradient(135deg, ${SHIPZILLA_PRIMARY} 0%, ${SHIPZILLA_ACCENT} 100%)`
 
 interface AddMoneyDialogProps {
   open: boolean
@@ -109,15 +109,15 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
             gap={1}
             alignItems={'center'}
             sx={{
-              bgcolor: alpha(DE_BLUE, 0.08),
+              bgcolor: alpha(SHIPZILLA_PRIMARY, 0.08),
               px: 2,
               py: 1,
               borderRadius: 1,
-              border: `1px solid ${alpha(DE_BLUE, 0.15)}`,
+              border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.15)}`,
             }}
           >
-            <BiWallet size={18} color={DE_BLUE} />
-            <Typography variant="body2" fontWeight={800} color={DE_BLUE}>
+            <BiWallet size={18} color={SHIPZILLA_PRIMARY} />
+            <Typography variant="body2" fontWeight={800} color={SHIPZILLA_PRIMARY}>
               ₹{currentBalance.toLocaleString('en-IN')}
             </Typography>
           </Box>
@@ -133,11 +133,11 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
           display={'flex'}
           justifyContent={'center'}
           sx={{
-            bgcolor: alpha(DE_BLUE, 0.04),
+            bgcolor: alpha(SHIPZILLA_PRIMARY, 0.04),
             borderRadius: 1,
             p: 3,
             mb: 3,
-            border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
+            border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
           }}
         >
           <TextField
@@ -150,22 +150,22 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
               input: {
                 disableUnderline: true,
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ fontSize: '2.5rem', color: DE_BLUE }}>
+                  <InputAdornment position="start" sx={{ fontSize: '2.5rem', color: SHIPZILLA_PRIMARY }}>
                     ₹
                   </InputAdornment>
                 ),
                 sx: {
                   fontSize: '2.2rem',
                   fontWeight: 900,
-                  borderBottom: `2px solid ${alpha(DE_BLUE, 0.15)}`,
+                  borderBottom: `2px solid ${alpha(SHIPZILLA_PRIMARY, 0.15)}`,
                   width: '100%',
                   maxWidth: 280,
-                  color: DE_BLUE,
+                  color: SHIPZILLA_PRIMARY,
                   pb: 1,
                   mx: 'auto',
                   transition: 'all 0.3s ease',
                   '&:focus-within': {
-                    borderBottomColor: DE_BLUE,
+                    borderBottomColor: SHIPZILLA_PRIMARY,
                   },
                 },
                 inputProps: {
@@ -173,7 +173,7 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
                   pattern: '[0-9]*',
                   style: {
                     textAlign: 'center',
-                    color: DE_BLUE,
+                    color: SHIPZILLA_PRIMARY,
                     MozAppearance: 'textfield',
                   },
                 },
@@ -181,7 +181,7 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
             }}
             sx={{
               '& .MuiInputBase-input::placeholder': {
-                color: alpha(DE_BLUE, 0.3),
+                color: alpha(SHIPZILLA_PRIMARY, 0.3),
                 opacity: 0.7,
               },
               '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
@@ -196,7 +196,7 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
           <Typography
             variant="body2"
             fontWeight={700}
-            sx={{ color: '#42526E', mb: 1.5, textAlign: 'center', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}
+            sx={{ color: '#6E6483', mb: 1.5, textAlign: 'center', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}
           >
             Quick Select Amount
           </Typography>
@@ -213,21 +213,21 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
                   fontSize: '0.9rem',
                   px: 3,
                   py: 1.2,
-                  bgcolor: amount === v ? DE_BLUE : '#FFFFFF',
-                  color: amount === v ? '#FFFFFF' : DE_BLUE,
-                  border: amount === v ? 'none' : `1px solid ${alpha(DE_BLUE, 0.2)}`,
-                  background: amount === v ? DE_BLUE : '#FFFFFF',
-                  boxShadow: amount === v ? `0 8px 16px ${alpha(DE_BLUE, 0.25)}` : 'none',
+                  bgcolor: amount === v ? SHIPZILLA_PRIMARY : '#FFFFFF',
+                  color: amount === v ? '#FFFFFF' : SHIPZILLA_PRIMARY,
+                  border: amount === v ? 'none' : `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.2)}`,
+                  background: amount === v ? SHIPZILLA_PRIMARY : '#FFFFFF',
+                  boxShadow: amount === v ? `0 8px 16px ${alpha(SHIPZILLA_PRIMARY, 0.25)}` : 'none',
                   transition: 'all 0.2s ease',
                   textTransform: 'none',
                   '&:hover': {
                     transform: 'translateY(-1px)',
                     boxShadow:
                       amount === v
-                        ? `0 10px 20px ${alpha(DE_BLUE, 0.35)}`
-                        : `0 4px 12px ${alpha(DE_BLUE, 0.15)}`,
-                    bgcolor: amount === v ? '#0043A4' : alpha(DE_BLUE, 0.06),
-                    borderColor: amount === v ? undefined : DE_BLUE,
+                        ? `0 10px 20px ${alpha(SHIPZILLA_PRIMARY, 0.35)}`
+                        : `0 4px 12px ${alpha(SHIPZILLA_PRIMARY, 0.15)}`,
+                    bgcolor: amount === v ? '#43166D' : alpha(SHIPZILLA_PRIMARY, 0.06),
+                    borderColor: amount === v ? undefined : SHIPZILLA_PRIMARY,
                   },
                 }}
               >
@@ -270,7 +270,7 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
           </Collapse>
         )} */}
 
-        <Divider sx={{ my: 3, borderColor: alpha(DE_BLUE, 0.1) }} />
+        <Divider sx={{ my: 3, borderColor: alpha(SHIPZILLA_PRIMARY, 0.1) }} />
 
         {isKycBlocked && (
           <Alert
@@ -294,8 +294,8 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
         {/* Payment Info */}
         <Box
           sx={{
-            bgcolor: alpha(DE_BLUE, 0.04),
-            border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
+            bgcolor: alpha(SHIPZILLA_PRIMARY, 0.04),
+            border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
             borderRadius: 1,
             p: 2.5,
             mb: 3,
@@ -338,14 +338,14 @@ const AddMoneyDialog: React.FC<AddMoneyDialogProps> = ({ open, setOpen, currentB
             styles={{
               py: 1.6,
               borderRadius: 1,
-              bgcolor: DE_BLUE,
+              bgcolor: SHIPZILLA_PRIMARY,
               fontWeight: 800,
               fontSize: '1rem',
-              boxShadow: `0 8px 20px ${alpha(DE_BLUE, 0.3)}`,
-              '&:hover': { bgcolor: '#0043A4' },
+              boxShadow: `0 8px 20px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
+              '&:hover': { bgcolor: '#43166D' },
             }}
           />
-          <Typography variant="caption" sx={{ color: '#6B778C', textAlign: 'center', display: 'block', mt: 2, fontWeight: 500 }}>
+          <Typography variant="caption" sx={{ color: '#6E6483', textAlign: 'center', display: 'block', mt: 2, fontWeight: 500 }}>
             Secure payment powered by <b>Razorpay</b>
           </Typography>
         </Box>

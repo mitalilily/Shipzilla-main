@@ -18,18 +18,18 @@ async function runMigration() {
     console.log('🔄 Starting courier composite key migration...\n')
 
     // Step 1: Drop FK constraint
-    console.log('Step 1: Dropping FK constraint from DelExpress_zones...')
+    console.log('Step 1: Dropping FK constraint from shipzilla_zones...')
     await db.execute(sql`
-      ALTER TABLE "DelExpress_zones" 
-      DROP CONSTRAINT IF EXISTS "DelExpress_zones_courier_id_couriers_id_fk"
+      ALTER TABLE "shipzilla_zones"
+      DROP CONSTRAINT IF EXISTS "shipzilla_zones_courier_id_couriers_id_fk"
     `)
     console.log('  ✓ Done\n')
 
     // Step 2: Update NULL serviceProvider values
     console.log('Step 2: Updating NULL serviceProvider values to nimbuspost...')
     const result = await db.execute(sql`
-      UPDATE "couriers" 
-      SET "serviceProvider" = 'nimbuspost' 
+      UPDATE "couriers"
+      SET "serviceProvider" = 'nimbuspost'
       WHERE "serviceProvider" IS NULL
     `)
     console.log(`  ✓ Updated ${result.rowCount} rows\n`)
@@ -37,7 +37,7 @@ async function runMigration() {
     // Step 3: Make serviceProvider NOT NULL
     console.log('Step 3: Making serviceProvider NOT NULL...')
     await db.execute(sql`
-      ALTER TABLE "couriers" 
+      ALTER TABLE "couriers"
       ALTER COLUMN "serviceProvider" SET NOT NULL
     `)
     console.log('  ✓ Done\n')
@@ -45,7 +45,7 @@ async function runMigration() {
     // Step 4: Drop old primary key
     console.log('Step 4: Dropping old primary key...')
     await db.execute(sql`
-      ALTER TABLE "couriers" 
+      ALTER TABLE "couriers"
       DROP CONSTRAINT IF EXISTS "couriers_pkey"
     `)
     console.log('  ✓ Done\n')

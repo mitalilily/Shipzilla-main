@@ -60,15 +60,15 @@ export default function PublicNavbar({
                   px: 2,
                   py: 1,
                   borderRadius: 999,
-                  color: isActive ? brand.ink : brand.inkSoft,
+                  color: isActive ? brand.primary : brand.inkSoft,
                   fontSize: '0.88rem',
                   fontWeight: 600,
                   transition: 'all 0.2s ease',
-                  background: isActive ? alpha(brand.sky, 0.8) : 'transparent',
-                  boxShadow: isActive ? '0 10px 24px rgba(0,29,103,0.08)' : 'none',
+                  background: isActive ? brand.primarySoft : 'transparent',
+                  boxShadow: isActive ? '0 10px 24px rgba(93,35,148,0.08)' : 'none',
                   '&:hover': {
-                    color: brand.ink,
-                    backgroundColor: alpha('#FFFFFF', 0.68),
+                    color: brand.primary,
+                    backgroundColor: brand.primarySoft,
                   },
                 }}
               >
@@ -101,11 +101,11 @@ export default function PublicNavbar({
             sx={{
               background: brandGradients.button,
               color: '#FFFFFF',
-              boxShadow: '0 16px 32px rgba(0,29,103,0.22)',
+              boxShadow: '0 16px 32px rgba(93,35,148,0.22)',
               '&:hover': {
                 background: brandGradients.button,
                 transform: 'translateY(-1px)',
-                boxShadow: '0 20px 40px rgba(0,29,103,0.28)',
+                boxShadow: '0 20px 40px rgba(93,35,148,0.28)',
               },
             }}
           >

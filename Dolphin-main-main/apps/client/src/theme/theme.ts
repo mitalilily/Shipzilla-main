@@ -1,13 +1,7 @@
 import { alpha, createTheme } from '@mui/material/styles'
 import { brand, brandFonts, brandGradients } from './brand'
 
-export const BRAND_NAVY = brand.ink
-export const BRAND_PLUM = brand.ink
-export const BRAND_YELLOW = brand.gold
-export const BRAND_BLUE = brand.sky
 export const TEXT = brand.inkSoft
-export const BRAND_LIGHT_NAVY = alpha(brand.ink, 0.12)
-export const BRAND_PURPLE = brand.ink
 
 const theme = createTheme({
   breakpoints: {
@@ -26,15 +20,15 @@ const theme = createTheme({
       paper: brand.surface,
     },
     primary: {
-      main: brand.ink,
-      light: brand.sky,
-      dark: '#0B2232',
+      main: brand.primary,
+      light: brand.primaryLight,
+      dark: brand.primaryDark,
       contrastText: '#FFFFFF',
     },
     secondary: {
-      main: brand.accent,
-      light: '#FFEAD0',
-      dark: '#E7B671',
+      main: brand.secondary,
+      light: brand.secondarySoft,
+      dark: brand.secondaryDark,
       contrastText: brand.ink,
     },
     error: {
@@ -44,13 +38,13 @@ const theme = createTheme({
     },
     warning: {
       main: brand.warning,
-      light: '#FDE7C5',
-      dark: '#B45309',
+      light: '#FFF3C4',
+      dark: '#9A6B00',
     },
     info: {
-      main: '#60A5FA',
-      light: '#D4F6FF',
-      dark: '#1D4ED8',
+      main: brand.primaryLight,
+      light: brand.primarySoft,
+      dark: brand.primaryDark,
     },
     success: {
       main: brand.success,
@@ -65,7 +59,7 @@ const theme = createTheme({
     divider: alpha(brand.ink, 0.08),
   },
   shape: {
-    borderRadius: 22,
+    borderRadius: 20,
   },
   typography: {
     fontFamily: brandFonts.body,
@@ -75,7 +69,7 @@ const theme = createTheme({
       fontWeight: 800,
       fontSize: '3rem',
       lineHeight: 1,
-      letterSpacing: '-0.05em',
+      letterSpacing: 0,
     },
     h2: {
       fontFamily: brandFonts.display,
@@ -83,7 +77,7 @@ const theme = createTheme({
       fontWeight: 800,
       fontSize: '2.35rem',
       lineHeight: 1.04,
-      letterSpacing: '-0.05em',
+      letterSpacing: 0,
     },
     h3: {
       fontFamily: brandFonts.display,
@@ -91,7 +85,7 @@ const theme = createTheme({
       fontWeight: 800,
       fontSize: '1.85rem',
       lineHeight: 1.08,
-      letterSpacing: '-0.04em',
+      letterSpacing: 0,
     },
     h4: {
       fontFamily: brandFonts.display,
@@ -123,7 +117,7 @@ const theme = createTheme({
       color: brand.inkSoft,
       fontWeight: 600,
       fontSize: '0.84rem',
-      letterSpacing: '0.02em',
+      letterSpacing: 0,
     },
     body1: {
       color: brand.ink,
@@ -140,7 +134,7 @@ const theme = createTheme({
     button: {
       textTransform: 'none',
       fontWeight: 700,
-      letterSpacing: '0.01em',
+      letterSpacing: 0,
     },
   },
   components: {
@@ -168,9 +162,9 @@ const theme = createTheme({
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: 28,
+          borderRadius: 22,
           boxShadow: brand.shadow,
-          border: `1px solid ${alpha('#FFFFFF', 0.82)}`,
+          border: `1px solid ${alpha(brand.line, 0.88)}`,
           background: brandGradients.surface,
         },
       },
@@ -186,10 +180,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           background: brandGradients.surface,
-          borderRadius: 28,
+          borderRadius: 22,
         },
         elevation1: {
-          boxShadow: '0 18px 38px rgba(15, 44, 67, 0.06)',
+          boxShadow: '0 18px 38px rgba(67, 22, 109, 0.08)',
         },
         elevation4: {
           boxShadow: brand.shadow,
@@ -208,26 +202,26 @@ const theme = createTheme({
         containedPrimary: {
           background: brandGradients.button,
           color: '#FFFFFF',
-          boxShadow: '0 16px 32px rgba(0,29,103,0.24)',
+          boxShadow: '0 16px 32px rgba(93,35,148,0.24)',
           '&:hover': {
             background: brandGradients.button,
             transform: 'translateY(-1px)',
-            boxShadow: '0 20px 40px rgba(0,29,103,0.3)',
+            boxShadow: '0 20px 40px rgba(93,35,148,0.3)',
           },
         },
         containedSecondary: {
           background: brandGradients.buttonWarm,
-          color: '#FFFFFF',
+          color: brand.primaryDark,
           '&:hover': {
             background: brandGradients.buttonWarm,
           },
         },
         outlined: {
-          borderColor: alpha(brand.sky, 0.98),
-          color: brand.ink,
+          borderColor: alpha(brand.primary, 0.18),
+          color: brand.primary,
           backgroundColor: alpha('#FFFFFF', 0.78),
           '&:hover': {
-            borderColor: brand.sky,
+            borderColor: alpha(brand.primary, 0.34),
             backgroundColor: '#FFFFFF',
           },
         },
@@ -252,7 +246,7 @@ const theme = createTheme({
               borderColor: alpha(brand.ink, 0.24),
             },
             '&.Mui-focused fieldset': {
-              borderColor: brand.ink,
+              borderColor: brand.primary,
             },
           },
           '& .MuiInputLabel-root': {
@@ -287,9 +281,9 @@ const theme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 28,
-          border: `1px solid ${alpha(brand.ink, 0.1)}`,
-          boxShadow: '0 32px 68px rgba(0, 29, 103, 0.16)',
+          borderRadius: 24,
+          border: `1px solid ${alpha(brand.primary, 0.12)}`,
+          boxShadow: '0 32px 68px rgba(67, 22, 109, 0.16)',
           background: brandGradients.surface,
           overflow: 'hidden',
         },
@@ -319,7 +313,7 @@ const theme = createTheme({
         root: {
           padding: '14px 20px',
           borderTop: `1px solid ${alpha(brand.ink, 0.08)}`,
-          backgroundColor: alpha(brand.sky, 0.08),
+          backgroundColor: alpha(brand.primary, 0.06),
           gap: 10,
         },
       },
@@ -327,7 +321,7 @@ const theme = createTheme({
     MuiBackdrop: {
       styleOverrides: {
         root: {
-          backgroundColor: alpha(brand.ink, 0.36),
+          backgroundColor: alpha(brand.primaryDark, 0.42),
           backdropFilter: 'blur(8px)',
         },
       },
@@ -335,7 +329,7 @@ const theme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         head: {
-          backgroundColor: alpha(brand.sky, 0.26),
+          backgroundColor: alpha(brand.primary, 0.08),
           color: brand.ink,
           fontWeight: 700,
           borderBottom: `1px solid ${alpha(brand.ink, 0.08)}`,

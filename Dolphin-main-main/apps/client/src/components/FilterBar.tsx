@@ -54,8 +54,8 @@ interface GlassFilterBarProps<T extends Record<string, any>> {
   appliedCount?: number
 }
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 export const FilterBar = <T extends Record<string, any>>({
   fields,
@@ -146,14 +146,14 @@ export const FilterBar = <T extends Record<string, any>>({
   }
 
   const desktopActionButtonSx = {
-    border: `1px solid ${alpha(DE_BLUE, 0.25)}`,
+    border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.25)}`,
     p: 1,
     borderRadius: 1,
-    background: alpha(DE_BLUE, 0.06),
-    color: DE_BLUE,
+    background: alpha(SHIPZILLA_PRIMARY, 0.06),
+    color: SHIPZILLA_PRIMARY,
     '&:hover': {
-      background: alpha(DE_BLUE, 0.12),
-      borderColor: alpha(DE_BLUE, 0.45),
+      background: alpha(SHIPZILLA_PRIMARY, 0.12),
+      borderColor: alpha(SHIPZILLA_PRIMARY, 0.45),
     },
   }
 
@@ -201,7 +201,7 @@ export const FilterBar = <T extends Record<string, any>>({
                   borderRadius: 1,
                   minWidth: 92,
                   py: 1,
-                  background: `linear-gradient(135deg, ${DE_BLUE} 0%, #2a5fbe 100%)`,
+                  background: `linear-gradient(135deg, ${SHIPZILLA_PRIMARY} 0%, #7A3DB4 100%)`,
                 }}
               >
                 Apply
@@ -229,8 +229,8 @@ export const FilterBar = <T extends Record<string, any>>({
               sx={{
                 p: { xs: 0.4, md: 1.1 },
                 borderRadius: 1,
-                border: `1px solid ${alpha(DE_BLUE, 0.14)}`,
-                backgroundColor: alpha(DE_BLUE, 0.03),
+                border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.14)}`,
+                backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.03),
               }}
             >
               <Grid container spacing={1.4}>
@@ -257,16 +257,16 @@ export const FilterBar = <T extends Record<string, any>>({
         {isMobile ? (
           <IconButton
             sx={{
-              border: `1px solid ${alpha(DE_BLUE, 0.25)}`,
+              border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.25)}`,
               p: 1,
               display: 'flex',
               gap: 1,
               borderRadius: 1,
-              background: alpha(DE_BLUE, 0.06),
-              color: DE_BLUE,
+              background: alpha(SHIPZILLA_PRIMARY, 0.06),
+              color: SHIPZILLA_PRIMARY,
               '&:hover': {
-                background: alpha(DE_BLUE, 0.12),
-                borderColor: alpha(DE_BLUE, 0.45),
+                background: alpha(SHIPZILLA_PRIMARY, 0.12),
+                borderColor: alpha(SHIPZILLA_PRIMARY, 0.45),
               },
             }}
             size="small"
@@ -285,11 +285,11 @@ export const FilterBar = <T extends Record<string, any>>({
             width: '100%',
             overflow: 'hidden',
             background: `
-              radial-gradient(560px 170px at 0% 0%, ${alpha(DE_AMBER, 0.08)} 0%, transparent 75%),
-              radial-gradient(560px 170px at 100% 0%, ${alpha(DE_BLUE, 0.1)} 0%, transparent 75%),
+              radial-gradient(560px 170px at 0% 0%, ${alpha(SHIPZILLA_ACCENT, 0.08)} 0%, transparent 75%),
+              radial-gradient(560px 170px at 100% 0%, ${alpha(SHIPZILLA_PRIMARY, 0.1)} 0%, transparent 75%),
               #ffffff
             `,
-            border: `1px solid ${alpha(DE_BLUE, 0.16)}`,
+            border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.16)}`,
             borderRadius: 1,
             boxShadow: '0 6px 18px rgba(0, 82, 204, 0.1)',
             px: { xs: 1.25, md: 1.5 },
@@ -350,14 +350,14 @@ export const FilterBar = <T extends Record<string, any>>({
                   setDrawerOpen(false)
                 }}
                 sx={{
-                  borderColor: alpha(DE_BLUE, 0.3),
-                  color: DE_BLUE,
+                  borderColor: alpha(SHIPZILLA_PRIMARY, 0.3),
+                  color: SHIPZILLA_PRIMARY,
                   fontWeight: 700,
                   textTransform: 'none',
                   borderRadius: 1,
                   '&:hover': {
-                    borderColor: DE_BLUE,
-                    backgroundColor: alpha(DE_BLUE, 0.08),
+                    borderColor: SHIPZILLA_PRIMARY,
+                    backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.08),
                   },
                 }}
               >
@@ -368,7 +368,7 @@ export const FilterBar = <T extends Record<string, any>>({
                 variant="contained"
                 type="submit"
                 sx={{
-                  background: `linear-gradient(135deg, ${DE_BLUE} 0%, #2a5fbe 100%)`,
+                  background: `linear-gradient(135deg, ${SHIPZILLA_PRIMARY} 0%, #7A3DB4 100%)`,
                   color: '#FFFFFF',
                   fontWeight: 700,
                   textTransform: 'none',

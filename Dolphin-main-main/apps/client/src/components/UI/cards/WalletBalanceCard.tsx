@@ -110,7 +110,7 @@ const WalletBalanceCard: React.FC<WalletBalanceCardProps> = ({
               sx={{
                 fontWeight: 900,
                 color: theme.palette.text.primary,
-                letterSpacing: '-0.04em',
+                letterSpacing: 0,
               }}
             >
               INR {balance.toLocaleString('en-IN')}

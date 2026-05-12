@@ -3,9 +3,9 @@ import { MdAccessTime, MdLocationPin, MdLocalShipping } from 'react-icons/md'
 import type { Pickup } from '../../api/dashboard.api'
 import StatusChip from '../UI/chip/StatusChip'
 
-const DE_BLUE = '#0052CC'
-const TEXT_PRIMARY = '#172B4D'
-const TEXT_SECONDARY = '#42526E'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const TEXT_PRIMARY = '#1D1730'
+const TEXT_SECONDARY = '#6E6483'
 
 const pickupStatusMap: Record<string, 'pending' | 'success' | 'info' | 'error'> = {
   scheduled: 'pending',
@@ -52,7 +52,7 @@ const UpcomingPickupsHome = ({ data: overrideData, isLoading: overrideLoading, e
               sx={{
                 borderRadius: 1,
                 p: 1.35,
-                border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+                border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
                 bgcolor: '#ffffff',
               }}
             >
@@ -70,11 +70,11 @@ const UpcomingPickupsHome = ({ data: overrideData, isLoading: overrideLoading, e
             py: 3.3,
             textAlign: 'center',
             borderRadius: 1,
-            border: `1px dashed ${alpha(DE_BLUE, 0.2)}`,
-            bgcolor: alpha(DE_BLUE, 0.02),
+            border: `1px dashed ${alpha(SHIPZILLA_PRIMARY, 0.2)}`,
+            bgcolor: alpha(SHIPZILLA_PRIMARY, 0.02),
           }}
         >
-          <MdLocalShipping size={30} style={{ color: DE_BLUE, opacity: 0.5 }} />
+          <MdLocalShipping size={30} style={{ color: SHIPZILLA_PRIMARY, opacity: 0.5 }} />
           <Typography sx={{ mt: 0.8, fontSize: '0.88rem', color: TEXT_SECONDARY, fontWeight: 600 }}>
             No upcoming pickups found
           </Typography>
@@ -109,12 +109,12 @@ const UpcomingPickupsHome = ({ data: overrideData, isLoading: overrideLoading, e
                 sx={{
                   p: 1.6,
                   borderRadius: 1,
-                  border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+                  border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
                   bgcolor: '#ffffff',
                   transition: 'all 0.2s ease',
                   '&:hover': {
-                    borderColor: DE_BLUE,
-                    boxShadow: `0 4px 12px ${alpha(DE_BLUE, 0.08)}`,
+                    borderColor: SHIPZILLA_PRIMARY,
+                    boxShadow: `0 4px 12px ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
                   },
                 }}
               >
@@ -130,7 +130,7 @@ const UpcomingPickupsHome = ({ data: overrideData, isLoading: overrideLoading, e
                       />
                     </Stack>
                     <Stack direction="row" spacing={0.8} alignItems="center" color={TEXT_SECONDARY}>
-                      <MdLocationPin size={14} color={DE_BLUE} />
+                      <MdLocationPin size={14} color={SHIPZILLA_PRIMARY} />
                       <Typography noWrap sx={{ fontSize: '0.78rem', fontWeight: 500 }}>
                         {address}
                       </Typography>
@@ -138,7 +138,7 @@ const UpcomingPickupsHome = ({ data: overrideData, isLoading: overrideLoading, e
                   </Box>
 
                   <Box sx={{ textAlign: isMobile ? 'left' : 'right' }}>
-                    <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: DE_BLUE, mb: 0.5 }}>
+                    <Typography sx={{ fontSize: '0.88rem', fontWeight: 800, color: SHIPZILLA_PRIMARY, mb: 0.5 }}>
                       {courier}
                     </Typography>
                     <Tooltip title="Pickup Scheduled Time">

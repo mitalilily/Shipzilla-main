@@ -21,7 +21,7 @@ interface StepOneProps {
   setErrors: React.Dispatch<React.SetStateAction<FormErrors>>
 }
 
-const DE_BLUE = '#8A1F43'
+const SHIPZILLA_PRIMARY = '#5D2394'
 const BRAND_ORANGE = '#56C0A5'
 
 export default function StepOneForm({ formData, onChange, errors, setFormData, setErrors }: StepOneProps) {
@@ -93,7 +93,7 @@ export default function StepOneForm({ formData, onChange, errors, setFormData, s
   const fieldCardSx = {
     p: { xs: 1.6, md: 2 },
     borderRadius: 1,
-    border: `1px solid ${alpha(DE_BLUE, 0.12)}`,
+    border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.12)}`,
     backgroundColor: '#fff',
   }
 
@@ -102,7 +102,7 @@ export default function StepOneForm({ formData, onChange, errors, setFormData, s
       <Box>
         <Typography
           variant="h5"
-          sx={{ fontWeight: 800, color: DE_BLUE, mb: 0.7, fontSize: { xs: '1.22rem', md: '1.5rem' } }}
+          sx={{ fontWeight: 800, color: SHIPZILLA_PRIMARY, mb: 0.7, fontSize: { xs: '1.22rem', md: '1.5rem' } }}
         >
           Account Details
         </Typography>
@@ -122,7 +122,7 @@ export default function StepOneForm({ formData, onChange, errors, setFormData, s
               required
               error={!!errors.basicInfo.firstName}
               helperText={errors.basicInfo.firstName}
-              prefix={<FiUser color={DE_BLUE} />}
+              prefix={<FiUser color={SHIPZILLA_PRIMARY} />}
             />
           </Box>
         </Grid>
@@ -137,7 +137,7 @@ export default function StepOneForm({ formData, onChange, errors, setFormData, s
               required
               error={!!errors.basicInfo.lastName}
               helperText={errors.basicInfo.lastName}
-              prefix={<FiUser color={DE_BLUE} />}
+              prefix={<FiUser color={SHIPZILLA_PRIMARY} />}
             />
           </Box>
         </Grid>
@@ -152,79 +152,44 @@ export default function StepOneForm({ formData, onChange, errors, setFormData, s
           required
           error={!!errors.basicInfo.companyName}
           helperText={errors.basicInfo.companyName}
-          prefix={<MdBusiness color={DE_BLUE} />}
+          prefix={<MdBusiness color={SHIPZILLA_PRIMARY} />}
         />
       </Box>
 
-      {userData?.companyInfo?.contactEmail && userData?.companyInfo?.POCEmailVerified ? (
-        <Grid container spacing={{ xs: 1.5, md: 2 }}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={fieldCardSx}>
-              <CustomInput
-                label="Email"
-                name="email"
-                type="email"
-                value={formData?.basicInfo.email}
-                onChange={(e) => onChange(e, 'basicInfo')}
-                disabled
-                required
-                error={!!errors.basicInfo.email}
-                helperText={errors.basicInfo.email}
-                prefix={<MdEmail color={DE_BLUE} />}
-              />
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={fieldCardSx}>
-              <CustomInput
-                label="Phone"
-                name="phone"
-                type="tel"
-                value={formData?.basicInfo?.phone}
-                onChange={(e) => onChange(createSyntheticEvent('phone', e.target.value), 'basicInfo')}
-                required
-                error={!!errors.basicInfo.phone}
-                helperText={errors.basicInfo.phone}
-                prefix={<MdPhone color={DE_BLUE} />}
-              />
-            </Box>
-          </Grid>
+      <Grid container spacing={{ xs: 1.5, md: 2 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box sx={fieldCardSx}>
+            <CustomInput
+              label="Email"
+              name="email"
+              type="email"
+              value={formData?.basicInfo.email}
+              onChange={(e) => onChange(e, 'basicInfo')}
+              disabled={Boolean(userData?.companyInfo?.contactEmail && userData?.companyInfo?.POCEmailVerified)}
+              required
+              error={!!errors.basicInfo.email}
+              helperText={errors.basicInfo.email}
+              prefix={<MdEmail color={SHIPZILLA_PRIMARY} />}
+            />
+          </Box>
         </Grid>
-      ) : userData?.companyInfo?.contactNumber && userData?.companyInfo?.POCPhoneVerified ? (
-        <Grid container spacing={{ xs: 1.5, md: 2 }}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={fieldCardSx}>
-              <CustomInput
-                label="Email"
-                name="email"
-                type="email"
-                value={formData?.basicInfo.email}
-                onChange={(e) => onChange(e, 'basicInfo')}
-                required
-                error={!!errors.basicInfo.email}
-                helperText={errors.basicInfo.email}
-                prefix={<MdEmail color={DE_BLUE} />}
-              />
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={fieldCardSx}>
-              <CustomInput
-                label="Phone"
-                name="phone"
-                type="tel"
-                value={formData?.basicInfo?.phone}
-                onChange={(e) => onChange(e, 'basicInfo')}
-                disabled
-                required
-                error={!!errors.basicInfo.phone}
-                helperText={errors.basicInfo.phone}
-                prefix={<MdPhone color={DE_BLUE} />}
-              />
-            </Box>
-          </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box sx={fieldCardSx}>
+            <CustomInput
+              label="Phone"
+              name="phone"
+              type="tel"
+              value={formData?.basicInfo?.phone}
+              onChange={(e) => onChange(createSyntheticEvent('phone', e.target.value), 'basicInfo')}
+              disabled={Boolean(userData?.companyInfo?.contactNumber && userData?.companyInfo?.POCPhoneVerified)}
+              required
+              error={!!errors.basicInfo.phone}
+              helperText={errors.basicInfo.phone}
+              prefix={<MdPhone color={SHIPZILLA_PRIMARY} />}
+            />
+          </Box>
         </Grid>
-      ) : null}
+      </Grid>
 
       <Box sx={fieldCardSx}>
         <CustomInput
@@ -234,7 +199,7 @@ export default function StepOneForm({ formData, onChange, errors, setFormData, s
           onChange={(e) => onChange(e, 'basicInfo')}
           error={!!errors.basicInfo.pincode}
           helperText={errors.basicInfo.pincode}
-          prefix={<MdLocationPin color={DE_BLUE} />}
+          prefix={<MdLocationPin color={SHIPZILLA_PRIMARY} />}
         />
       </Box>
 
@@ -243,8 +208,8 @@ export default function StepOneForm({ formData, onChange, errors, setFormData, s
           label="Validating pincode..."
           sx={{
             width: 'fit-content',
-            backgroundColor: alpha(DE_BLUE, 0.08),
-            color: DE_BLUE,
+            backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.08),
+            color: SHIPZILLA_PRIMARY,
             fontWeight: 700,
           }}
         />

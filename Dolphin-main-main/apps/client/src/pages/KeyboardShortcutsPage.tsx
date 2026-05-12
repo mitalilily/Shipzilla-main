@@ -22,7 +22,7 @@ const Kbd = styled(Box)(({ theme }) => ({
   fontSize: '0.85rem',
   fontWeight: 800,
   color: INK,
-  boxShadow: '0 6px 16px rgba(15, 44, 67, 0.08)',
+  boxShadow: '0 6px 16px rgba(67, 22, 109, 0.08)',
   transition: 'all 0.1s ease',
   cursor: 'default',
   userSelect: 'none',
@@ -104,11 +104,11 @@ export default function KeyboardShortcutsPage() {
                 borderRadius: '28px',
                 border: `1px solid ${alpha('#FFFFFF', 0.72)}`,
                 background: brandGradients.surface,
-                boxShadow: '0 18px 38px rgba(15, 44, 67, 0.08)',
+                boxShadow: '0 18px 38px rgba(67, 22, 109, 0.08)',
                 transition: 'all 0.2s ease',
                 '&:hover': {
                   transform: 'translateY(-2px)',
-                  boxShadow: '0 22px 44px rgba(15, 44, 67, 0.1)',
+                  boxShadow: '0 22px 44px rgba(67, 22, 109, 0.1)',
                   borderColor: alpha(SKY, 0.32),
                 },
               }}

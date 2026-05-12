@@ -1,13 +1,13 @@
-# Skyrush Main
+# Shipzilla Main
 
-This repository brings the Skyrush codebase together in one monorepo without changing the original source repositories. The currently deployed links stay safe as long as those existing repos remain connected in Netlify, Vercel, and Render until you finish switching them over.
+This repository brings the Shipzilla platform together in one monorepo: landing page, seller client, admin dashboard, and backend API.
 
 ## Repository Layout
 
-- `apps/admin` - imported from `https://github.com/mitalilily/skyrush-admin`
-- `apps/client` - imported from `https://github.com/mitalilily/skyrush-client`
-- `apps/landing` - imported from `https://github.com/mitalilily/skyrush-landing` and flattened from its original `delexpress-main/` folder
-- `apps/backend` - imported from `https://github.com/mitalilily/skyrush-backend`
+- `apps/landing` - Shipzilla marketing site imported from `https://github.com/mitalilily/shipzilla-landingpage`
+- `apps/client` - Shipzilla seller/client dashboard
+- `apps/admin` - Shipzilla admin dashboard
+- `apps/backend` - Shipzilla API, jobs, courier integrations, webhooks, and database services
 
 ## Run Locally
 

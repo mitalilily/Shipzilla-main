@@ -208,7 +208,7 @@ export default function WeightReconciliation() {
           <PageHeading
             eyebrow="Discrepancy Panel"
             title="Weight Discrepancy"
-            subtitle="Manage weight discrepancies, resolve extra charges, and keep courier billing aligned in one Nimbus-style reconciliation panel."
+            subtitle="Manage weight discrepancies, resolve extra charges, and keep courier billing aligned in one Shipzilla-style reconciliation panel."
             icon={<RiScales3Line size={12} />}
           />
           <Stack direction="row" gap={2}>

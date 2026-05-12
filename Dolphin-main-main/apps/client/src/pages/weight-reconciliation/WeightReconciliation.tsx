@@ -161,10 +161,10 @@ export default function WeightReconciliation() {
                 <Stack direction={{ xs: 'column', lg: 'row' }} alignItems={{ xs: 'stretch', lg: 'center' }} justifyContent='space-between' gap={2}>
                     <PageHeading eyebrow='Discrepancy Panel' title='Weight Discrepancy' subtitle='Manage weight discrepancies, resolve extra charges, and keep courier billing aligned in one reconciliation panel.' icon={<RiScales3Line size={12} />} />
                     <Stack direction='row' gap={2}>
-                        <Button startIcon={<FiDownload />} onClick={handleExport} variant='outlined' sx={{ borderColor: '#333369', color: '#333369', fontWeight: 600, textTransform: 'none', px: 2.5, py: 1, borderRadius: '8px', '&:hover': { borderColor: '#2F3B5F', backgroundColor: 'rgba(59, 74, 116, 0.08)', }, }}>
+                        <Button startIcon={<FiDownload />} onClick={handleExport} variant='outlined' sx={{ borderColor: '#5D2394', color: '#5D2394', fontWeight: 600, textTransform: 'none', px: 2.5, py: 1, borderRadius: '8px', '&:hover': { borderColor: '#43166D', backgroundColor: 'rgba(93, 35, 148, 0.08)', }, }}>
                             Export CSV
                         </Button>
-                        <Button startIcon={<FiSettings />} onClick={() => navigate('/reconciliation/weight/settings')} variant='outlined' sx={{ borderColor: '#333369', color: '#333369', fontWeight: 600, textTransform: 'none', px: 2.5, py: 1, borderRadius: '8px', '&:hover': { borderColor: '#2F3B5F', backgroundColor: 'rgba(59, 74, 116, 0.08)', }, }}>
+                        <Button startIcon={<FiSettings />} onClick={() => navigate('/reconciliation/weight/settings')} variant='outlined' sx={{ borderColor: '#5D2394', color: '#5D2394', fontWeight: 600, textTransform: 'none', px: 2.5, py: 1, borderRadius: '8px', '&:hover': { borderColor: '#43166D', backgroundColor: 'rgba(93, 35, 148, 0.08)', }, }}>
                             Settings
                         </Button>
                     </Stack>
@@ -172,19 +172,19 @@ export default function WeightReconciliation() {
                 {summary?.summary && (
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 2, }}>
                         <Box sx={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', p: 2.5, }}>
-                            <Typography variant='body2' sx={{ color: '#6B7280', fontSize: '13px', mb: 1 }}> Total Discrepancies </Typography>
-                            <Typography variant='h5' sx={{ color: '#333369', fontWeight: 700 }}> {summary.summary.totalDiscrepancies} </Typography>
+                            <Typography variant='body2' sx={{ color: '#6E6483', fontSize: '13px', mb: 1 }}> Total Discrepancies </Typography>
+                            <Typography variant='h5' sx={{ color: '#5D2394', fontWeight: 700 }}> {summary.summary.totalDiscrepancies} </Typography>
                         </Box>
                         <Box sx={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', p: 2.5, }}>
-                            <Typography variant='body2' sx={{ color: '#6B7280', fontSize: '13px', mb: 1 }}> Pending Review </Typography>
+                            <Typography variant='body2' sx={{ color: '#6E6483', fontSize: '13px', mb: 1 }}> Pending Review </Typography>
                             <Typography variant='h5' sx={{ color: '#F39C12', fontWeight: 700 }}> {summary.summary.pendingCount} </Typography>
                         </Box>
                         <Box sx={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', p: 2.5, }}>
-                            <Typography variant='body2' sx={{ color: '#6B7280', fontSize: '13px', mb: 1 }}> Active Disputes </Typography>
+                            <Typography variant='body2' sx={{ color: '#6E6483', fontSize: '13px', mb: 1 }}> Active Disputes </Typography>
                             <Typography variant='h5' sx={{ color: '#3498DB', fontWeight: 700 }}> {summary.summary.disputedCount} </Typography>
                         </Box>
                         <Box sx={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', p: 2.5, }}>
-                            <Typography variant='body2' sx={{ color: '#6B7280', fontSize: '13px', mb: 1 }}> Total Extra Charges </Typography>
+                            <Typography variant='body2' sx={{ color: '#6E6483', fontSize: '13px', mb: 1 }}> Total Extra Charges </Typography>
                             <Typography variant='h5' sx={{ color: '#E74C3C', fontWeight: 700 }}> ₹{Number(summary.summary.totalAdditionalCharges || 0).toFixed(2)} </Typography>
                         </Box>
                     </Box>
@@ -200,9 +200,9 @@ export default function WeightReconciliation() {
                     />
                 </Box>
                 {selectedDiscrepancies.length > 0 && (
-                    <Box sx={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #333369', boxShadow: '0 2px 8px rgba(59, 74, 116, 0.15)', p: 2, }}>
+                    <Box sx={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #5D2394', boxShadow: '0 2px 8px rgba(93, 35, 148, 0.15)', p: 2, }}>
                         <Stack direction='row' alignItems='center' justifyContent='space-between'>
-                            <Typography sx={{ color: '#333369', fontWeight: 600 }}> {selectedDiscrepancies.length} selected </Typography>
+                            <Typography sx={{ color: '#5D2394', fontWeight: 600 }}> {selectedDiscrepancies.length} selected </Typography>
                             <Stack direction='row' gap={2}>
                                 <Button variant='contained' onClick={handleBulkAccept} disabled={bulkAccept.isPending} sx={{ bgcolor: '#27AE60', textTransform: 'none', '&:hover': { bgcolor: '#229954' }, }}>
                                     Accept Selected
@@ -230,7 +230,7 @@ export default function WeightReconciliation() {
                         renderExpandedRow={(row: WeightDiscrepancy) => (
                             <Box sx={{ p: 2 }}>
                                 <Stack direction='row' gap={2}>
-                                    <Button variant='contained' size='small' onClick={() => navigate(`/reconciliation/weight/${row.id}`)} sx={{ bgcolor: '#333369', textTransform: 'none', '&:hover': { bgcolor: '#2F3B5F' }, }}>
+                                    <Button variant='contained' size='small' onClick={() => navigate(`/reconciliation/weight/${row.id}`)} sx={{ bgcolor: '#5D2394', textTransform: 'none', '&:hover': { bgcolor: '#43166D' }, }}>
                                         View Details
                                     </Button>
                                 </Stack>

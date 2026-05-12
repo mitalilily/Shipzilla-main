@@ -18,7 +18,7 @@ import { toast } from '../../UI/Toast'
 import { useChangePassword } from '../../../hooks/Auth/useChangePassword'
 import { useUserInfo } from '../../../hooks/useUserInfo'
 
-const DE_BLUE = '#0052CC'
+const SHIPZILLA_PRIMARY = '#5D2394'
 
 interface PasswordFormValues {
   currentPassword?: string
@@ -78,7 +78,7 @@ export default function PasswordSettingsForm() {
         aria-label={visible ? 'Hide password' : 'Show password'}
         onClick={() => setVisible(!visible)}
         edge="end"
-        sx={{ color: '#6b6b6b', '&:hover': { color: DE_BLUE, bgcolor: alpha(DE_BLUE, 0.08) } }}
+        sx={{ color: '#6b6b6b', '&:hover': { color: SHIPZILLA_PRIMARY, bgcolor: alpha(SHIPZILLA_PRIMARY, 0.08) } }}
       >
         {visible ? <BiHide /> : <BiShow />}
       </IconButton>
@@ -92,7 +92,7 @@ export default function PasswordSettingsForm() {
       sx={{
         p: { xs: 2, md: 2.8 },
         borderRadius: 1,
-        border: `1px solid ${alpha(DE_BLUE, 0.13)}`,
+        border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.13)}`,
         backgroundColor: '#fff',
         boxShadow: '0 8px 24px rgba(0, 82, 204, 0.08)',
       }}
@@ -104,15 +104,15 @@ export default function PasswordSettingsForm() {
             sx={{
               p: 1.2,
               borderRadius: 1,
-              bgcolor: alpha(DE_BLUE, 0.08),
-              color: DE_BLUE,
+              bgcolor: alpha(SHIPZILLA_PRIMARY, 0.08),
+              color: SHIPZILLA_PRIMARY,
               display: 'flex',
             }}
           >
             <FiLock size={22} />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: DE_BLUE }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: SHIPZILLA_PRIMARY }}>
               Password Security
             </Typography>
             <Typography variant="body2" sx={{ color: '#5e759a' }}>
@@ -132,7 +132,7 @@ export default function PasswordSettingsForm() {
               error={!!errors.currentPassword}
               helperText={errors.currentPassword?.message}
               fullWidth
-              prefix={<FiLock color={DE_BLUE} size={15} />}
+              prefix={<FiLock color={SHIPZILLA_PRIMARY} size={15} />}
               postfix={<PasswordToggle visible={showCurrent} setVisible={setShowCurrent} />}
             />
           )}
@@ -147,7 +147,7 @@ export default function PasswordSettingsForm() {
             error={!!errors.newPassword}
             helperText={errors.newPassword?.message}
             fullWidth
-            prefix={<FiLock color={DE_BLUE} size={15} />}
+            prefix={<FiLock color={SHIPZILLA_PRIMARY} size={15} />}
             postfix={<PasswordToggle visible={showNew} setVisible={setShowNew} />}
           />
 
@@ -161,7 +161,7 @@ export default function PasswordSettingsForm() {
             error={!!errors.confirmPassword}
             helperText={errors.confirmPassword?.message}
             fullWidth
-            prefix={<FiLock color={DE_BLUE} size={15} />}
+            prefix={<FiLock color={SHIPZILLA_PRIMARY} size={15} />}
             postfix={<PasswordToggle visible={showConfirm} setVisible={setShowConfirm} />}
           />
         </Stack>
@@ -174,8 +174,8 @@ export default function PasswordSettingsForm() {
             styles={{
               px: 4,
               borderRadius: 1,
-              bgcolor: DE_BLUE,
-              '&:hover': { bgcolor: '#0043A4' },
+              bgcolor: SHIPZILLA_PRIMARY,
+              '&:hover': { bgcolor: '#43166D' },
             }}
           />
         </Box>

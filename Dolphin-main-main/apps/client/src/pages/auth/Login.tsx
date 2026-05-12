@@ -35,7 +35,7 @@ export default function Login() {
     >
       <Stack spacing={2.4}>
         <Stack spacing={0.8}>
-          <Typography sx={{ color: brand.ink, fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.05em' }}>
+          <Typography sx={{ color: brand.ink, fontSize: '2rem', fontWeight: 800, letterSpacing: 0 }}>
             Login
           </Typography>
           <Typography sx={{ color: brand.inkSoft, lineHeight: 1.72 }}>
@@ -49,7 +49,7 @@ export default function Login() {
           sx={{
             p: 0.6,
             borderRadius: 999,
-            backgroundColor: 'rgba(198,231,255,0.18)',
+            backgroundColor: 'rgba(93,35,148,0.08)',
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             gap: 0.6,

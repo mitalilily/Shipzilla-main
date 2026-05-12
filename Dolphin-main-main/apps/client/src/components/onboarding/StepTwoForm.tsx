@@ -17,8 +17,8 @@ interface StepTwoFormProps {
   errors: FormErrors
 }
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 const BUSINESS_OPTIONS = [
   {
@@ -71,7 +71,7 @@ export default function StepTwoForm({ formData, onChange, errors }: StepTwoFormP
           variant="h5"
           sx={{
             fontWeight: 800,
-            color: DE_BLUE,
+            color: SHIPZILLA_PRIMARY,
             mb: 0.7,
             fontSize: { xs: '1.22rem', md: '1.5rem' },
           }}
@@ -88,11 +88,11 @@ export default function StepTwoForm({ formData, onChange, errors }: StepTwoFormP
         sx={{
           p: { xs: 1.6, md: 2 },
           borderRadius: 1,
-          border: `1px solid ${alpha(DE_BLUE, 0.12)}`,
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.12)}`,
           backgroundColor: '#fff',
         }}
       >
-        <Typography sx={{ fontSize: '0.84rem', fontWeight: 700, color: DE_BLUE, mb: 1.2 }}>
+        <Typography sx={{ fontSize: '0.84rem', fontWeight: 700, color: SHIPZILLA_PRIMARY, mb: 1.2 }}>
           Select one or more shipment models
         </Typography>
 
@@ -112,8 +112,8 @@ export default function StepTwoForm({ formData, onChange, errors }: StepTwoFormP
                   sx={{
                     p: 1.5,
                     borderRadius: 1,
-                    border: `1px solid ${active ? alpha(DE_BLUE, 0.4) : alpha(DE_BLUE, 0.12)}`,
-                    backgroundColor: active ? alpha(DE_BLUE, 0.06) : '#fff',
+                    border: `1px solid ${active ? alpha(SHIPZILLA_PRIMARY, 0.4) : alpha(SHIPZILLA_PRIMARY, 0.12)}`,
+                    backgroundColor: active ? alpha(SHIPZILLA_PRIMARY, 0.06) : '#fff',
                     cursor: 'pointer',
                     transition: 'all .2s ease',
                     display: 'flex',
@@ -126,7 +126,7 @@ export default function StepTwoForm({ formData, onChange, errors }: StepTwoFormP
                     sx={{
                       fontSize: '0.94rem',
                       fontWeight: 800,
-                      color: active ? DE_BLUE : '#2f4e77',
+                      color: active ? SHIPZILLA_PRIMARY : '#1D1730',
                     }}
                   >
                     {option.title}
@@ -153,11 +153,11 @@ export default function StepTwoForm({ formData, onChange, errors }: StepTwoFormP
         sx={{
           p: { xs: 1.6, md: 2 },
           borderRadius: 1,
-          border: `1px solid ${alpha(DE_BLUE, 0.12)}`,
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.12)}`,
           backgroundColor: '#fff',
         }}
       >
-        <Typography sx={{ fontSize: '0.84rem', fontWeight: 700, color: DE_BLUE, mb: 1.6 }}>
+        <Typography sx={{ fontSize: '0.84rem', fontWeight: 700, color: SHIPZILLA_PRIMARY, mb: 1.6 }}>
           Shipment Volume & Brand Identity
         </Typography>
 
@@ -198,7 +198,7 @@ export default function StepTwoForm({ formData, onChange, errors }: StepTwoFormP
                 required
                 error={!!errors.businessLegal.brandName}
                 helperText={errors.businessLegal.brandName}
-                prefix={<MdBusiness color={DE_BLUE} />}
+                prefix={<MdBusiness color={SHIPZILLA_PRIMARY} />}
               />
               <FormControlLabel
                 control={
@@ -206,7 +206,7 @@ export default function StepTwoForm({ formData, onChange, errors }: StepTwoFormP
                     size="small"
                     checked={sameAsCompany}
                     onChange={(e) => setSameAsCompany(e.target.checked)}
-                    sx={{ color: alpha(DE_BLUE, 0.4), '&.Mui-checked': { color: DE_BLUE } }}
+                    sx={{ color: alpha(SHIPZILLA_PRIMARY, 0.4), '&.Mui-checked': { color: SHIPZILLA_PRIMARY } }}
                   />
                 }
                 label={
@@ -224,11 +224,11 @@ export default function StepTwoForm({ formData, onChange, errors }: StepTwoFormP
         sx={{
           p: 1.5,
           borderRadius: 1,
-          bgcolor: alpha(DE_AMBER, 0.06),
-          border: `1px solid ${alpha(DE_AMBER, 0.2)}`,
+          bgcolor: alpha(SHIPZILLA_ACCENT, 0.06),
+          border: `1px solid ${alpha(SHIPZILLA_ACCENT, 0.2)}`,
         }}
       >
-        <Typography variant="caption" sx={{ color: DE_AMBER, fontWeight: 700, display: 'block' }}>
+        <Typography variant="caption" sx={{ color: SHIPZILLA_ACCENT, fontWeight: 700, display: 'block' }}>
           These shipping profile details help us show the most relevant couriers and defaults across
           the panel.
         </Typography>

@@ -63,7 +63,7 @@ export async function createWalletOrder(
     amount: razorpayOrder.amount,
     currency: razorpayOrder.currency,
     key: keyId,
-    name: 'DelExpress',
+    name: 'Shipzilla',
     description: 'Wallet Recharge',
     prefill: {
       name: details.name,

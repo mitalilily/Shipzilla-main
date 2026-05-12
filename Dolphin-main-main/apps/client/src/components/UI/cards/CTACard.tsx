@@ -95,7 +95,7 @@ const CTACard: React.FC<CTACardProps> = ({
                     fontWeight: 800,
                     color: theme.palette.text.primary,
                     fontSize: { xs: '1rem', sm: '1.15rem' },
-                    letterSpacing: '-0.02em',
+                    letterSpacing: 0,
                   }}
                 >
                   {title}

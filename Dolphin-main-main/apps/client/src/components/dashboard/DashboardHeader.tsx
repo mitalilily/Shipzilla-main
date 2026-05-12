@@ -22,11 +22,11 @@ export default function DashboardHeader({
         borderRadius: '34px',
         border: `1px solid ${alpha('#FFFFFF', 0.76)}`,
         background: `
-          radial-gradient(circle at 100% 0%, rgba(255,221,174,0.6), transparent 24%),
+          radial-gradient(circle at 100% 0%, rgba(86,232,19,0.12), transparent 24%),
           ${brandGradients.hero}
         `,
         color: brand.ink,
-        boxShadow: '0 24px 52px rgba(15,44,67,0.1)',
+        boxShadow: '0 24px 52px rgba(67,22,109,0.1)',
       }}
     >
       <Stack
@@ -41,7 +41,7 @@ export default function DashboardHeader({
               fontSize: { xs: '1.45rem', md: '2.05rem' },
               fontWeight: 800,
               mb: 0.5,
-              letterSpacing: '-0.05em',
+              letterSpacing: 0,
             }}
           >
             Logistics Command Center
@@ -80,7 +80,7 @@ export default function DashboardHeader({
             }
             sx={{
               background: brandGradients.button,
-              color: brand.ink,
+              color: '#FFFFFF',
             }}
           >
             {isRefetching ? 'Updating...' : 'Refresh Feed'}

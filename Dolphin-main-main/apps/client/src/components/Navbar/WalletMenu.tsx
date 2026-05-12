@@ -82,7 +82,7 @@ const WalletMenu = () => {
                 fontSize: '0.86rem',
                 fontWeight: 900,
                 color: INK,
-                letterSpacing: '-0.02em',
+                letterSpacing: 0,
               }}
             >
               INR {walletBalance?.toLocaleString('en-IN')}

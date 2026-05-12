@@ -486,6 +486,10 @@ export const handleEmailVerificationRequest = async (
           email: maskEmailForLog(normalizedEmail),
           existingUser: true,
         })
+        console.log('[Auth Email Verification] TEST CODE', {
+          email: maskEmailForLog(normalizedEmail),
+          verificationToken: token,
+        })
       }
 
       return {
@@ -540,6 +544,10 @@ export const handleEmailVerificationRequest = async (
       console.log('[Auth Email Verification] Skipping verification email because auth codes are exposed inline', {
         email: maskEmailForLog(normalizedEmail),
         existingUser: false,
+      })
+      console.log('[Auth Email Verification] TEST CODE', {
+        email: maskEmailForLog(normalizedEmail),
+        verificationToken: token,
       })
     }
 
@@ -620,7 +628,7 @@ export async function createUserWithWallet(data: Partial<IUser>, txn: any = db) 
       printer_type: 'thermal',
       char_limit: 25,
       max_items: 3,
-      powered_by: 'DelExpress',
+      powered_by: 'Shipzilla',
       order_info: {
         orderId: true,
         invoiceNumber: true,

@@ -22,7 +22,7 @@ const PolicyPages = () => {
         </Box>
         <Typography paragraph>
           • You may cancel your account at any time by emailing us at{' '}
-          <Link href="mailto:support@dolphinenterprise.com">support@dolphinenterprise.com</Link>.
+          <Link href="mailto:support@shipzilla.in">support@shipzilla.in</Link>.
         </Typography>
         <Typography paragraph>
           • Once your account is cancelled, all of your data and content will be permanently deleted
@@ -159,7 +159,7 @@ const PolicyPages = () => {
           services).
           <br />
           To do so, please contact us at{' '}
-          <Link href="mailto:support@dolphinenterprise.com">support@dolphinenterprise.com</Link>.
+          <Link href="mailto:support@shipzilla.in">support@shipzilla.in</Link>.
         </Typography>
         <Typography paragraph>
           10. Third-Party Links

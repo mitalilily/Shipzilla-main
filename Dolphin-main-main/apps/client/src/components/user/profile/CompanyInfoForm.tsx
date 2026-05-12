@@ -12,7 +12,7 @@ import CustomInput from '../../UI/inputs/CustomInput'
 import { toast } from '../../UI/Toast'
 import type { UploadedFileInfo } from '../../UI/uploader/FileUploader'
 import FileUploader from '../../UI/uploader/FileUploader'
-import { BRAND_GRADIENT, DE_BLUE } from './UserProfileForm'
+import { BRAND_GRADIENT, SHIPZILLA_PRIMARY } from './UserProfileForm'
 
 interface CompanyFormValues {
   brandName?: string
@@ -162,8 +162,8 @@ export default function CompanyInfoForm() {
         gap: 3,
         mb: 4,
         bgcolor: '#FFFFFF',
-        border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-        boxShadow: `0 4px 16px ${alpha(DE_BLUE, 0.08)}`,
+        border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+        boxShadow: `0 4px 16px ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
         position: 'relative',
         overflow: 'hidden',
         '&::before': {
@@ -329,10 +329,10 @@ export default function CompanyInfoForm() {
           styles={{
             minWidth: 160,
             borderRadius: 1,
-            bgcolor: DE_BLUE,
-            boxShadow: `0 8px 20px ${alpha(DE_BLUE, 0.3)}`,
+            bgcolor: SHIPZILLA_PRIMARY,
+            boxShadow: `0 8px 20px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
             '&:hover': {
-              bgcolor: '#0043A4',
+              bgcolor: '#43166D',
             },
           }}
         />

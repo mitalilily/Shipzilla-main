@@ -28,7 +28,7 @@ else
   exit 1
 fi
 
-echo "ðŸš€ Building dolphin client..."
+echo "ðŸš€ Building shipzilla client..."
 
 # Navigate to project directory
 cd "$(dirname "$0")"
@@ -45,8 +45,9 @@ echo "ðŸ”¨ Running build with production environment variables..."
 
 # Set production environment variables
 # Vite uses VITE_ prefix for environment variables
-export VITE_API_URL="${VITE_API_URL:-https://shipzilla-main-production.up.railway.app/api}"
-export VITE_APP_SOCKET_URL="${VITE_APP_SOCKET_URL:-https://shipzilla-main-production.up.railway.app}"
+export VITE_API_URL="${VITE_API_URL:-https://shipzilla-backend.onrender.com/api}"
+export VITE_APP_SOCKET_URL="${VITE_APP_SOCKET_URL:-https://shipzilla-backend.onrender.com}"
+export VITE_UI_ONLY_AUTH="${VITE_UI_ONLY_AUTH:-false}"
 
 # Keep other environment variables from .env if needed (Shopify, Google OAuth, etc.)
 # These can be overridden here if you have different production values

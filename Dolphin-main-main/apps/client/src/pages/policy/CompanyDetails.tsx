@@ -60,7 +60,7 @@ const CompanyDetails = () => {
             <Chip
               clickable
               component={Link}
-              href="mailto:support@dolphinenterprise.com"
+              href="mailto:support@shipzilla.in"
               label="Support Email"
               color="primary"
               variant="filled"

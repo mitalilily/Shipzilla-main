@@ -20,7 +20,7 @@ import { BRAND_GRADIENT } from '../UserProfileForm'
 /* ---------- Styled components ---------- */
 const GlassCard = styled(Card)(() => ({
   backgroundColor: '#FFFFFF',
-  border: '1px solid #E0E6ED',
+  border: '1px solid #E5DCF3',
   borderRadius: 16,
   overflow: 'hidden',
   minHeight: 150,
@@ -47,7 +47,7 @@ const PrimaryRibbon = styled('div')(() => ({
   position: 'absolute',
   top: 16,
   right: 16,
-  background: 'linear-gradient(135deg, #3DD598 0%, #2AB87B 100%)',
+  background: 'linear-gradient(135deg, #56E813 0%, #36B309 100%)',
   color: '#FFFFFF',
   padding: '6px 14px',
   borderRadius: 8,
@@ -82,7 +82,7 @@ export const BankAccountsList: React.FC<{
             mt: 4,
             pl: 0.5,
             fontWeight: 700,
-            color: '#333369',
+            color: '#5D2394',
             display: 'flex',
             alignItems: 'center',
             gap: 1,
@@ -90,7 +90,7 @@ export const BankAccountsList: React.FC<{
               content: '""',
               width: 4,
               height: 24,
-              bgcolor: '#3DD598',
+              bgcolor: '#56E813',
               borderRadius: 1,
             },
           }}
@@ -158,12 +158,12 @@ export const BankAccountCard: React.FC<{
                 alignItems="center"
                 gap={1}
                 fontWeight={700}
-                color="#1A1A1A"
+                color="#1D1730"
                 noWrap
               >
                 {isUpiOnly ? a.accountHolder : a.bankName}
                 {a.status === 'verified' ? (
-                  <MdCheckCircle color="#3DD598" size={20} />
+                  <MdCheckCircle color="#56E813" size={20} />
                 ) : a.status === 'pending' ? (
                   <FaClock color="#FFA726" size={16} />
                 ) : (
@@ -220,7 +220,7 @@ export const BankAccountCard: React.FC<{
                     disabled={a.isPrimary || a.status !== 'verified'}
                     onClick={() => onMakePrimary?.(a.id)}
                     sx={{
-                      bgcolor: '#3DD598',
+                      bgcolor: '#56E813',
                       color: '#FFFFFF',
                       fontWeight: 600,
                       px: 2,
@@ -229,7 +229,7 @@ export const BankAccountCard: React.FC<{
                       textTransform: 'none',
                       boxShadow: '0 2px 8px rgba(61, 213, 152, 0.3)',
                       '&:hover': {
-                        bgcolor: '#2AB87B',
+                        bgcolor: '#36B309',
                         transform: 'translateY(-1px)',
                         boxShadow: '0 4px 12px rgba(61, 213, 152, 0.4)',
                       },
@@ -246,11 +246,11 @@ export const BankAccountCard: React.FC<{
                     aria-label="Edit account"
                     onClick={() => onEdit?.(a.id)}
                     sx={{
-                      color: '#333369',
+                      color: '#5D2394',
                       bgcolor: '#F5F7FA',
-                      border: '1px solid #E0E6ED',
+                      border: '1px solid #E5DCF3',
                       '&:hover': {
-                        bgcolor: '#E0E6ED',
+                        bgcolor: '#E5DCF3',
                         transform: 'scale(1.1)',
                       },
                       transition: 'all 0.3s ease',

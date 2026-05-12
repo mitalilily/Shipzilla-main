@@ -99,12 +99,12 @@ export function LabelPreview({ values, order, preferences }: LabelPreviewProps) 
     <Paper
       sx={{
         p: 2,
-        border: '2px solid #0f172a',
+        border: '2px solid #1D1730',
         borderRadius: 2,
         width: values.printer === 'thermal' ? '100mm' : '210mm',
         minHeight: values.printer === 'thermal' ? '150mm' : '297mm',
         bgcolor: 'white',
-        color: '#0f172a',
+        color: '#1D1730',
         mx: 'auto',
       }}
       elevation={1}

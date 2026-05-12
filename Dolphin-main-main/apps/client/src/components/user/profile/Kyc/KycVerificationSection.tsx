@@ -203,7 +203,7 @@ const KYCVerificationStep: React.FC<{
               p: { xs: 2, md: 3 },
               borderRadius: 3,
               bgcolor: '#FFFFFF',
-              border: '1px solid #E0E6ED',
+              border: '1px solid #E5DCF3',
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               position: 'relative',
               '&::before': {
@@ -213,7 +213,7 @@ const KYCVerificationStep: React.FC<{
                 left: 0,
                 right: 0,
                 height: '4px',
-                background: 'linear-gradient(90deg, #333369 0%, #3DD598 100%)',
+                background: 'linear-gradient(90deg, #5D2394 0%, #56E813 100%)',
                 borderRadius: '12px 12px 0 0',
               },
             }}
@@ -225,12 +225,12 @@ const KYCVerificationStep: React.FC<{
                 startIcon={<IoChevronBack />}
                 disabled={activeStep === 0}
                 sx={{
-                  borderColor: '#E0E6ED',
-                  color: '#333369',
+                  borderColor: '#E5DCF3',
+                  color: '#5D2394',
                   fontWeight: 600,
                   '&:hover': {
                     bgcolor: '#F5F7FA',
-                    borderColor: '#333369',
+                    borderColor: '#5D2394',
                   },
                 }}
               >
@@ -243,7 +243,7 @@ const KYCVerificationStep: React.FC<{
                     variant="outlined"
                     onClick={onCancelEdit}
                     sx={{
-                      borderColor: '#E0E6ED',
+                      borderColor: '#E5DCF3',
                       color: '#E74C3C',
                       fontWeight: 600,
                       '&:hover': {
@@ -288,7 +288,7 @@ const KYCVerificationStep: React.FC<{
               p: { xs: 2, md: 3 },
               borderRadius: 3,
               bgcolor: '#FFFFFF',
-              border: '1px solid #E0E6ED',
+              border: '1px solid #E5DCF3',
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               position: 'sticky',
               top: 24,
@@ -302,21 +302,21 @@ const KYCVerificationStep: React.FC<{
                   color: '#4A5568',
                   fontWeight: 500,
                   '&.Mui-active': {
-                    color: '#333369',
+                    color: '#5D2394',
                     fontWeight: 700,
                   },
                   '&.Mui-completed': {
-                    color: '#3DD598',
+                    color: '#56E813',
                     fontWeight: 600,
                   },
                 },
                 '& .MuiStepIcon-root': {
-                  color: '#E0E6ED',
+                  color: '#E5DCF3',
                   '&.Mui-active': {
-                    color: '#333369',
+                    color: '#5D2394',
                   },
                   '&.Mui-completed': {
-                    color: '#3DD598',
+                    color: '#56E813',
                   },
                 },
               }}

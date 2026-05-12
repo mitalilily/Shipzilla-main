@@ -19,8 +19,8 @@ import { hasValidationErrors, validateOnboardingFields } from '../../utils/funct
 import { brand, brandGradients } from '../../theme/brand'
 import { initialFormData } from '../../utils/utility'
 
-const DE_BLUE = brand.ink
-const DE_AMBER = brand.accent
+const SHIPZILLA_PRIMARY = brand.ink
+const SHIPZILLA_ACCENT = brand.accent
 
 export type FormErrors = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,8 +74,8 @@ export default function UserOnboarding() {
           userData?.companyInfo?.contactPerson?.split(' ')?.slice(1).join(' ') ||
           prefill?.lastName ||
           '',
-        email: userData?.companyInfo?.contactEmail ?? '',
-        phone: userData?.companyInfo?.contactNumber ?? '',
+        email: userData?.companyInfo?.contactEmail || userData?.email || '',
+        phone: userData?.companyInfo?.contactNumber || '',
         companyName: userData?.companyInfo?.businessName ?? '',
         pincode: userData?.companyInfo?.pincode ?? '',
         state: userData?.companyInfo?.state ?? '',
@@ -171,7 +171,7 @@ export default function UserOnboarding() {
       >
         <Typography
           variant="h6"
-          sx={{ fontWeight: 900, color: DE_BLUE, letterSpacing: -0.5, fontSize: '1.4rem' }}
+          sx={{ fontWeight: 900, color: SHIPZILLA_PRIMARY, letterSpacing: 0, fontSize: '1.4rem' }}
         >
           Shipzilla Seller Panel
         </Typography>
@@ -188,7 +188,7 @@ export default function UserOnboarding() {
           overflow: 'hidden',
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
-          boxShadow: '0 24px 54px rgba(15, 44, 67, 0.1)',
+          boxShadow: '0 24px 54px rgba(67, 22, 109, 0.1)',
         }}
       >
         {/* Sidebar Progress */}
@@ -196,11 +196,11 @@ export default function UserOnboarding() {
           sx={{
             width: { xs: '100%', md: 280 },
             background: `
-              radial-gradient(circle at 0% 0%, ${alpha(DE_AMBER, 0.22)} 0%, transparent 32%),
+              radial-gradient(circle at 0% 0%, ${alpha(SHIPZILLA_ACCENT, 0.22)} 0%, transparent 32%),
               ${brandGradients.softSurface}
             `,
-            borderRight: { md: `1px solid ${alpha(DE_BLUE, 0.08)}` },
-            borderBottom: { xs: `1px solid ${alpha(DE_BLUE, 0.08)}`, md: 'none' },
+            borderRight: { md: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}` },
+            borderBottom: { xs: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`, md: 'none' },
             p: 3,
           }}
         >
@@ -219,11 +219,11 @@ export default function UserOnboarding() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      bgcolor: completed ? '#36B37E' : active ? DE_BLUE : 'transparent',
+                      bgcolor: completed ? '#56E813' : active ? SHIPZILLA_PRIMARY : 'transparent',
                       border: completed
                         ? 'none'
-                        : `1.5px solid ${active ? DE_BLUE : alpha(DE_BLUE, 0.2)}`,
-                      color: completed || active ? '#fff' : alpha(DE_BLUE, 0.4),
+                        : `1.5px solid ${active ? SHIPZILLA_PRIMARY : alpha(SHIPZILLA_PRIMARY, 0.2)}`,
+                      color: completed || active ? '#fff' : alpha(SHIPZILLA_PRIMARY, 0.4),
                       fontWeight: 800,
                       fontSize: '0.85rem',
                       transition: 'all 0.3s ease',
@@ -236,7 +236,7 @@ export default function UserOnboarding() {
                       sx={{
                         fontSize: '0.88rem',
                         fontWeight: 800,
-                        color: active ? DE_BLUE : completed ? '#36B37E' : alpha(DE_BLUE, 0.4),
+                        color: active ? SHIPZILLA_PRIMARY : completed ? '#56E813' : alpha(SHIPZILLA_PRIMARY, 0.4),
                       }}
                     >
                       {s.title}
@@ -245,7 +245,7 @@ export default function UserOnboarding() {
                       sx={{
                         fontSize: '0.72rem',
                         fontWeight: 600,
-                        color: alpha(DE_BLUE, 0.35),
+                        color: alpha(SHIPZILLA_PRIMARY, 0.35),
                         textTransform: 'uppercase',
                         letterSpacing: 0.5,
                       }}
@@ -259,13 +259,13 @@ export default function UserOnboarding() {
           </Stack>
 
           <Box sx={{ mt: 6 }}>
-            <Typography variant="caption" sx={{ color: alpha(DE_BLUE, 0.4), fontWeight: 700 }}>
+            <Typography variant="caption" sx={{ color: alpha(SHIPZILLA_PRIMARY, 0.4), fontWeight: 700 }}>
               WORKSPACE SETUP
             </Typography>
             <Box
               sx={{
                 height: 6,
-                bgcolor: alpha(DE_BLUE, 0.08),
+                bgcolor: alpha(SHIPZILLA_PRIMARY, 0.08),
                 borderRadius: 3,
                 mt: 1,
                 overflow: 'hidden',
@@ -275,14 +275,14 @@ export default function UserOnboarding() {
                 sx={{
                   width: `${progressPercent}%`,
                   height: '100%',
-                  bgcolor: DE_BLUE,
+                  bgcolor: SHIPZILLA_PRIMARY,
                   transition: 'width 0.5s ease',
                 }}
               />
             </Box>
             <Typography
               variant="caption"
-              sx={{ mt: 0.8, display: 'block', fontWeight: 800, color: DE_BLUE }}
+              sx={{ mt: 0.8, display: 'block', fontWeight: 800, color: SHIPZILLA_PRIMARY }}
             >
               {progressPercent}% Complete
             </Typography>
@@ -304,14 +304,14 @@ export default function UserOnboarding() {
                 fontWeight: 800,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: alpha(DE_BLUE, 0.6),
+                color: alpha(SHIPZILLA_PRIMARY, 0.6),
                 mb: 0.75,
               }}
             >
               Shipzilla onboarding
             </Typography>
             <Typography
-              sx={{ fontSize: { xs: '1.35rem', md: '1.8rem' }, fontWeight: 900, color: DE_BLUE }}
+              sx={{ fontSize: { xs: '1.35rem', md: '1.8rem' }, fontWeight: 900, color: SHIPZILLA_PRIMARY }}
             >
               Complete your seller workspace setup
             </Typography>
@@ -342,19 +342,19 @@ export default function UserOnboarding() {
           <Stack
             direction="row"
             spacing={2}
-            sx={{ mt: 5, pt: 3, borderTop: `1px solid ${alpha(DE_BLUE, 0.06)}` }}
+            sx={{ mt: 5, pt: 3, borderTop: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.06)}` }}
           >
             {step > 1 && (
               <Button
                 onClick={() => setStep((p) => p - 1)}
                 startIcon={<MdArrowBack />}
                 sx={{
-                  color: DE_BLUE,
+                  color: SHIPZILLA_PRIMARY,
                   fontWeight: 800,
                   textTransform: 'none',
                   px: 3,
                   borderRadius: 1,
-                  '&:hover': { bgcolor: alpha(DE_BLUE, 0.06) },
+                  '&:hover': { bgcolor: alpha(SHIPZILLA_PRIMARY, 0.06) },
                 }}
               >
                 Back

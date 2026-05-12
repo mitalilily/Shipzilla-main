@@ -14,7 +14,7 @@ exports.locations = void 0
 var drizzle_orm_1 = require('drizzle-orm')
 var pg_core_1 = require('drizzle-orm/pg-core')
 var createTable = (0, pg_core_1.pgTableCreator)(function (name) {
-  return 'meracourierwala_'.concat(name)
+  return 'shipzilla_'.concat(name)
 })
 exports.locations = createTable('locations', {
   id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),

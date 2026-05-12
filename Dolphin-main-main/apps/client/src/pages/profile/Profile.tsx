@@ -7,8 +7,8 @@ import FullScreenLoader from '../../components/UI/loader/FullScreenLoader'
 
 type TopSection = 'user_profile' | 'company' | 'bank_details' | 'kyc_details'
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 const sectionTabs: Array<{ label: string; value: TopSection; icon: React.ReactNode }> = [
   { label: 'User', value: 'user_profile', icon: <FiUser size={15} /> },
@@ -37,20 +37,20 @@ export default function ProfileLayout() {
         sx={{
           p: { xs: 2, md: 2.5 },
           borderRadius: 1,
-          border: `1px solid ${alpha(DE_BLUE, 0.14)}`,
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.14)}`,
           background: `
-            radial-gradient(720px 220px at 0% 0%, ${alpha(DE_AMBER, 0.11)} 0%, transparent 70%),
-            radial-gradient(620px 200px at 100% 0%, ${alpha(DE_BLUE, 0.12)} 0%, transparent 65%),
+            radial-gradient(720px 220px at 0% 0%, ${alpha(SHIPZILLA_ACCENT, 0.11)} 0%, transparent 70%),
+            radial-gradient(620px 200px at 100% 0%, ${alpha(SHIPZILLA_PRIMARY, 0.12)} 0%, transparent 65%),
             #ffffff
           `,
         }}
       >
         <Stack spacing={1.5}>
           <Box>
-            <Typography sx={{ fontSize: '0.75rem', letterSpacing: 2, fontWeight: 700, color: DE_AMBER }}>
+            <Typography sx={{ fontSize: '0.75rem', letterSpacing: 2, fontWeight: 700, color: SHIPZILLA_ACCENT }}>
               ACCOUNT CENTER
             </Typography>
-            <Typography sx={{ fontSize: { xs: '1.25rem', md: '1.6rem' }, fontWeight: 800, color: DE_BLUE }}>
+            <Typography sx={{ fontSize: { xs: '1.25rem', md: '1.6rem' }, fontWeight: 800, color: SHIPZILLA_PRIMARY }}>
               Profile & Verification
             </Typography>
             <Typography variant="body2" sx={{ color: '#5d769e', mt: 0.3 }}>
@@ -77,9 +77,9 @@ export default function ProfileLayout() {
                     borderRadius: 1,
                     whiteSpace: 'nowrap',
                     cursor: 'pointer',
-                    border: `1px solid ${isActive ? alpha(DE_BLUE, 0.4) : alpha(DE_BLUE, 0.18)}`,
-                    backgroundColor: isActive ? alpha(DE_BLUE, 0.08) : '#fff',
-                    color: isActive ? DE_BLUE : '#5c759b',
+                    border: `1px solid ${isActive ? alpha(SHIPZILLA_PRIMARY, 0.4) : alpha(SHIPZILLA_PRIMARY, 0.18)}`,
+                    backgroundColor: isActive ? alpha(SHIPZILLA_PRIMARY, 0.08) : '#fff',
+                    color: isActive ? SHIPZILLA_PRIMARY : '#6E6483',
                     fontWeight: 700,
                     fontSize: '0.86rem',
                     transition: 'all .2s ease',

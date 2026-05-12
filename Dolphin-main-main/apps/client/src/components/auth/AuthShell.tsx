@@ -74,7 +74,7 @@ export default function AuthShell({
                     fontWeight: 700,
                     letterSpacing: '0.22em',
                     textTransform: 'uppercase',
-                    color: brand.inkSoft,
+                  color: brand.primary,
                   }}
                 >
                   {eyebrow}
@@ -85,7 +85,7 @@ export default function AuthShell({
                     fontSize: { xs: '2rem', sm: '2.6rem' },
                     fontWeight: 800,
                     lineHeight: 1.05,
-                    letterSpacing: '-0.05em',
+                    letterSpacing: 0,
                   }}
                 >
                   {title}
@@ -106,7 +106,7 @@ export default function AuthShell({
                 sx={{
                   p: 1.8,
                   borderRadius: '24px',
-                  border: `1px solid ${alpha(brand.sky, 0.34)}`,
+                  border: `1px solid ${alpha(brand.primary, 0.16)}`,
                 }}
               >
                 <Stack spacing={0.6}>
@@ -151,7 +151,7 @@ export default function AuthShell({
                   p: { xs: 2.5, md: 4 },
                   background: `
                     radial-gradient(circle at 15% 12%, rgba(255,255,255,0.76), transparent 24%),
-                    radial-gradient(circle at 90% 0%, rgba(255,221,174,0.68), transparent 28%),
+                    radial-gradient(circle at 90% 0%, rgba(86,232,19,0.12), transparent 28%),
                     ${brandGradients.hero}
                   `,
                 }}
@@ -163,9 +163,9 @@ export default function AuthShell({
                         key={pill}
                         label={pill}
                         sx={{
-                          bgcolor: alpha('#FFFFFF', 0.66),
-                          color: brand.ink,
-                          border: `1px solid ${alpha('#FFFFFF', 0.6)}`,
+                          bgcolor: brand.primarySoft,
+                          color: brand.primary,
+                          border: `1px solid ${alpha(brand.primary, 0.08)}`,
                           fontWeight: 700,
                         }}
                       />
@@ -179,7 +179,7 @@ export default function AuthShell({
                         fontWeight: 700,
                         letterSpacing: '0.22em',
                         textTransform: 'uppercase',
-                        color: brand.inkSoft,
+                        color: brand.primary,
                       }}
                     >
                       {eyebrow}
@@ -190,7 +190,7 @@ export default function AuthShell({
                         fontSize: { xs: '2.35rem', sm: '3.1rem', lg: '4.45rem' },
                         fontWeight: 800,
                         lineHeight: { xs: 1.02, lg: 0.96 },
-                        letterSpacing: '-0.05em',
+                        letterSpacing: 0,
                         maxWidth: 740,
                       }}
                     >
@@ -220,8 +220,8 @@ export default function AuthShell({
                                 borderRadius: '16px',
                                 display: 'grid',
                                 placeItems: 'center',
-                                bgcolor: alpha(brand.sky, 0.76),
-                                color: brand.ink,
+                                bgcolor: brand.primarySoft,
+                                color: brand.primary,
                               }}
                             >
                               {item.icon}
@@ -247,8 +247,8 @@ export default function AuthShell({
                           borderRadius: '16px',
                           display: 'grid',
                           placeItems: 'center',
-                          bgcolor: alpha(brand.warning, 0.16),
-                          color: brand.ink,
+                          bgcolor: alpha(brand.secondary, 0.16),
+                          color: brand.primary,
                           flexShrink: 0,
                         }}
                       >

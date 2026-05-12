@@ -56,7 +56,7 @@ const SectionHeading: React.FC<SectionHeadingProps> = ({
               fontSize: { xs: '1.48rem', md: '1.92rem' },
               fontWeight: 800,
               color: brand.ink,
-              letterSpacing: '-0.03em',
+              letterSpacing: 0,
               lineHeight: 1.06,
             }}
           >

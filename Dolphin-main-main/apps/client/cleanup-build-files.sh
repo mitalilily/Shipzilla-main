@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Script to remove build files from delexpress-client root directory
+# Script to remove build files from shipzilla-client root directory
 # These files should only be in the dist/ subdirectory
 # Usage: ./cleanup-build-files.sh [vps_user@vps_ip]
 # Example: ./cleanup-build-files.sh user@your-server-ip
 
 set +e
 
-VPS_TARGET_PATH="/var/www/delexpress/delexpress-client"
+VPS_TARGET_PATH="/var/www/shipzilla/shipzilla-client"
 
 if [ -n "$1" ]; then
   VPS_CONNECTION="$1"
@@ -18,7 +18,7 @@ else
   exit 1
 fi
 
-echo "ðŸ§¹ Cleaning up build files from delexpress-client root directory"
+echo "ðŸ§¹ Cleaning up build files from shipzilla-client root directory"
 echo "ðŸ” You will be prompted for your VPS password"
 echo ""
 echo "âš ï¸  This will remove the dist/ folder from root (it should be recreated as dist/ subdirectory by deploy script):"

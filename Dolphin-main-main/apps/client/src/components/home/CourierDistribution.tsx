@@ -2,11 +2,11 @@ import { alpha, Box, LinearProgress, Skeleton, Stack, Typography } from '@mui/ma
 import { FaTruck } from 'react-icons/fa6'
 import type { CourierDistribution as CourierDistributionType } from '../../api/dashboard.api'
 
-const DE_BLUE = '#0052CC'
-const TEXT_PRIMARY = '#172B4D'
-const TEXT_SECONDARY = '#42526E'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const TEXT_PRIMARY = '#1D1730'
+const TEXT_SECONDARY = '#6E6483'
 
-const barColors = ['#0052CC', '#0065FF', '#FFAB00', '#FFC400', '#36B37E', '#172B4D']
+const barColors = ['#5D2394', '#7A3DB4', '#56E813', '#EEFDE8', '#56E813', '#1D1730']
 
 type CourierDistributionProps = {
   data?: CourierDistributionType[]
@@ -50,11 +50,11 @@ const CourierDistribution = ({
             textAlign: 'center',
             py: 4,
             borderRadius: 1,
-            border: `1px dashed ${alpha(DE_BLUE, 0.2)}`,
-            bgcolor: alpha(DE_BLUE, 0.02),
+            border: `1px dashed ${alpha(SHIPZILLA_PRIMARY, 0.2)}`,
+            bgcolor: alpha(SHIPZILLA_PRIMARY, 0.02),
           }}
         >
-          <FaTruck size={30} style={{ color: DE_BLUE, opacity: 0.5 }} />
+          <FaTruck size={30} style={{ color: SHIPZILLA_PRIMARY, opacity: 0.5 }} />
           <Typography sx={{ mt: 0.8, fontSize: '0.88rem', color: TEXT_SECONDARY, fontWeight: 600 }}>
             No courier data found
           </Typography>
@@ -71,7 +71,7 @@ const CourierDistribution = ({
                 sx={{
                   p: 1.4,
                   borderRadius: 1,
-                  border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+                  border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
                   bgcolor: '#ffffff',
                 }}
               >
@@ -90,7 +90,7 @@ const CourierDistribution = ({
                   sx={{
                     height: 6,
                     borderRadius: 1,
-                    bgcolor: alpha(DE_BLUE, 0.1),
+                    bgcolor: alpha(SHIPZILLA_PRIMARY, 0.1),
                     '& .MuiLinearProgress-bar': {
                       borderRadius: 1,
                       bgcolor: color,
@@ -103,7 +103,7 @@ const CourierDistribution = ({
                   <Typography
                     sx={{
                       fontSize: '11px',
-                      color: percentage > 35 ? '#8a3e00' : DE_BLUE,
+                      color: percentage > 35 ? '#8a3e00' : SHIPZILLA_PRIMARY,
                       fontWeight: 700,
                     }}
                   >
@@ -117,7 +117,7 @@ const CourierDistribution = ({
       )}
 
       {distribution && distribution.length > 0 && (
-        <Box sx={{ p: 1.2, borderRadius: 1, bgcolor: alpha('#FFAB00', 0.1), border: `1px solid ${alpha('#FFAB00', 0.2)}` }}>
+        <Box sx={{ p: 1.2, borderRadius: 1, bgcolor: alpha('#56E813', 0.1), border: `1px solid ${alpha('#56E813', 0.2)}` }}>
           <Typography sx={{ fontSize: '12px', color: '#8a3e00', fontWeight: 700 }}>
             Total orders processed: {totalOrders}
           </Typography>

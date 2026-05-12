@@ -252,7 +252,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
     color: '#FFFFFF',
     '& .MuiListItemIcon-root': { color: '#FFFFFF' },
     '& .MuiListItemText-primary': { fontWeight: 800 },
-    boxShadow: '0 16px 28px rgba(0,29,103,0.18)',
+    boxShadow: '0 16px 28px rgba(93,35,148,0.2)',
   }
 
   const navItemSx = {
@@ -265,10 +265,10 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
     border: '1px solid transparent',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     '&:hover': {
-      bgcolor: alpha('#FFFFFF', 0.72),
-      color: brand.ink,
-      borderColor: alpha(brand.ink, 0.06),
-      '& .MuiListItemIcon-root': { color: brand.ink },
+      bgcolor: brand.primarySoft,
+      color: brand.primary,
+      borderColor: alpha(brand.primary, 0.08),
+      '& .MuiListItemIcon-root': { color: brand.primary },
     },
   }
 
@@ -295,9 +295,9 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
               ...(isSelected && !hasChildren ? activeItemSx : {}),
               ...(hasChildren && childSelected
                 ? {
-                    bgcolor: alpha('#FFFFFF', 0.72),
-                    color: brand.ink,
-                    '& .MuiListItemIcon-root': { color: brand.ink },
+                    bgcolor: brand.primarySoft,
+                    color: brand.primary,
+                    '& .MuiListItemIcon-root': { color: brand.primary },
                   }
                 : {}),
             }}
@@ -306,7 +306,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
               sx={{
                 minWidth: isSidebarExpanded ? 36 : 0,
                 justifyContent: 'center',
-                color: isSelected || childSelected ? brand.ink : 'inherit',
+                color: isSelected || childSelected ? brand.primary : 'inherit',
                 transition: 'color 0.2s',
               }}
             >
@@ -318,7 +318,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
                 primaryTypographyProps={{
                   fontSize: '0.85rem',
                   fontWeight: isSelected || childSelected ? 800 : 600,
-                  letterSpacing: '-0.01em',
+                  letterSpacing: 0,
                 }}
               />
             ) : null}
@@ -327,7 +327,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
                 style={{
                   transform: showExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                   transition: 'transform 0.3s',
-                  color: showExpanded ? brand.ink : 'inherit',
+                  color: showExpanded ? brand.primary : 'inherit',
                 }}
               />
             ) : null}
@@ -358,11 +358,11 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
                           py: 0.65,
                           px: 1.3,
                           borderRadius: 999,
-                          color: subActive ? brand.ink : alpha(brand.ink, 0.72),
-                          bgcolor: subActive ? alpha(brand.sky, 0.46) : 'transparent',
+                          color: subActive ? brand.primary : alpha(brand.ink, 0.72),
+                          bgcolor: subActive ? brand.primarySoft : 'transparent',
                           '&:hover': {
-                            bgcolor: alpha('#FFFFFF', 0.72),
-                            color: brand.ink,
+                            bgcolor: brand.primarySoft,
+                            color: brand.primary,
                           },
                           mb: 0.4,
                         }}
@@ -391,8 +391,8 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
       sx={{
         width: isSidebarExpanded ? DRAWER_WIDTH : COLLAPSED_WIDTH,
         height: '100vh',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(248,251,255,0.96) 100%)',
-        borderRight: `1px solid ${alpha(brand.ink, 0.08)}`,
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,243,251,0.96) 100%)',
+        borderRight: `1px solid ${alpha(brand.primary, 0.1)}`,
         transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         display: 'flex',
         flexDirection: 'column',
@@ -401,7 +401,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
         left: 0,
         top: 0,
         overflowX: 'hidden',
-        boxShadow: '16px 0 40px rgba(0,29,103,0.08)',
+        boxShadow: '16px 0 40px rgba(67,22,109,0.08)',
         backdropFilter: 'blur(18px)',
       }}
       onMouseEnter={() => setHovered(true)}
@@ -457,7 +457,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
             p: isSidebarExpanded ? 0.7 : 0.2,
             borderRadius: '28px',
             bgcolor: alpha('#FFFFFF', 0.52),
-            border: `1px solid ${alpha(brand.ink, 0.05)}`,
+            border: `1px solid ${alpha(brand.primary, 0.08)}`,
           }}
         >
           {renderNavList(navItems.filter((item) => item.roles.includes(role || 'customer')))}
@@ -467,7 +467,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
       <Box
         sx={{
           p: 1.1,
-          borderTop: `1px solid ${alpha(brand.ink, 0.08)}`,
+          borderTop: `1px solid ${alpha(brand.primary, 0.08)}`,
           bgcolor: alpha('#FFFFFF', 0.72),
         }}
       >

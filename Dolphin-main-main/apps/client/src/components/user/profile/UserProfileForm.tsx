@@ -16,9 +16,9 @@ import FileUploader from '../../UI/uploader/FileUploader'
 import ProfileEmailVerificationModal from './ProfileEmailVerificationModal'
 import PhoneVerificationModal from './ProfilePhoneVerificationModal'
 
-export const DE_BLUE = '#0052CC'
-export const DE_AMBER = '#FFAB00'
-export const BRAND_GRADIENT = `linear-gradient(135deg, ${DE_BLUE} 0%, #2a5fbe 100%)`
+export const SHIPZILLA_PRIMARY = '#5D2394'
+export const SHIPZILLA_ACCENT = '#56E813'
+export const BRAND_GRADIENT = `linear-gradient(135deg, ${SHIPZILLA_PRIMARY} 0%, #7A3DB4 100%)`
 
 export default function UserProfileForm() {
   const { user, loading } = useAuth()
@@ -86,11 +86,11 @@ export default function UserProfileForm() {
         label="Verified"
         size="small"
         sx={{
-          bgcolor: alpha(DE_BLUE, 0.12),
-          color: DE_BLUE,
-          border: `1px solid ${alpha(DE_BLUE, 0.3)}`,
+          bgcolor: alpha(SHIPZILLA_PRIMARY, 0.12),
+          color: SHIPZILLA_PRIMARY,
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
           fontWeight: 700,
-          '& .MuiChip-icon': { color: DE_BLUE },
+          '& .MuiChip-icon': { color: SHIPZILLA_PRIMARY },
         }}
       />
     ) : (
@@ -99,11 +99,11 @@ export default function UserProfileForm() {
         label="Unverified"
         size="small"
         sx={{
-          bgcolor: alpha(DE_AMBER, 0.12),
-          color: DE_AMBER,
-          border: `1px solid ${alpha(DE_AMBER, 0.3)}`,
+          bgcolor: alpha(SHIPZILLA_ACCENT, 0.12),
+          color: SHIPZILLA_ACCENT,
+          border: `1px solid ${alpha(SHIPZILLA_ACCENT, 0.3)}`,
           fontWeight: 700,
-          '& .MuiChip-icon': { color: DE_AMBER },
+          '& .MuiChip-icon': { color: SHIPZILLA_ACCENT },
         }}
       />
     )
@@ -114,8 +114,8 @@ export default function UserProfileForm() {
       sx={{
         p: { xs: 2, md: 3 },
         borderRadius: 1,
-        border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-        background: `radial-gradient(circle at 100% 0%, ${alpha(DE_BLUE, 0.03)} 0%, transparent 40%), #fff`,
+        border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+        background: `radial-gradient(circle at 100% 0%, ${alpha(SHIPZILLA_PRIMARY, 0.03)} 0%, transparent 40%), #fff`,
       }}
     >
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
@@ -139,7 +139,7 @@ export default function UserProfileForm() {
           <Stack spacing={3} flex={1} width="100%">
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="h6" sx={{ fontWeight: 800, color: DE_BLUE }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: SHIPZILLA_PRIMARY }}>
                   Account Information
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#5e759a' }}>
@@ -180,7 +180,7 @@ export default function UserProfileForm() {
                     <Button
                       size="small"
                       onClick={() => setShowEmailModal(true)}
-                      sx={{ alignSelf: 'flex-start', color: DE_BLUE, fontWeight: 700, fontSize: '0.75rem' }}
+                      sx={{ alignSelf: 'flex-start', color: SHIPZILLA_PRIMARY, fontWeight: 700, fontSize: '0.75rem' }}
                     >
                       Verify Email
                     </Button>
@@ -203,7 +203,7 @@ export default function UserProfileForm() {
                     <Button
                       size="small"
                       onClick={() => setShowPhoneModal(true)}
-                      sx={{ alignSelf: 'flex-start', color: DE_BLUE, fontWeight: 700, fontSize: '0.75rem' }}
+                      sx={{ alignSelf: 'flex-start', color: SHIPZILLA_PRIMARY, fontWeight: 700, fontSize: '0.75rem' }}
                     >
                       Verify Phone
                     </Button>
@@ -221,9 +221,9 @@ export default function UserProfileForm() {
                 styles={{
                   px: 4,
                   borderRadius: 1,
-                  bgcolor: DE_BLUE,
-                  boxShadow: `0 8px 20px ${alpha(DE_BLUE, 0.3)}`,
-                  '&:hover': { bgcolor: '#0043A4' },
+                  bgcolor: SHIPZILLA_PRIMARY,
+                  boxShadow: `0 8px 20px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
+                  '&:hover': { bgcolor: '#43166D' },
                 }}
               />
             </Box>

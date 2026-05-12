@@ -13,9 +13,9 @@ import { toast } from '../../../UI/Toast'
 import { AddBankAccountDialog } from './AddBankAccountDialog'
 import { BankAccountsList } from './BankAccountList'
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
-const BRAND_GRADIENT = `linear-gradient(135deg, ${DE_BLUE} 0%, ${DE_AMBER} 100%)`
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
+const BRAND_GRADIENT = `linear-gradient(135deg, ${SHIPZILLA_PRIMARY} 0%, ${SHIPZILLA_ACCENT} 100%)`
 
 export const BankAccountsSection: React.FC = () => {
   const [open, setOpen] = useState(false)
@@ -109,10 +109,10 @@ export const BankAccountsSection: React.FC = () => {
                 height={190}
                 sx={{
                   borderRadius: 3,
-                  bgcolor: alpha(DE_BLUE, 0.04),
+                  bgcolor: alpha(SHIPZILLA_PRIMARY, 0.04),
                   '&::after': {
                     background: `linear-gradient(90deg, transparent, ${alpha(
-                      DE_BLUE,
+                      SHIPZILLA_PRIMARY,
                       0.08,
                     )}, transparent)`,
                   },
@@ -139,9 +139,9 @@ export const BankAccountsSection: React.FC = () => {
             py: 8,
             px: 4,
             gap: 3,
-            bgcolor: alpha(DE_BLUE, 0.04),
+            bgcolor: alpha(SHIPZILLA_PRIMARY, 0.04),
             borderRadius: 3,
-            border: `2px dashed ${alpha(DE_BLUE, 0.2)}`,
+            border: `2px dashed ${alpha(SHIPZILLA_PRIMARY, 0.2)}`,
             position: 'relative',
             overflow: 'hidden',
             '&::before': {
@@ -166,7 +166,7 @@ export const BankAccountsSection: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: `0 4px 16px ${alpha(DE_BLUE, 0.25)}`,
+              boxShadow: `0 4px 16px ${alpha(SHIPZILLA_PRIMARY, 0.25)}`,
               position: 'relative',
               '&::after': {
                 content: '""',
@@ -215,13 +215,13 @@ export const BankAccountsSection: React.FC = () => {
               borderRadius: 2.5,
               fontWeight: 600,
               background: BRAND_GRADIENT,
-              boxShadow: `0 4px 16px ${alpha(DE_BLUE, 0.3)}`,
+              boxShadow: `0 4px 16px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
               textTransform: 'none',
               color: '#FFFFFF',
               '&:hover': {
                 transform: 'translateY(-2px)',
-                boxShadow: `0 6px 20px ${alpha(DE_BLUE, 0.4)}`,
-                background: `linear-gradient(135deg, ${DE_BLUE} 0%, ${DE_AMBER} 100%)`,
+                boxShadow: `0 6px 20px ${alpha(SHIPZILLA_PRIMARY, 0.4)}`,
+                background: `linear-gradient(135deg, ${SHIPZILLA_PRIMARY} 0%, ${SHIPZILLA_ACCENT} 100%)`,
               },
               transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             }}

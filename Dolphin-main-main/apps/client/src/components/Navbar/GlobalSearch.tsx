@@ -22,7 +22,7 @@ import { useNavigate } from 'react-router-dom'
 import type { GlobalSearchResult } from '../../api/globalSearch.api'
 import { useGlobalSearch } from '../../hooks/useGlobalSearch'
 
-const INK = '#171310'
+const INK = '#5D2394'
 const CLAY = '#D97943'
 const SURFACE = '#FFFDF8'
 

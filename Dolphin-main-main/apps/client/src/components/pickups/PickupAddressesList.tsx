@@ -150,7 +150,7 @@ const PickupAddressesList = ({
           <Button
             size="small"
             variant="outlined"
-            sx={{ color: '#333369' }}
+            sx={{ color: '#5D2394' }}
             onClick={() => handleEdit(row)}
             startIcon={<CiEdit />}
           >

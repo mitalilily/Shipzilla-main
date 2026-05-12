@@ -19,7 +19,7 @@ import CustomIconLoadingButton from '../../components/UI/button/CustomLoadingBut
 import PageHeading from '../../components/UI/heading/PageHeading'
 import CustomInput from '../../components/UI/inputs/CustomInput'
 import { SmartTabs } from '../../components/UI/tab/Tabs'
-import { DE_BLUE } from '../../components/user/profile/UserProfileForm'
+import { SHIPZILLA_PRIMARY } from '../../components/user/profile/UserProfileForm'
 import { useAvailableCouriersMutation } from '../../hooks/Integrations/useCouriers'
 import { usePaymentOptions } from '../../hooks/usePaymentOptions'
 import { usePincodeLookup } from '../../hooks/User/usePincodeLookup'
@@ -339,7 +339,7 @@ export function RateCalculator() {
                           textTransform: 'none',
                           fontWeight: 600,
                           fontSize: '0.95rem',
-                          color: '#6B7280',
+                          color: '#6E6483',
                           border: '1px solid #E2E8F0',
                           transition: 'all 0.25s ease',
                           '&.Mui-selected': {
@@ -349,7 +349,7 @@ export function RateCalculator() {
                           },
                           '&:hover': {
                             borderColor: BRAND_GREEN,
-                            color: '#333369',
+                            color: '#5D2394',
                           },
                         }}
                       >
@@ -368,7 +368,7 @@ export function RateCalculator() {
                           textTransform: 'none',
                           fontWeight: 500,
                           fontSize: '0.95rem',
-                          color: '#6B7280',
+                          color: '#6E6483',
                           border: '1px solid #E2E8F0',
                           transition: 'all 0.25s ease',
                           '&.Mui-selected': {
@@ -378,7 +378,7 @@ export function RateCalculator() {
                           },
                           '&:hover': {
                             borderColor: BRAND_GREEN,
-                            color: '#333369',
+                            color: '#5D2394',
                           },
                         }}
                       >
@@ -422,16 +422,16 @@ export function RateCalculator() {
             styles={{
               py: 1.5,
               borderRadius: 1,
-              bgcolor: DE_BLUE,
+              bgcolor: SHIPZILLA_PRIMARY,
               fontWeight: 800,
-              boxShadow: `0 8px 20px ${alpha(DE_BLUE, 0.3)}`,
-              '&:hover': { bgcolor: '#0043A4' },
+              boxShadow: `0 8px 20px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
+              '&:hover': { bgcolor: '#43166D' },
             }}
           />
         </CardContent>
       </FormProvider>
       {isPending && (
-        <Typography sx={{ color: '#333369', textAlign: 'center', py: 2 }}>
+        <Typography sx={{ color: '#5D2394', textAlign: 'center', py: 2 }}>
           Loading available couriers...
         </Typography>
       )}
@@ -459,7 +459,7 @@ export function RateCalculator() {
           p: 3,
         }}
       >
-        <Typography variant="h6" gutterBottom sx={{ color: '#333369', fontWeight: 700 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#5D2394', fontWeight: 700 }}>
           Terms & Conditions ({shipmentType.toUpperCase()})
         </Typography>
 
@@ -470,7 +470,7 @@ export function RateCalculator() {
                 <Typography
                   key={idx}
                   variant="body2"
-                  sx={{ color: '#6B7280', fontSize: '0.85rem', lineHeight: 1.6 }}
+                  sx={{ color: '#6E6483', fontSize: '0.85rem', lineHeight: 1.6 }}
                 >
                   • {term}
                 </Typography>
@@ -482,7 +482,7 @@ export function RateCalculator() {
               <Stack key={idx} spacing={0.5}>
                 <Typography
                   variant="body2"
-                  sx={{ color: '#333369', fontSize: '0.85rem', lineHeight: 1.6, fontWeight: 600 }}
+                  sx={{ color: '#5D2394', fontSize: '0.85rem', lineHeight: 1.6, fontWeight: 600 }}
                 >
                   • {term.text}
                 </Typography>
@@ -491,7 +491,7 @@ export function RateCalculator() {
                     <Typography
                       key={subIdx}
                       variant="body2"
-                      sx={{ color: '#6B7280', fontSize: '0.8rem', lineHeight: 1.5 }}
+                      sx={{ color: '#6E6483', fontSize: '0.8rem', lineHeight: 1.5 }}
                     >
                       ◦ {subItem}
                     </Typography>

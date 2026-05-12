@@ -91,8 +91,8 @@ const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
               backgroundImage:
                 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.98) 100%)',
               boxShadow: isFocused
-                ? '0 0 0 4px rgba(198,231,255,0.34), 0 16px 30px rgba(15,44,67,0.08)'
-                : '0 10px 24px rgba(15,44,67,0.045)',
+                ? '0 0 0 4px rgba(93,35,148,0.12), 0 16px 30px rgba(67,22,109,0.08)'
+                : '0 10px 24px rgba(67,22,109,0.045)',
               transition: 'all 0.2s ease',
               '& fieldset': {
                 borderColor: isFocused ? alpha(brand.ink, 0.28) : alpha(brand.ink, 0.1),

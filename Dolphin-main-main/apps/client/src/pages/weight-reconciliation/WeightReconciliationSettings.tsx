@@ -73,10 +73,10 @@ export default function WeightReconciliationSettings() {
             startIcon={<FiArrowLeft />}
             onClick={() => navigate('/reconciliation/weight')}
             sx={{
-              color: '#6B7280',
+              color: '#6E6483',
               textTransform: 'none',
               mb: 2,
-              '&:hover': { color: '#333369' },
+              '&:hover': { color: '#5D2394' },
             }}
           >
             Back to Weight Reconciliation
@@ -101,10 +101,10 @@ export default function WeightReconciliationSettings() {
                 p: 3,
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#333369', mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#5D2394', mb: 1 }}>
                 Auto-Acceptance
               </Typography>
-              <Typography variant="body2" sx={{ color: '#6B7280', mb: 3, fontSize: '14px' }}>
+              <Typography variant="body2" sx={{ color: '#6E6483', mb: 3, fontSize: '14px' }}>
                 Automatically accept weight discrepancies that fall within your defined thresholds
               </Typography>
 
@@ -114,13 +114,13 @@ export default function WeightReconciliationSettings() {
                   sx={{
                     mb: 3,
                     backgroundColor: '#E7F3FF',
-                    borderLeft: '4px solid #333369',
+                    borderLeft: '4px solid #5D2394',
                     '& .MuiAlert-icon': {
-                      color: '#333369',
+                      color: '#5D2394',
                     },
                   }}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#333369', mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#5D2394', mb: 1 }}>
                     What happens when auto-acceptance is enabled:
                   </Typography>
                   <Box component="ul" sx={{ m: 0, pl: 2.5, color: '#4B5563' }}>
@@ -176,10 +176,10 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#333369', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#5D2394', mb: 0.5 }}>
                       Enable Auto-Accept
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ color: '#6E6483', fontSize: '13px' }}>
                       Automatically accept minor weight differences
                     </Typography>
                   </Box>
@@ -190,10 +190,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#333369',
+                        color: '#5D2394',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#333369',
+                        backgroundColor: '#5D2394',
                       },
                     }}
                   />
@@ -204,7 +204,7 @@ export default function WeightReconciliationSettings() {
                     <Divider />
                     <Box>
                       <Typography
-                        sx={{ fontWeight: 600, color: '#333369', mb: 1.5, fontSize: '14px' }}
+                        sx={{ fontWeight: 600, color: '#5D2394', mb: 1.5, fontSize: '14px' }}
                       >
                         Weight Threshold (kg)
                       </Typography>
@@ -223,14 +223,14 @@ export default function WeightReconciliationSettings() {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             '&.Mui-focused fieldset': {
-                              borderColor: '#333369',
+                              borderColor: '#5D2394',
                             },
                           },
                         }}
                       />
                       <Typography
                         variant="caption"
-                        sx={{ color: '#6B7280', mt: 0.5, display: 'block', fontSize: '12px' }}
+                        sx={{ color: '#6E6483', mt: 0.5, display: 'block', fontSize: '12px' }}
                       >
                         Example: If set to 0.05 kg, discrepancies of 50g or less will be
                         auto-accepted
@@ -239,7 +239,7 @@ export default function WeightReconciliationSettings() {
 
                     <Box>
                       <Typography
-                        sx={{ fontWeight: 600, color: '#333369', mb: 1.5, fontSize: '14px' }}
+                        sx={{ fontWeight: 600, color: '#5D2394', mb: 1.5, fontSize: '14px' }}
                       >
                         Percentage Threshold (%)
                       </Typography>
@@ -258,14 +258,14 @@ export default function WeightReconciliationSettings() {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             '&.Mui-focused fieldset': {
-                              borderColor: '#333369',
+                              borderColor: '#5D2394',
                             },
                           },
                         }}
                       />
                       <Typography
                         variant="caption"
-                        sx={{ color: '#6B7280', mt: 0.5, display: 'block', fontSize: '12px' }}
+                        sx={{ color: '#6E6483', mt: 0.5, display: 'block', fontSize: '12px' }}
                       >
                         Example: If set to 5%, a 1kg order with 50g difference (5%) will be
                         auto-accepted
@@ -295,10 +295,10 @@ export default function WeightReconciliationSettings() {
                 p: 3,
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#333369', mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#5D2394', mb: 1 }}>
                 Notifications
               </Typography>
-              <Typography variant="body2" sx={{ color: '#6B7280', mb: 2, fontSize: '14px' }}>
+              <Typography variant="body2" sx={{ color: '#6E6483', mb: 2, fontSize: '14px' }}>
                 Choose when you want to be notified about weight issues
               </Typography>
               <Alert severity="info" sx={{ mb: 3, backgroundColor: '#F0F9FF', fontSize: '13px' }}>
@@ -321,10 +321,10 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#333369', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#5D2394', mb: 0.5 }}>
                       Notify on All Discrepancies
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ color: '#6E6483', fontSize: '13px' }}>
                       Get notified whenever a weight discrepancy is detected
                     </Typography>
                   </Box>
@@ -335,10 +335,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#333369',
+                        color: '#5D2394',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#333369',
+                        backgroundColor: '#5D2394',
                       },
                     }}
                   />
@@ -355,10 +355,10 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#333369', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#5D2394', mb: 0.5 }}>
                       Notify on Large Discrepancies
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ color: '#6E6483', fontSize: '13px' }}>
                       Get priority alerts for significant weight differences
                     </Typography>
                   </Box>
@@ -369,10 +369,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#333369',
+                        color: '#5D2394',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#333369',
+                        backgroundColor: '#5D2394',
                       },
                     }}
                   />
@@ -383,7 +383,7 @@ export default function WeightReconciliationSettings() {
                     <Divider />
                     <Box>
                       <Typography
-                        sx={{ fontWeight: 600, color: '#333369', mb: 1.5, fontSize: '14px' }}
+                        sx={{ fontWeight: 600, color: '#5D2394', mb: 1.5, fontSize: '14px' }}
                       >
                         Large Discrepancy Threshold (kg)
                       </Typography>
@@ -402,7 +402,7 @@ export default function WeightReconciliationSettings() {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             '&.Mui-focused fieldset': {
-                              borderColor: '#333369',
+                              borderColor: '#5D2394',
                             },
                           },
                         }}
@@ -423,16 +423,16 @@ export default function WeightReconciliationSettings() {
                 p: 3,
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#333369', mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#5D2394', mb: 1 }}>
                 Email Reports
               </Typography>
-              <Typography variant="body2" sx={{ color: '#6B7280', mb: 2, fontSize: '14px' }}>
+              <Typography variant="body2" sx={{ color: '#6E6483', mb: 2, fontSize: '14px' }}>
                 Receive regular email summaries of weight reconciliation activities
               </Typography>
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#6B7280',
+                  color: '#6E6483',
                   mb: 3,
                   display: 'block',
                   fontSize: '12px',
@@ -456,10 +456,10 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#333369', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#5D2394', mb: 0.5 }}>
                       Daily Summary
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ color: '#6E6483', fontSize: '13px' }}>
                       Receive a daily email with all weight discrepancies
                     </Typography>
                   </Box>
@@ -470,10 +470,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#333369',
+                        color: '#5D2394',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#333369',
+                        backgroundColor: '#5D2394',
                       },
                     }}
                   />
@@ -490,10 +490,10 @@ export default function WeightReconciliationSettings() {
                   }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 600, color: '#333369', mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 600, color: '#5D2394', mb: 0.5 }}>
                       Weekly Report
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#6B7280', fontSize: '13px' }}>
+                    <Typography variant="body2" sx={{ color: '#6E6483', fontSize: '13px' }}>
                       Receive a comprehensive weekly report with analytics
                     </Typography>
                   </Box>
@@ -504,10 +504,10 @@ export default function WeightReconciliationSettings() {
                     }
                     sx={{
                       '& .MuiSwitch-switchBase.Mui-checked': {
-                        color: '#333369',
+                        color: '#5D2394',
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                        backgroundColor: '#333369',
+                        backgroundColor: '#5D2394',
                       },
                     }}
                   />
@@ -522,13 +522,13 @@ export default function WeightReconciliationSettings() {
                 onClick={() => navigate('/reconciliation/weight')}
                 sx={{
                   borderColor: '#E2E8F0',
-                  color: '#6B7280',
+                  color: '#6E6483',
                   textTransform: 'none',
                   px: 3,
                   py: 1.2,
                   '&:hover': {
-                    borderColor: '#333369',
-                    backgroundColor: 'rgba(59, 74, 116, 0.04)',
+                    borderColor: '#5D2394',
+                    backgroundColor: 'rgba(93, 35, 148, 0.04)',
                   },
                 }}
               >
@@ -540,14 +540,14 @@ export default function WeightReconciliationSettings() {
                 disabled={updateSettings.isPending}
                 startIcon={<FiSave />}
                 sx={{
-                  bgcolor: '#333369',
+                  bgcolor: '#5D2394',
                   color: '#FFFFFF',
                   textTransform: 'none',
                   px: 3,
                   py: 1.2,
                   fontWeight: 600,
                   '&:hover': {
-                    bgcolor: '#2F3B5F',
+                    bgcolor: '#43166D',
                   },
                   '&:disabled': {
                     bgcolor: '#9CA3AF',

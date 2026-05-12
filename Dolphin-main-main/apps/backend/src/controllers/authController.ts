@@ -226,6 +226,10 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
       console.log('[Auth OTP] Skipping OTP email because auth codes are exposed inline', {
         email: maskEmailForLog(normalizedEmail),
       })
+      console.log('[Auth OTP] TEST CODE', {
+        email: maskEmailForLog(normalizedEmail),
+        otp,
+      })
     }
 
     return res.json({

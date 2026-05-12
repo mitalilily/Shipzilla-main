@@ -118,7 +118,7 @@ export const BusinessStructureStep: React.FC<Props> = ({ defaultValue, onChange,
 
   return (
     <Box>
-      <Typography variant="h6" mb={3} fontWeight={700} color="#333369">
+      <Typography variant="h6" mb={3} fontWeight={700} color="#5D2394">
         Select your business structure
       </Typography>
 
@@ -133,8 +133,8 @@ export const BusinessStructureStep: React.FC<Props> = ({ defaultValue, onChange,
                   sx={{
                     border:
                       selectedStructure === option.value
-                        ? '2px solid #333369'
-                        : '1px solid #E0E6ED',
+                        ? '2px solid #5D2394'
+                        : '1px solid #E5DCF3',
                     borderRadius: 2,
                     transition: 'all 0.3s ease',
                     bgcolor:
@@ -143,7 +143,7 @@ export const BusinessStructureStep: React.FC<Props> = ({ defaultValue, onChange,
                     '&:hover': {
                       transform: 'translateY(-2px)',
                       boxShadow: '0 4px 12px rgba(51, 51, 105, 0.12)',
-                      borderColor: '#333369',
+                      borderColor: '#5D2394',
                     },
                   }}
                   onClick={() => setValue('structure', option.value)}
@@ -153,7 +153,7 @@ export const BusinessStructureStep: React.FC<Props> = ({ defaultValue, onChange,
                       minHeight={34}
                       variant="subtitle1"
                       fontWeight={700}
-                      color={selectedStructure === option.value ? '#333369' : '#1A1A1A'}
+                      color={selectedStructure === option.value ? '#5D2394' : '#1D1730'}
                     >
                       {option.title}
                     </Typography>

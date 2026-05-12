@@ -9,7 +9,7 @@ import {
 } from '@mui/material'
 import { useState } from 'react'
 
-const DE_BLUE = '#0052CC'
+const SHIPZILLA_PRIMARY = '#5D2394'
 
 interface CardCheckboxProps {
   label: string;
@@ -48,24 +48,24 @@ export default function CardCheckbox({
         minHeight: { xs: 160, sm: 180, md: 200 },
         borderRadius: 1,
         border: `2px solid`,
-        borderColor: checked ? DE_BLUE : alpha(DE_BLUE, 0.1),
+        borderColor: checked ? SHIPZILLA_PRIMARY : alpha(SHIPZILLA_PRIMARY, 0.1),
         background: checked
-          ? alpha(DE_BLUE, 0.04)
+          ? alpha(SHIPZILLA_PRIMARY, 0.04)
           : '#ffffff',
         boxShadow: checked
-          ? `0 8px 24px ${alpha(DE_BLUE, 0.15)}`
+          ? `0 8px 24px ${alpha(SHIPZILLA_PRIMARY, 0.15)}`
           : '0 2px 8px rgba(0, 0, 0, 0.04)',
         transition: 'all 0.2s ease',
         transform: isFocused ? 'scale(1.01)' : 'scale(1)',
         '&:hover': {
           transform: 'translateY(-2px)',
-          borderColor: checked ? DE_BLUE : alpha(DE_BLUE, 0.3),
+          borderColor: checked ? SHIPZILLA_PRIMARY : alpha(SHIPZILLA_PRIMARY, 0.3),
           boxShadow: checked
-            ? `0 12px 32px ${alpha(DE_BLUE, 0.2)}`
-            : `0 4px 16px ${alpha(DE_BLUE, 0.08)}`,
+            ? `0 12px 32px ${alpha(SHIPZILLA_PRIMARY, 0.2)}`
+            : `0 4px 16px ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
         },
         '&:focus-visible': {
-          outline: `2px solid ${DE_BLUE}`,
+          outline: `2px solid ${SHIPZILLA_PRIMARY}`,
           outlineOffset: 2,
         },
       }}
@@ -92,9 +92,9 @@ export default function CardCheckbox({
           top: 12,
           right: 12,
           zIndex: 50,
-          color: checked ? DE_BLUE : '#9e9e9e',
+          color: checked ? SHIPZILLA_PRIMARY : '#6E6483',
           '&.Mui-checked': {
-            color: DE_BLUE,
+            color: SHIPZILLA_PRIMARY,
           },
         }}
       />
@@ -127,7 +127,7 @@ export default function CardCheckbox({
           variant="subtitle2"
           fontWeight={600}
           noWrap
-          color={checked ? DE_BLUE : '#1a1a1a'}
+          color={checked ? SHIPZILLA_PRIMARY : '#1D1730'}
           sx={{ transition: 'color 0.2s ease' }}
         >
           {label}

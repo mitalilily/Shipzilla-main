@@ -3,8 +3,8 @@ import { motion } from 'framer-motion'
 import React from 'react'
 import { TbBolt, TbChartBar, TbClick, TbWorld } from 'react-icons/tb'
 
-const NAVY = '#0C3B80'
-const ORANGE = '#F57C00'
+const NAVY = '#5D2394'
+const ORANGE = '#56E813'
 const TEXT_PRIMARY = '#241A1B'
 const TEXT_SECONDARY = '#6A5E59'
 
@@ -35,7 +35,7 @@ const features = [
     description: 'Move onboarding, rate checks, and serviceability into a friendlier launch flow.',
     tag: 'Setup',
     icon: <TbClick size={22} />,
-    tone: alpha('#178A68', 0.1),
+    tone: alpha('#36B309', 0.1),
   },
 ]
 
@@ -108,7 +108,7 @@ const FeatureSection: React.FC = () => {
                 fontSize: { xs: '2rem', md: '2.7rem' },
                 fontWeight: 800,
                 color: TEXT_PRIMARY,
-                letterSpacing: '-0.04em',
+                letterSpacing: 0,
                 lineHeight: 1.02,
                 maxWidth: 420,
               }}

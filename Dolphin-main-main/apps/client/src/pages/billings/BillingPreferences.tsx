@@ -65,14 +65,14 @@ const BillingPreferencesPage: React.FC = () => {
             borderRadius: 5,
             p: 3,
             background: '#FFFFFF',
-            border: '1px solid #E0E6ED',
+            border: '1px solid #E5DCF3',
             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           }}
         >
           <CardContent>
             {/* Header */}
             <Stack direction="row" alignItems="start" spacing={2} mb={3}>
-              <RiMoneyRupeeCircleFill size={36} color="#333369" />
+              <RiMoneyRupeeCircleFill size={36} color="#5D2394" />
               <Box>
                 <PageHeading
                   title="Billing Preferences"
@@ -84,7 +84,7 @@ const BillingPreferencesPage: React.FC = () => {
             <form onSubmit={handleSubmit(onSubmit)}>
               {/* Frequency */}
               <Stack direction="row" alignItems="center" spacing={1}>
-                <FaClock color="#333369" />
+                <FaClock color="#5D2394" />
                 <Typography fontWeight={500}>Billing Frequency</Typography>
               </Stack>
               <FormControl fullWidth margin="normal" variant="outlined" size="small">
@@ -137,7 +137,7 @@ const BillingPreferencesPage: React.FC = () => {
 
               {/* Auto-generate toggle */}
               <Stack direction="row" alignItems="center" spacing={1} mt={3}>
-                <MdOutlineAutorenew color="#3DD598" />
+                <MdOutlineAutorenew color="#56E813" />
                 <Controller
                   name="autoGenerate"
                   control={control}

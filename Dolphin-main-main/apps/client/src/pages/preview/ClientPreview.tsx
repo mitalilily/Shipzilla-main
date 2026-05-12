@@ -203,7 +203,7 @@ export default function ClientPreview() {
                       fontSize: { xs: '1.95rem', md: '3.1rem' },
                       fontWeight: 700,
                       lineHeight: 0.99,
-                      letterSpacing: '-0.025em',
+                      letterSpacing: 0,
                     }}
                   >
                     Ship smarter.

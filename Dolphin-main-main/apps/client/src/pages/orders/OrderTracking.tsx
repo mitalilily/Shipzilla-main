@@ -52,14 +52,14 @@ const statusLabels: Record<string, string> = {
   EX: 'Exception',
 }
 
-const DE_BLUE = '#0052CC'
+const SHIPZILLA_PRIMARY = '#5D2394'
 const BACKGROUND = '#F4F5F7'
 
 const ColorConnector = styled(StepConnector)(() => ({
   '& .MuiStepConnector-alternativeLabel': { top: 22 },
-  '&.Mui-active .MuiStepConnector-line': { backgroundColor: DE_BLUE },
-  '&.Mui-completed .MuiStepConnector-line': { backgroundColor: '#36B37E' },
-  '& .MuiStepConnector-line': { height: 4, border: 0, backgroundColor: '#DFE1E6', borderRadius: 1 },
+  '&.Mui-active .MuiStepConnector-line': { backgroundColor: SHIPZILLA_PRIMARY },
+  '&.Mui-completed .MuiStepConnector-line': { backgroundColor: '#56E813' },
+  '& .MuiStepConnector-line': { height: 4, border: 0, backgroundColor: '#E5DCF3', borderRadius: 1 },
 }))
 
 export default function TrackingPage() {
@@ -92,7 +92,7 @@ export default function TrackingPage() {
           justifyContent: 'center',
           height: '100vh',
           bgcolor: BACKGROUND,
-          color: DE_BLUE,
+          color: SHIPZILLA_PRIMARY,
           px: 2,
         }}
       >
@@ -101,8 +101,8 @@ export default function TrackingPage() {
             width: 80,
             height: 80,
             borderRadius: 1,
-            border: `6px solid ${alpha(DE_BLUE, 0.1)}`,
-            borderTopColor: DE_BLUE,
+            border: `6px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+            borderTopColor: SHIPZILLA_PRIMARY,
             animation: 'spin 1.2s linear infinite',
             mb: 2,
           }}
@@ -130,11 +130,11 @@ export default function TrackingPage() {
           textAlign: 'center',
         }}
       >
-        <FaExclamationTriangle size={60} color="#FFAB00" style={{ marginBottom: 20 }} />
-        <Typography variant="h4" sx={{ fontWeight: 800, color: '#172B4D', mb: 1 }}>
+        <FaExclamationTriangle size={60} color="#56E813" style={{ marginBottom: 20 }} />
+        <Typography variant="h4" sx={{ fontWeight: 800, color: '#1D1730', mb: 1 }}>
           No Shipment Data Found
         </Typography>
-        <Typography variant="body1" sx={{ color: '#42526E', mb: 4, maxWidth: 460 }}>
+        <Typography variant="body1" sx={{ color: '#6E6483', mb: 4, maxWidth: 460 }}>
           We couldn't locate any shipment with AWB: <b>{awb}</b>. Please check the tracking number
           and try again.
         </Typography>
@@ -145,10 +145,10 @@ export default function TrackingPage() {
             px: 2.5,
             py: 2.2,
             borderRadius: 1,
-            bgcolor: DE_BLUE,
+            bgcolor: SHIPZILLA_PRIMARY,
             color: '#fff',
             fontWeight: 800,
-            '&:hover': { bgcolor: '#0043A4' },
+            '&:hover': { bgcolor: '#43166D' },
           }}
         />
       </Box>
@@ -166,8 +166,8 @@ export default function TrackingPage() {
           sx={{
             p: { xs: 3, md: 4.5 },
             borderRadius: 1,
-            border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-            background: `linear-gradient(135deg, #FFFFFF 0%, ${alpha(DE_BLUE, 0.02)} 100%)`,
+            border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+            background: `linear-gradient(135deg, #FFFFFF 0%, ${alpha(SHIPZILLA_PRIMARY, 0.02)} 100%)`,
             mb: 4,
           }}
         >
@@ -178,23 +178,23 @@ export default function TrackingPage() {
             spacing={3}
           >
             <Stack spacing={0.5}>
-              <Typography variant="caption" sx={{ color: DE_BLUE, fontWeight: 900, letterSpacing: 1 }}>
+              <Typography variant="caption" sx={{ color: SHIPZILLA_PRIMARY, fontWeight: 900, letterSpacing: 1 }}>
                 SHIPMENT STATUS
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: '#172B4D', letterSpacing: -0.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: '#1D1730', letterSpacing: 0 }}>
                 {trackingData.status || 'Order Placed'}
               </Typography>
-              <Typography variant="body2" sx={{ color: '#42526E' }}>
+              <Typography variant="body2" sx={{ color: '#6E6483' }}>
                 AWB: <b>{awb}</b> • Order: <b>{order}</b>
               </Typography>
             </Stack>
 
             <Stack direction="row" spacing={2} alignItems="center">
               <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-                <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 800, display: 'block' }}>
+                <Typography variant="caption" sx={{ color: '#6E6483', fontWeight: 800, display: 'block' }}>
                   ESTIMATED DELIVERY
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 900, color: '#172B4D' }}>
+                <Typography variant="h6" sx={{ fontWeight: 900, color: '#1D1730' }}>
                   {trackingData.edd || 'To be updated'}
                 </Typography>
               </Box>
@@ -202,8 +202,8 @@ export default function TrackingPage() {
                 sx={{
                   p: 1.8,
                   borderRadius: 1,
-                  bgcolor: alpha(DE_BLUE, 0.08),
-                  color: DE_BLUE,
+                  bgcolor: alpha(SHIPZILLA_PRIMARY, 0.08),
+                  color: SHIPZILLA_PRIMARY,
                   display: 'flex',
                 }}
               >
@@ -221,11 +221,11 @@ export default function TrackingPage() {
               sx={{
                 p: { xs: 3, md: 5 },
                 borderRadius: 1,
-                border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+                border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
                 bgcolor: '#FFFFFF',
               }}
             >
-              <Typography variant="h6" sx={{ fontWeight: 800, color: '#172B4D', mb: 6 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: '#1D1730', mb: 6 }}>
                 Tracking Timeline
               </Typography>
 
@@ -249,7 +249,7 @@ export default function TrackingPage() {
                               alignItems: 'center',
                               justifyContent: 'center',
                               bgcolor:
-                                index <= currentStage ? (index === 4 ? '#36B37E' : DE_BLUE) : '#DFE1E6',
+                                index <= currentStage ? (index === 4 ? '#56E813' : SHIPZILLA_PRIMARY) : '#E5DCF3',
                               color: '#fff',
                               boxShadow: index <= currentStage ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
                               zIndex: 1,
@@ -264,7 +264,7 @@ export default function TrackingPage() {
                           sx={{
                             fontWeight: 800,
                             mt: 1.5,
-                            color: index <= currentStage ? '#172B4D' : '#6B778C',
+                            color: index <= currentStage ? '#1D1730' : '#6E6483',
                           }}
                         >
                           {stage.label}
@@ -294,10 +294,10 @@ export default function TrackingPage() {
                 {trackingData?.history?.map((event, i) => (
                   <Stack key={i} direction="row" spacing={3}>
                     <Box sx={{ minWidth: 90, pt: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 800, color: '#172B4D' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: '#1D1730' }}>
                         {event.event_time ? new Date(event.event_time).toLocaleDateString('en-GB') : 'N/A'}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#6B778C' }}>
+                      <Typography variant="caption" sx={{ color: '#6E6483' }}>
                         {event.event_time
                           ? new Date(event.event_time).toLocaleTimeString('en-IN', {
                               hour: '2-digit',
@@ -312,7 +312,7 @@ export default function TrackingPage() {
                           width: 12,
                           height: 12,
                           borderRadius: 1,
-                          bgcolor: i === 0 ? DE_BLUE : '#DFE1E6',
+                          bgcolor: i === 0 ? SHIPZILLA_PRIMARY : '#E5DCF3',
                           mt: 1,
                           zIndex: 1,
                         }}
@@ -331,10 +331,10 @@ export default function TrackingPage() {
                       )}
                     </Box>
                     <Box sx={{ pb: 3 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 800, color: '#172B4D' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: '#1D1730' }}>
                         {event.message}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: '#42526E', display: 'block', mt: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: '#6E6483', display: 'block', mt: 0.5 }}>
                         Location: {event.location}
                       </Typography>
                     </Box>
@@ -352,27 +352,27 @@ export default function TrackingPage() {
                 sx={{
                   p: 3.5,
                   borderRadius: 1,
-                  border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+                  border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
                   bgcolor: '#FFFFFF',
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: 800, color: '#172B4D', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: '#1D1730', mb: 3 }}>
                   Consignee Info
                 </Typography>
                 <Stack spacing={2}>
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 800 }}>
+                    <Typography variant="caption" sx={{ color: '#6E6483', fontWeight: 800 }}>
                       RECIPIENT
                     </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#172B4D' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#1D1730' }}>
                       {trackingMeta?.consignee?.name || 'Customer'}
                     </Typography>
                   </Box>
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 800 }}>
+                    <Typography variant="caption" sx={{ color: '#6E6483', fontWeight: 800 }}>
                       DESTINATION
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#172B4D' }}>
+                    <Typography variant="body2" sx={{ color: '#1D1730' }}>
                       {trackingMeta?.consignee?.city || 'N/A'}, {trackingMeta?.consignee?.pincode || 'N/A'}
                     </Typography>
                   </Box>
@@ -384,27 +384,27 @@ export default function TrackingPage() {
                 sx={{
                   p: 3.5,
                   borderRadius: 1,
-                  border: `1px solid ${alpha(DE_BLUE, 0.08)}`,
+                  border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.08)}`,
                   bgcolor: '#FFFFFF',
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: 800, color: '#172B4D', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: '#1D1730', mb: 3 }}>
                   Shipment Content
                 </Typography>
                 <Stack spacing={2}>
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 800 }}>
+                    <Typography variant="caption" sx={{ color: '#6E6483', fontWeight: 800 }}>
                       WEIGHT
                     </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#172B4D' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#1D1730' }}>
                       {trackingMeta?.weight || '0.5'} kg
                     </Typography>
                   </Box>
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#6B778C', fontWeight: 800 }}>
+                    <Typography variant="caption" sx={{ color: '#6E6483', fontWeight: 800 }}>
                       DIMENSIONS
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#172B4D' }}>
+                    <Typography variant="body2" sx={{ color: '#1D1730' }}>
                       {trackingMeta?.dimensions || trackingData.shipment_info || 'N/A'}
                     </Typography>
                   </Box>

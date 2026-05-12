@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { integer, jsonb, pgTableCreator, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
 import { users } from './users'
 
-const createTable = pgTableCreator((name) => `meracourierwala_${name}`)
+const createTable = pgTableCreator((name) => `shipzilla_${name}`)
 
 export const labelPreferences = createTable('label_preferences', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -62,7 +62,7 @@ export const labelPreferences = createTable('label_preferences', {
   max_items: integer('max_items').default(3).notNull(),
 
   brand_logo: text('brand_logo'), // S3 key or URL
-  powered_by: varchar('powered_by', { length: 120 }).default('DelExpress'),
+  powered_by: varchar('powered_by', { length: 120 }).default('Shipzilla'),
 
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true })

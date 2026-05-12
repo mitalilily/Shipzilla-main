@@ -1,19 +1,25 @@
 services:
   - type: web
-    name: delexpress-backend
+    name: shipzilla-backend
     runtime: node
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: API_URL
+        value: https://shipzilla-backend.onrender.com
+      - key: FRONTEND_URL
+        value: https://shipzilla-main.onrender.com
       - key: DATABASE_URL
         sync: false
-        # Set this to the full Railway Postgres connection string
+        # Set this to the full Render Postgres connection string
         # Example: postgresql://user:password@host:5432/database?sslmode=require
       - key: CORS_ORIGINS
-        sync: false
+        value: https://shipzilla-main.onrender.com,https://shipzilla-admin.onrender.com
+      - key: PGSSLMODE
+        value: require
       - key: ACCESS_TOKEN_SECRET
         sync: false
       - key: REFRESH_TOKEN_SECRET
@@ -68,5 +74,5 @@ services:
         sync: false
 
 databases:
-  - name: delexpress-postgres
-    databaseName: delexpress
+  - name: shipzilla-postgres
+    databaseName: shipzilla

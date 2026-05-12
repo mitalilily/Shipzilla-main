@@ -37,7 +37,7 @@ export default function Signup() {
               color: brand.ink,
               fontSize: '2rem',
               fontWeight: 800,
-              letterSpacing: '-0.05em',
+              letterSpacing: 0,
             }}
           >
             Create your account

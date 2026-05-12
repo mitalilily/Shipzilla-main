@@ -13,7 +13,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { locations } from './locations'
 
-const createTable = pgTableCreator((name) => `meracourierwala_${name}`)
+const createTable = pgTableCreator((name) => `shipzilla_${name}`)
 // optional prefix to avoid naming conflicts
 
 export const zones = createTable(

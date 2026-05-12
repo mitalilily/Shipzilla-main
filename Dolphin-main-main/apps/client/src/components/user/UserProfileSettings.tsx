@@ -5,8 +5,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import PasswordSettingsForm from './profile/PasswordSettings'
 import UserProfileForm from './profile/UserProfileForm'
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 const tabs = [
   {
@@ -37,7 +37,7 @@ export default function UserProfileSettings() {
         sx={{
           p: { xs: 1.4, md: 1.8 },
           borderRadius: 1,
-          border: `1px solid ${alpha(DE_BLUE, 0.13)}`,
+          border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.13)}`,
           backgroundColor: '#fff',
         }}
       >
@@ -59,17 +59,17 @@ export default function UserProfileSettings() {
                   flex: 1,
                   borderRadius: 1,
                   p: 1.25,
-                  border: `1px solid ${active ? alpha(DE_BLUE, 0.35) : alpha(DE_BLUE, 0.14)}`,
-                  backgroundColor: active ? alpha(DE_BLUE, 0.08) : '#fff',
+                  border: `1px solid ${active ? alpha(SHIPZILLA_PRIMARY, 0.35) : alpha(SHIPZILLA_PRIMARY, 0.14)}`,
+                  backgroundColor: active ? alpha(SHIPZILLA_PRIMARY, 0.08) : '#fff',
                   cursor: 'pointer',
                   transition: 'all .2s ease',
                 }}
               >
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Box sx={{ color: active ? DE_BLUE : '#5f769d', display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ color: active ? SHIPZILLA_PRIMARY : '#6E6483', display: 'flex', alignItems: 'center' }}>
                     {tab.icon}
                   </Box>
-                  <Typography sx={{ fontWeight: 800, color: active ? DE_BLUE : '#2f4e77', fontSize: '0.92rem' }}>
+                  <Typography sx={{ fontWeight: 800, color: active ? SHIPZILLA_PRIMARY : '#1D1730', fontSize: '0.92rem' }}>
                     {tab.label}
                   </Typography>
                 </Stack>
@@ -81,7 +81,7 @@ export default function UserProfileSettings() {
           })}
         </Stack>
 
-        <Typography variant="caption" sx={{ mt: 1.1, display: 'block', color: DE_AMBER, fontWeight: 700 }}>
+        <Typography variant="caption" sx={{ mt: 1.1, display: 'block', color: SHIPZILLA_ACCENT, fontWeight: 700 }}>
           Keep your profile and credentials updated for uninterrupted account operations.
         </Typography>
       </Paper>

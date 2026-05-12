@@ -94,7 +94,7 @@ const PendingActions = () => {
                       </Box>
                     )}
                   </Stack>
-                  <Typography fontSize="14px" fontWeight={600} sx={{ color: '#333369', mb: 0.5 }}>
+                  <Typography fontSize="14px" fontWeight={600} sx={{ color: '#5D2394', mb: 0.5 }}>
                     {action.label}
                   </Typography>
                   {action.count > 0 ? (

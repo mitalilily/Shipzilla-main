@@ -10,7 +10,10 @@ import { userProfiles } from '../schema/userProfile'
 // Optional image clarity checker
 // import { isImageBlurrySharp } from "@/utils/imageBlurriness";
 
-export const UpdateKYCDetails = async (userId: string, details: KycDetails): Promise<void> => {
+export const UpdateKYCDetails = async (
+  userId: string,
+  details: KycDetails,
+): Promise<typeof kyc.$inferSelect> => {
   const { structure, companyType } = details
 
   if (!structure || !(structure in requiredKycDetails)) {
@@ -39,7 +42,7 @@ export const UpdateKYCDetails = async (userId: string, details: KycDetails): Pro
 
   const now = new Date()
 
-  await db.transaction(async (tx) => {
+  return await db.transaction(async (tx) => {
     const [existingKyc] = await tx
       .select()
       .from(kyc)
@@ -119,22 +122,17 @@ export const UpdateKYCDetails = async (userId: string, details: KycDetails): Pro
     }
 
     // ✅ Remove unchanged audit-only fields before checking
-    const changedKeys = Object.keys(kycPayload).filter(
-      (k) => !['structure', 'companyType', 'updatedAt', 'status'].includes(k),
-    )
-
-    if (existingKyc && changedKeys.length > 0) {
-      await tx.update(kyc).set(kycPayload).where(eq(kyc.userId, userId)).execute()
-    } else if (!existingKyc) {
-      await tx
-        .insert(kyc)
-        .values({
-          ...kycPayload,
-          userId,
-          createdAt: now,
-        } as KycDetails)
-        .execute()
-    }
+    const [savedKyc] = existingKyc
+      ? await tx.update(kyc).set(kycPayload).where(eq(kyc.userId, userId)).returning().execute()
+      : await tx
+          .insert(kyc)
+          .values({
+            ...kycPayload,
+            userId,
+            createdAt: now,
+          } as KycDetails)
+          .returning()
+          .execute()
 
     // ✅ Update domesticKyc in user_profiles
     await tx
@@ -147,6 +145,8 @@ export const UpdateKYCDetails = async (userId: string, details: KycDetails): Pro
       })
       .where(eq(userProfiles.userId, userId))
       .execute()
+
+    return savedKyc
   })
 }
 

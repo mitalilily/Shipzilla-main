@@ -1,6 +1,6 @@
 ## Summary
 
-Describe the issue clearly and include the affected Dolphin Enterprise admin area.
+Describe the issue clearly and include the affected Shipzilla admin area.
 
 ## Steps To Reproduce
 

@@ -224,7 +224,7 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                   sx={{
                     fontSize: { xs: '1.02rem', sm: '1.18rem' },
                     fontWeight: 800,
-                    letterSpacing: '-0.03em',
+                    letterSpacing: 0,
                     color: textPrimary,
                   }}
                 >

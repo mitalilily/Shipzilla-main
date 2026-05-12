@@ -867,10 +867,10 @@ const B2COrdersList = () => {
             gap={2}
           >
             <Box>
-              <Typography sx={{ fontWeight: 700, color: '#333369', fontSize: '15px' }}>
+              <Typography sx={{ fontWeight: 700, color: '#5D2394', fontSize: '15px' }}>
                 {selectedOrders.length} order{selectedOrders.length > 1 ? 's' : ''} selected
               </Typography>
-              <Typography sx={{ color: '#6B7280', fontSize: '13px', mt: 0.5 }}>
+              <Typography sx={{ color: '#6E6483', fontSize: '13px', mt: 0.5 }}>
                 Manifest up to {BULK_MANIFEST_LIMIT} eligible orders at once. Bulk label, invoice,
                 and manifest downloads have no selection limit.
               </Typography>

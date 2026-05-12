@@ -316,7 +316,7 @@ export const SamplePayloadModal = ({
                             sx={{
                               fontFamily: 'monospace',
                               fontSize: '0.75rem',
-                              color: '#333369',
+                              color: '#5D2394',
                               m: 0,
                               whiteSpace: 'pre-wrap',
                               wordBreak: 'break-word',

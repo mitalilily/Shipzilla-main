@@ -33,14 +33,14 @@ export default function SwitchAccountButton() {
     navigate('/')
   }
 
-  const DE_BLUE = '#0052CC'
+  const SHIPZILLA_PRIMARY = '#5D2394'
 
   /* ---------- styles (glass) ----- */
   const glass = {
     backdropFilter: 'blur(17px)',
     background: '#ffffff',
-    border: `1px solid ${alpha(DE_BLUE, 0.15)}`,
-    boxShadow: `0 12px 40px ${alpha(DE_BLUE, 0.1)}`,
+    border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.15)}`,
+    boxShadow: `0 12px 40px ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
     borderRadius: 1,
     p: 3,
     width: { xs: 280, sm: 320 },
@@ -54,14 +54,14 @@ export default function SwitchAccountButton() {
         startIcon={!isMobile && <AiOutlineUserSwitch />}
         sx={{
           textTransform: 'none',
-          borderColor: alpha(DE_BLUE, 0.25),
-          color: DE_BLUE,
+          borderColor: alpha(SHIPZILLA_PRIMARY, 0.25),
+          color: SHIPZILLA_PRIMARY,
           fontWeight: 800,
           borderRadius: 1,
           px: 2,
           '&:hover': {
-            borderColor: DE_BLUE,
-            backgroundColor: alpha(DE_BLUE, 0.06),
+            borderColor: SHIPZILLA_PRIMARY,
+            backgroundColor: alpha(SHIPZILLA_PRIMARY, 0.06),
           },
         }}
         onClick={openPopover}
@@ -85,21 +85,21 @@ export default function SwitchAccountButton() {
         <Stack spacing={2.5}>
           {/* Header */}
           <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="subtitle1" fontWeight={800} color="#172B4D">
+            <Typography variant="subtitle1" fontWeight={800} color="#1D1730">
               Switch Account?
             </Typography>
             <IconButton
               size="small"
               onClick={closePopover}
               aria-label="Close"
-              sx={{ color: '#6B778C', bgcolor: alpha('#6B778C', 0.08) }}
+              sx={{ color: '#6E6483', bgcolor: alpha('#6E6483', 0.08) }}
             >
               <MdClose size={18} />
             </IconButton>
           </Box>
 
           {/* Body */}
-          <Typography variant="body2" color="#42526E" sx={{ fontWeight: 500 }}>
+          <Typography variant="body2" color="#6E6483" sx={{ fontWeight: 500 }}>
             This will log you out of the current seller panel so you can sign in with a different account.
           </Typography>
 
@@ -109,7 +109,7 @@ export default function SwitchAccountButton() {
               size="small"
               onClick={closePopover}
               sx={{
-                color: '#6B778C',
+                color: '#6E6483',
                 textTransform: 'none',
                 fontWeight: 700,
               }}
@@ -121,14 +121,14 @@ export default function SwitchAccountButton() {
               variant="contained"
               onClick={handleConfirm}
               sx={{
-                bgcolor: DE_BLUE,
+                bgcolor: SHIPZILLA_PRIMARY,
                 color: '#fff',
                 fontWeight: 800,
                 px: 2.5,
                 borderRadius: 1,
                 textTransform: 'none',
-                boxShadow: `0 4px 12px ${alpha(DE_BLUE, 0.3)}`,
-                '&:hover': { bgcolor: '#0043A4' },
+                boxShadow: `0 4px 12px ${alpha(SHIPZILLA_PRIMARY, 0.3)}`,
+                '&:hover': { bgcolor: '#43166D' },
               }}
             >
               Logout & Switch

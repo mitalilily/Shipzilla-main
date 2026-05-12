@@ -13,8 +13,8 @@ interface ActionItemsCardProps {
   formatCurrency: (amount: number) => string
 }
 
-const DE_BLUE = '#0052CC'
-const DE_AMBER = '#FFAB00'
+const SHIPZILLA_PRIMARY = '#5D2394'
+const SHIPZILLA_ACCENT = '#56E813'
 
 export default function ActionItemsCard({ actions, formatCurrency }: ActionItemsCardProps) {
   const navigate = useNavigate()
@@ -37,8 +37,8 @@ export default function ActionItemsCard({ actions, formatCurrency }: ActionItems
           title: `${actions.rtoCount} RTO Cases`,
           subtitle: 'Manage return flow',
           icon: <MdKeyboardReturn size={18} />,
-          color: DE_AMBER,
-          bg: alpha(DE_AMBER, 0.08),
+          color: SHIPZILLA_ACCENT,
+          bg: alpha(SHIPZILLA_ACCENT, 0.08),
           path: '/ops/rto',
         }
       : null,
@@ -47,8 +47,8 @@ export default function ActionItemsCard({ actions, formatCurrency }: ActionItems
           title: `${actions.pendingInvoices} Invoices`,
           subtitle: `Due: ${formatCurrency(actions.pendingInvoiceAmount || 0)}`,
           icon: <TbInvoice size={18} />,
-          color: DE_BLUE,
-          bg: alpha(DE_BLUE, 0.06),
+          color: SHIPZILLA_PRIMARY,
+          bg: alpha(SHIPZILLA_PRIMARY, 0.06),
           path: '/billing/invoice_management',
         }
       : null,
@@ -66,8 +66,8 @@ export default function ActionItemsCard({ actions, formatCurrency }: ActionItems
       sx={{
         height: '100%',
         borderRadius: 1,
-        border: `1px solid ${alpha(DE_BLUE, 0.1)}`,
-        boxShadow: `0 8px 20px ${alpha(DE_BLUE, 0.05)}`,
+        border: `1px solid ${alpha(SHIPZILLA_PRIMARY, 0.1)}`,
+        boxShadow: `0 8px 20px ${alpha(SHIPZILLA_PRIMARY, 0.05)}`,
       }}
     >
       <CardContent sx={{ p: 2.2 }}>
@@ -76,14 +76,14 @@ export default function ActionItemsCard({ actions, formatCurrency }: ActionItems
             sx={{
               p: 0.9,
               borderRadius: 1,
-              bgcolor: alpha(DE_BLUE, 0.08),
-              color: DE_BLUE,
+              bgcolor: alpha(SHIPZILLA_PRIMARY, 0.08),
+              color: SHIPZILLA_PRIMARY,
               display: 'flex',
             }}
           >
             <MdNotificationsActive size={20} />
           </Box>
-          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#172B4D', letterSpacing: -0.2 }}>
+          <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: '#1D1730', letterSpacing: 0 }}>
             Action Required
           </Typography>
         </Stack>
@@ -108,10 +108,10 @@ export default function ActionItemsCard({ actions, formatCurrency }: ActionItems
             >
               <Stack direction="row" spacing={1.2} alignItems="center" justifyContent="space-between">
                 <Box>
-                  <Typography sx={{ fontSize: '0.82rem', color: '#172B4D', fontWeight: 800 }}>
+                  <Typography sx={{ fontSize: '0.82rem', color: '#1D1730', fontWeight: 800 }}>
                     {item.title}
                   </Typography>
-                  <Typography sx={{ fontSize: '0.75rem', color: '#42526E', fontWeight: 500, mt: 0.2 }}>
+                  <Typography sx={{ fontSize: '0.75rem', color: '#6E6483', fontWeight: 500, mt: 0.2 }}>
                     {item.subtitle}
                   </Typography>
                 </Box>

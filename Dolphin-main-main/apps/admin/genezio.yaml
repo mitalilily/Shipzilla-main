@@ -1,4 +1,4 @@
-name: delexpress-admin-dashboard
+name: shipzilla-admin-dashboard
 region: us-east-1
 frontend:
   # Specifies the path of your code.
