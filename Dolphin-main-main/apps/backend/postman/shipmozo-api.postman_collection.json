@@ -11,7 +11,8 @@
     { "key": "privateKey", "value": "" },
     { "key": "orderId", "value": "SZTEST-001" },
     { "key": "returnOrderId", "value": "SZTEST-RET-001" },
-    { "key": "awbNumber", "value": "" },
+    { "key": "awbNumber", "value": "GGN9000181640" },
+    { "key": "cancelAwbNumber", "value": "38389839839839" },
     { "key": "warehouseId", "value": "1" },
     { "key": "warehouseNumericId", "value": "1" },
     { "key": "courierId", "value": "1" },
@@ -318,7 +319,7 @@
           { "key": "public_key", "value": "{{publicKey}}" },
           { "key": "private_key", "value": "{{privateKey}}" }
         ],
-        "url": "{{baseUrl}}/get-order-label/{{awbNumber}}"
+        "url": "{{baseUrl}}/get-order-label/{{cancelAwbNumber}}"
       }
     },
     {
@@ -343,7 +344,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"order_id\":\"{{orderId}}\",\"awb_number\":\"{{awbNumber}}\"}"
+          "raw": "{\"order_id\":\"{{orderId}}\",\"awb_number\":{{cancelAwbNumber}}}"
         },
         "url": "{{baseUrl}}/cancel-order"
       }
