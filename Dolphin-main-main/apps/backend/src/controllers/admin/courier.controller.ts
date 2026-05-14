@@ -23,6 +23,21 @@ import { courier_credentials } from '../../models/schema/courierCredentials'
 import { couriers } from '../../models/schema/couriers'
 import { getAllZones } from '../../models/services/zone.service'
 
+const normalizeWebhookBaseUrl = (value: string) =>
+  (value || '')
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\/api$/i, '')
+
+const getPublicWebhookBaseUrl = (req: Request) =>
+  normalizeWebhookBaseUrl(
+    process.env.SHIPMOZO_WEBHOOK_BASE_URL ||
+      process.env.WEBHOOK_PUBLIC_URL ||
+      process.env.API_PUBLIC_URL ||
+      process.env.API_URL ||
+      `${req.protocol}://${req.get('host')}`,
+  )
+
 export interface ShippingRateFilters {
   courier_name?: string[]
   mode?: string
@@ -336,6 +351,7 @@ export const updateServiceProviderStatusController = async (req: Request, res: R
 
 export const getCourierCredentialsController = async (req: Request, res: Response) => {
   try {
+    const shipmozoWebhookUrl = `${getPublicWebhookBaseUrl(req)}/api/webhook/shipmozo`
     const rows = await db
       .select({
         provider: courier_credentials.provider,
@@ -384,6 +400,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         privateKeyMasked: '',
         hasPassword: false,
         hasWebhookSecret: false,
+        webhookUrl: shipmozoWebhookUrl,
       },
     }
 
@@ -442,6 +459,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
             : '',
           hasPassword,
           hasWebhookSecret,
+          webhookUrl: shipmozoWebhookUrl,
         }
       }
       return acc

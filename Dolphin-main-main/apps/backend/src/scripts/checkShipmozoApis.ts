@@ -159,7 +159,43 @@ async function main() {
 
   await step('Push-Return-Order API', () =>
     (service as any).pushReturnOrder({
-      order_number: `${sampleOrderId}-RET`,
+      order_id: `${sampleOrderId}-RET`,
+      order_date: new Date(),
+      order_type: 'ESSENTIALS',
+      pickup_name: 'John',
+      pickup_phone: 8000042323,
+      pickup_email: 'johnhelp@gmail.com',
+      pickup_address_line_one: 'Sector 49',
+      pickup_address_line_two: 'Sohna Road',
+      pickup_pin_code: 122001,
+      pickup_city: 'Gurgaon',
+      pickup_state: 'Haryana',
+      product_detail: [
+        {
+          name: 'Product Name',
+          sku_number: '22',
+          quantity: 1,
+          discount: '',
+          hsn: '#123',
+          unit_price: 1000,
+          product_category: 'Other',
+        },
+      ],
+      payment_type: 'PREPAID',
+      weight: 2,
+      length: 10,
+      width: 500,
+      height: 15,
+      warehouse_id: warehouseId,
+      return_reason_id: 9,
+      customer_request: 'REFUND',
+      reason_comment: '',
+    }),
+  )
+
+  await step('Push-Return-Order API internal payload compatibility', () =>
+    (service as any).pushReturnOrder({
+      order_number: `${sampleOrderId}-RET-INTERNAL`,
       order_date: new Date(),
       consignee: {
         name: 'John',
@@ -179,6 +215,7 @@ async function main() {
       warehouse_id: warehouseId,
       return_reason_id: 9,
       customer_request: 'REFUND',
+      reason_comment: '',
     }),
   )
 

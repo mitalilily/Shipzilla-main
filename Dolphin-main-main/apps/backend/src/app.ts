@@ -12,6 +12,7 @@ import {
   delhiveryWebhookHandler,
 } from './controllers/webhooks/delhivery.webhook'
 import { ekartWebhookHandler } from './controllers/webhooks/ekart.webhook'
+import { shipmozoWebhookHandler } from './controllers/webhooks/shipmozo.webhook'
 import { xpressbeesWebhookHandler } from './controllers/webhooks/xpressbees.webhook'
 import adminCourierRoutes from './routes/adminRoutes/adminCourier.routes'
 import adminSupportRoutes from './routes/adminRoutes/adminSupport.routes'
@@ -154,6 +155,15 @@ app.post(
   express.raw({ type: 'application/json' }),
   shopifyOrderWebhookController,
 )
+
+const shipmozoJsonParser = express.json({
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf.toString('utf8')
+  },
+})
+
+app.post('/api/webhook/shipmozo', shipmozoJsonParser, shipmozoWebhookHandler)
+app.post('/api/webhook/shipmozo/track', shipmozoJsonParser, shipmozoWebhookHandler)
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))

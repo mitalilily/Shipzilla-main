@@ -94,11 +94,20 @@ const toWeightGrams = (value: unknown) => {
   return numeric <= 50 ? Math.round(numeric * 1000) : Math.round(numeric)
 }
 
+const toWeightKg = (value: unknown) => {
+  const numeric = toNumber(value, 0)
+  if (numeric <= 0) return 0
+  return numeric > 50 ? Number((numeric / 1000).toFixed(3)) : numeric
+}
+
 const mask = (value: string) =>
   value.length > 8 ? `${value.slice(0, 4)}...${value.slice(-4)}` : value ? '***' : ''
 
 export class ShipmozoService {
-  private baseApi = process.env.SHIPMOZO_API_BASE || DEFAULT_SHIPMOZO_BASE_URL
+  private baseApi =
+    process.env.SHIPMOZO_API_BASE ||
+    process.env.SHIPMOZO_API_BASE_URL ||
+    DEFAULT_SHIPMOZO_BASE_URL
   private username = process.env.SHIPMOZO_USERNAME || ''
   private password = process.env.SHIPMOZO_PASSWORD || ''
   private publicKey =
@@ -122,7 +131,9 @@ export class ShipmozoService {
   }
 
   private normalizeBaseApi(value: string) {
-    return (value || DEFAULT_SHIPMOZO_BASE_URL).replace(/\/+$/, '')
+    const normalized = (value || DEFAULT_SHIPMOZO_BASE_URL).replace(/\/+$/, '')
+    if (/^https?:\/\/api\.shipmozo\.com$/i.test(normalized)) return DEFAULT_SHIPMOZO_BASE_URL
+    return normalized
   }
 
   private async ensureConfigLoaded() {
@@ -434,6 +445,19 @@ export class ShipmozoService {
   }
 
   private buildProductDetail(payload: any) {
+    const directProducts = Array.isArray(payload?.product_detail) ? payload.product_detail : []
+    if (directProducts.length) {
+      return directProducts.map((item: any) => ({
+        name: trim(item?.name) || 'Product',
+        sku_number: trim(item?.sku_number ?? item?.sku) || 'SKU',
+        quantity: toNumber(item?.quantity ?? item?.qty, 1),
+        discount: item?.discount ?? '',
+        hsn: trim(item?.hsn ?? item?.hsnCode),
+        unit_price: toNumber(item?.unit_price ?? item?.price, 0),
+        product_category: trim(item?.product_category || payload?.category_of_goods) || 'Other',
+      }))
+    }
+
     const items = Array.isArray(payload?.order_items) ? payload.order_items : []
     const normalized = items.map((item: any) => ({
       name: trim(item?.name) || 'Product',
@@ -493,24 +517,32 @@ export class ShipmozoService {
   }
 
   private async pushReturnOrder(payload: any) {
+    const paymentType = trim(payload?.payment_type).toUpperCase()
+    const normalizedPaymentType = ['PREPAID', 'COD'].includes(paymentType) ? paymentType : 'PREPAID'
     const raw = await this.post<any>('/push-return-order', {
-      order_id: trim(payload.order_id || payload.order_number),
+      order_id: trim(payload.return_order_id || payload.order_number || payload.order_id),
       order_date: toDateOnly(payload.order_date),
       order_type: trim(payload.order_type || payload.category_of_goods) || 'ESSENTIALS',
-      pickup_name: trim(payload?.consignee?.name || payload?.pickup?.name),
-      pickup_phone: toPhone(payload?.consignee?.phone || payload?.pickup?.phone),
-      pickup_email: trim(payload?.consignee?.email || payload?.pickup?.email),
-      pickup_address_line_one: trim(payload?.consignee?.address || payload?.pickup?.address),
-      pickup_address_line_two: trim(payload?.consignee?.address_2 || payload?.pickup?.address_2),
-      pickup_pin_code: toPincode(payload?.consignee?.pincode || payload?.pickup?.pincode),
-      pickup_city: trim(payload?.consignee?.city || payload?.pickup?.city),
-      pickup_state: trim(payload?.consignee?.state || payload?.pickup?.state),
+      pickup_name: trim(payload?.pickup_name || payload?.consignee?.name || payload?.pickup?.name),
+      pickup_phone: toPhone(payload?.pickup_phone || payload?.consignee?.phone || payload?.pickup?.phone),
+      pickup_email: trim(payload?.pickup_email || payload?.consignee?.email || payload?.pickup?.email),
+      pickup_address_line_one: trim(
+        payload?.pickup_address_line_one || payload?.consignee?.address || payload?.pickup?.address,
+      ),
+      pickup_address_line_two: trim(
+        payload?.pickup_address_line_two || payload?.consignee?.address_2 || payload?.pickup?.address_2,
+      ),
+      pickup_pin_code: toPincode(
+        payload?.pickup_pin_code || payload?.consignee?.pincode || payload?.pickup?.pincode,
+      ),
+      pickup_city: trim(payload?.pickup_city || payload?.consignee?.city || payload?.pickup?.city),
+      pickup_state: trim(payload?.pickup_state || payload?.consignee?.state || payload?.pickup?.state),
       product_detail: this.buildProductDetail(payload),
-      payment_type: 'PREPAID',
-      weight: toNumber(payload?.package_weight, 0),
-      length: toNumber(payload?.package_length, 10),
-      width: toNumber(payload?.package_breadth, 10),
-      height: toNumber(payload?.package_height, 10),
+      payment_type: normalizedPaymentType,
+      weight: toWeightKg(payload?.weight ?? payload?.package_weight ?? payload?.packageWeight),
+      length: toNumber(payload?.length ?? payload?.package_length, 10),
+      width: toNumber(payload?.width ?? payload?.package_breadth ?? payload?.breadth, 10),
+      height: toNumber(payload?.height ?? payload?.package_height, 10),
       warehouse_id: trim(payload?.warehouse_id),
       return_reason_id: toNumber(payload?.return_reason_id, 14),
       customer_request: trim(payload?.customer_request) || 'REFUND',
@@ -645,7 +677,13 @@ export class ShipmozoService {
 
   async createReverseShipment(payload: any): Promise<ShipmozoShipmentResponse> {
     const pushed = await this.pushReturnOrder(payload)
-    const orderId = trim(pushed.data?.order_id || pushed.data?.reference_id || payload.order_number)
+    const orderId = trim(
+      pushed.data?.order_id ||
+        pushed.data?.reference_id ||
+        payload.return_order_id ||
+        payload.order_number ||
+        payload.order_id,
+    )
     if (!orderId) {
       throw new HttpError(502, 'Shipmozo push-return-order did not return an order_id.')
     }

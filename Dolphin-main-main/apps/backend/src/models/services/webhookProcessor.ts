@@ -1456,6 +1456,39 @@ const mapXpressbeesStatus = (status: string): string => {
   return 'in_transit'
 }
 
+const unwrapShipmozoPayload = (payload: any) => {
+  if (payload?.__provider === 'shipmozo' && payload?.body) return payload.body
+  if (Array.isArray(payload?.data) && payload.data.length > 0) return payload.data[0]
+  if (payload?.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+    return payload.data
+  }
+  return payload
+}
+
+const getShipmozoLatestScan = (event: any) => {
+  if (!Array.isArray(event?.scan_detail) || event.scan_detail.length === 0) return null
+  return event.scan_detail[event.scan_detail.length - 1]
+}
+
+const mapShipmozoStatus = (status: string): string => {
+  const s = (status || '').toLowerCase().trim()
+  if (!s) return 'in_transit'
+  if (s.includes('cancel')) return 'cancelled'
+  if (s.includes('ndr') || s.includes('undelivered') || s.includes('attempt')) return 'ndr'
+  if (s.includes('rto') && s.includes('deliver')) return 'rto_delivered'
+  if (s.includes('rto')) return 'rto_in_transit'
+  if (s.includes('deliver')) return 'delivered'
+  if (s.includes('out for delivery') || s.includes('ofd')) return 'out_for_delivery'
+  if (s.includes('pickup pending') || s.includes('pickup scheduled') || s.includes('pickup requested')) {
+    return 'pickup_initiated'
+  }
+  if (s.includes('pickup') || s.includes('manifest') || s.includes('booked') || s.includes('created')) {
+    return 'booked'
+  }
+  if (s.includes('transit') || s.includes('dispatched') || s.includes('shipped')) return 'in_transit'
+  return 'in_transit'
+}
+
 export async function processEkartWebhook(payload: any, tx = db) {
   const awb =
     payload?.tracking_id ||
@@ -1837,7 +1870,7 @@ export async function processXpressbeesWebhook(payload: any, tx = db) {
         await createNotificationService({
           targetRole: 'admin',
           title: 'COD remittance created',
-          message: `Order ${order.order_number} (${order.awb_number || 'no AWB'}) created pending COD remittance of ₹${Number(
+          message: `Order ${order.order_number} (${order.awb_number || 'no AWB'}) created pending COD remittance of Rs ${Number(
             remittance.remittableAmount || 0,
           ).toFixed(2)}.`,
         })
@@ -1852,6 +1885,232 @@ export async function processXpressbeesWebhook(payload: any, tx = db) {
 
   if (internalStatus === 'cancelled') {
     await applyCancellationRefundOnce(tx, order, 'xpressbees_webhook')
+  }
+
+  return { success: true }
+}
+
+export async function processShipmozoWebhook(payload: any, tx = db) {
+  const event = unwrapShipmozoPayload(payload)
+  const latestScan = getShipmozoLatestScan(event)
+  const awb =
+    event?.awb_number ||
+    event?.awb ||
+    event?.waybill ||
+    event?.tracking_number ||
+    event?.tracking_id ||
+    latestScan?.awb_number ||
+    latestScan?.awb ||
+    null
+  const orderRef =
+    event?.order_id ||
+    event?.reference_id ||
+    event?.reference_number ||
+    event?.order_number ||
+    latestScan?.order_id ||
+    latestScan?.reference_id ||
+    null
+  const statusRaw =
+    event?.current_status ||
+    event?.shipment_status ||
+    event?.status ||
+    event?.event ||
+    event?.scan_status ||
+    latestScan?.current_status ||
+    latestScan?.status ||
+    latestScan?.scan_status ||
+    ''
+  const remarks =
+    event?.remarks ||
+    event?.remark ||
+    event?.message ||
+    event?.description ||
+    latestScan?.remarks ||
+    latestScan?.remark ||
+    latestScan?.message ||
+    ''
+  const location =
+    event?.current_location ||
+    event?.location ||
+    event?.scan_location ||
+    latestScan?.location ||
+    latestScan?.scan_location ||
+    event?.city ||
+    null
+
+  if (!awb && !orderRef) return { success: false, reason: 'missing_awb' }
+
+  let order
+  if (awb) {
+    ;[order] = await tx.select().from(b2c_orders).where(eq(b2c_orders.awb_number, String(awb)))
+  }
+  if (!order && orderRef) {
+    ;[order] = await tx
+      .select()
+      .from(b2c_orders)
+      .where(eq(b2c_orders.order_number, String(orderRef)))
+  }
+  if (!order && orderRef) {
+    ;[order] = await tx.select().from(b2c_orders).where(eq(b2c_orders.order_id, String(orderRef)))
+  }
+
+  if (!order) {
+    console.warn(`No local order found for Shipmozo AWB ${awb || 'N/A'} ref ${orderRef || 'N/A'}`)
+    return { success: false, reason: 'order_not_found' }
+  }
+
+  const internalStatus = mapShipmozoStatus(statusRaw)
+  const statusLower = internalStatus.toLowerCase()
+  const statusText = statusRaw || internalStatus
+
+  const updateData: any = {
+    order_status: internalStatus,
+    delivery_location: location,
+    delivery_message: remarks || null,
+    updated_at: new Date(),
+  }
+
+  if (event?.expected_delivery_date) updateData.edd = String(event.expected_delivery_date)
+  if (event?.courier_cost !== undefined) updateData.courier_cost = Number(event.courier_cost)
+  if (event?.freight_charges !== undefined && updateData.courier_cost === undefined) {
+    updateData.courier_cost = Number(event.freight_charges)
+  }
+  if (event?.charged_weight !== undefined) updateData.charged_weight = Number(event.charged_weight)
+  if (event?.chargeable_weight !== undefined && updateData.charged_weight === undefined) {
+    updateData.charged_weight = Number(event.chargeable_weight)
+  }
+  if (event?.volumetric_weight !== undefined) updateData.volumetric_weight = Number(event.volumetric_weight)
+  if (event?.actual_weight !== undefined) updateData.actual_weight = Number(event.actual_weight)
+  if (event?.manifest) updateData.manifest = String(event.manifest)
+
+  await tx.transaction(async (innerTx) => {
+    await innerTx.update(b2c_orders).set(updateData).where(eq(b2c_orders.id, order.id))
+    await syncShopifyStatusForLocalOrder({ ...order, ...updateData }, innerTx).catch((err) => {
+      console.warn('Failed Shopify status sync for Shipmozo webhook:', err)
+    })
+
+    try {
+      await logTrackingEvent({
+        orderId: order.id,
+        userId: order.user_id,
+        awbNumber: order.awb_number || awb,
+        courier: event?.courier || event?.courier_company || 'Shipmozo',
+        statusCode: internalStatus,
+        statusText,
+        location,
+        raw: payload,
+      })
+    } catch (err: any) {
+      console.error('Failed to log Shipmozo tracking event:', err)
+    }
+
+    if (
+      ['booked', 'pickup_initiated', 'shipment_created', 'in_transit', 'out_for_delivery', 'delivered'].includes(
+        internalStatus,
+      )
+    ) {
+      try {
+        const [freshOrder] = await innerTx
+          .select()
+          .from(b2c_orders)
+          .where(eq(b2c_orders.id, order.id))
+
+        if (!freshOrder) return
+        await ensureOrderDocumentsAfterWebhook(freshOrder, innerTx, 'Shipmozo')
+      } catch (err: any) {
+        console.error(`Shipmozo document recovery flow error for ${order.order_number}:`, err)
+      }
+    }
+  })
+
+  if (isNdrLikeStatus(statusLower) || isNdrLikeStatus(statusText) || isNdrLikeStatus(remarks)) {
+    try {
+      await recordNdrEvent({
+        orderId: order.id,
+        userId: order.user_id,
+        awbNumber: order.awb_number || undefined,
+        status: statusLower,
+        reason: remarks || null,
+        remarks: statusText || null,
+        payload,
+      })
+      await createNotificationService({
+        targetRole: 'user',
+        userId: order.user_id,
+        title: 'Delivery attempt issue (Shipmozo)',
+        message: `Order ${order.order_number} marked as ${statusLower}.`,
+      })
+      await createNotificationService({
+        targetRole: 'admin',
+        title: 'NDR captured (Shipmozo)',
+        message: `User ${order.user_id} order ${order.order_number} status ${statusLower}`,
+      })
+    } catch (err) {
+      console.error('Failed to record NDR event (Shipmozo):', err)
+    }
+  }
+
+  if (statusLower.includes('rto')) {
+    try {
+      const rtoCharge = await applyRtoChargeOnce(tx, order, 'Shipmozo')
+      await recordRtoEvent({
+        orderId: order.id,
+        userId: order.user_id,
+        awbNumber: order.awb_number || undefined,
+        status: statusLower,
+        reason: remarks || null,
+        remarks: statusText || null,
+        rtoCharges: rtoCharge,
+        payload,
+        tx,
+      })
+      await createNotificationService({
+        targetRole: 'user',
+        userId: order.user_id,
+        title: 'RTO update (Shipmozo)',
+        message: `Order ${order.order_number} status ${statusLower}.`,
+      })
+      await createNotificationService({
+        targetRole: 'admin',
+        title: 'RTO event (Shipmozo)',
+        message: `User ${order.user_id} order ${order.order_number} ${statusLower}`,
+      })
+    } catch (err) {
+      console.error('Failed to record RTO event (Shipmozo):', err)
+    }
+  }
+
+  if (internalStatus === 'delivered' && order.order_type === 'cod') {
+    try {
+      const { remittance, created } = await createCodRemittance({
+        orderId: order.id,
+        orderType: 'b2c',
+        userId: order.user_id,
+        orderNumber: order.order_number,
+        awbNumber: order.awb_number || undefined,
+        courierPartner: 'Shipmozo',
+        codAmount: Number(order.order_amount ?? 0),
+        codCharges: Number(order.cod_charges ?? 0),
+        freightCharges: Number(order.freight_charges ?? order.shipping_charges ?? 0),
+        collectedAt: new Date(),
+      })
+
+      if (created) {
+        await createNotificationService({
+          targetRole: 'admin',
+          title: 'COD remittance created',
+          message: `Order ${order.order_number} (${order.awb_number || 'no AWB'}) created pending COD remittance of ₹${Number(
+            remittance.remittableAmount || 0,
+          ).toFixed(2)}.`,
+        })
+      }
+    } catch (err) {
+      console.error(`Failed to create COD remittance for Shipmozo order ${order.order_number}:`, err)
+    }
+  }
+
+  if (internalStatus === 'cancelled') {
+    await applyCancellationRefundOnce(tx, order, 'shipmozo_webhook')
   }
 
   return { success: true }

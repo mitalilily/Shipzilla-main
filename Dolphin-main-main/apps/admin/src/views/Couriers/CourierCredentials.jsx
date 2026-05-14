@@ -525,6 +525,20 @@ const CourierCredentials = () => {
             </FormControl>
 
             <FormControl>
+              <FormLabel>Webhook URL</FormLabel>
+              <Input
+                value={
+                  data?.shipmozo?.webhookUrl ||
+                  'https://shipzilla-backend.onrender.com/api/webhook/shipmozo'
+                }
+                isReadOnly
+              />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Paste this URL in the Shipmozo panel for tracking/status callbacks.
+              </Text>
+            </FormControl>
+
+            <FormControl>
               <FormLabel>Webhook Secret</FormLabel>
               <Input
                 type="password"

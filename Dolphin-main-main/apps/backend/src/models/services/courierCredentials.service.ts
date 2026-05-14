@@ -128,7 +128,8 @@ const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessTy
       process.env.SHIPMOZO_API_KEY ||
       process.env.SHIPMOZO_USERNAME ||
       process.env.SHIPMOZO_PASSWORD ||
-      process.env.SHIPMOZO_API_BASE
+      process.env.SHIPMOZO_API_BASE ||
+      process.env.SHIPMOZO_API_BASE_URL
     )
   }
   return false

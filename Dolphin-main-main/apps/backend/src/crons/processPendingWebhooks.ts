@@ -3,6 +3,7 @@ import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '../models/client'
 import {
   processDelhiveryWebhook,
+  processShipmozoWebhook,
   processXpressbeesWebhook,
 } from '../models/services/webhookProcessor'
 import { pending_webhooks } from '../schema/schema'
@@ -13,6 +14,22 @@ const MAX_PENDING_DUPLICATE_RETRIES = Number(
   process.env.PENDING_WEBHOOK_MAX_DUPLICATE_RETRIES || 5,
 )
 let isProcessingPendingWebhooks = false
+
+const resolvePendingProvider = (payload: any, status: unknown) =>
+  payload?.__provider ||
+  (String(status || '').startsWith('xpressbees:')
+    ? 'xpressbees'
+    : String(status || '').startsWith('shipmozo:')
+      ? 'shipmozo'
+      : 'delhivery')
+
+const unwrapPendingPayload = (payload: any) =>
+  payload?.__provider === 'xpressbees' || payload?.__provider === 'shipmozo'
+    ? payload?.body || {}
+    : payload
+
+const providerLabel = (provider: string) =>
+  provider === 'xpressbees' ? 'Xpressbees' : provider === 'shipmozo' ? 'Shipmozo' : 'Delhivery'
 
 export async function processPendingWebhooks() {
   if (isProcessingPendingWebhooks) {
@@ -40,9 +57,8 @@ export async function processPendingWebhooks() {
     const pendingIdsByKey = new Map<string, string[]>()
     for (const event of events) {
       const payload: any = event.payload || {}
-      const provider =
-        payload?.__provider || (String(event.status || '').startsWith('xpressbees:') ? 'xpressbees' : 'delhivery')
-      const rawPayload = payload?.__provider === 'xpressbees' ? payload?.body || {} : payload
+      const provider = resolvePendingProvider(payload, event.status)
+      const rawPayload = unwrapPendingPayload(payload)
       const awb =
         event.awb_number ||
         rawPayload?.Shipment?.AWB ||
@@ -66,8 +82,8 @@ export async function processPendingWebhooks() {
 
     for (const event of events) {
       const payload: any = event.payload || {}
-      const provider = payload?.__provider || (String(event.status || '').startsWith('xpressbees:') ? 'xpressbees' : 'delhivery')
-      const rawPayload = payload?.__provider === 'xpressbees' ? payload?.body || {} : payload
+      const provider = resolvePendingProvider(payload, event.status)
+      const rawPayload = unwrapPendingPayload(payload)
       const awb =
         event.awb_number ||
         rawPayload?.Shipment?.AWB ||
@@ -117,8 +133,15 @@ export async function processPendingWebhooks() {
             typeof rawPayload?.order_number === 'string' ||
             typeof rawPayload?.order_id === 'string' ||
             typeof awb === 'string')
+        const looksLikeShipmozo =
+          provider === 'shipmozo' &&
+          (typeof rawPayload?.awb_number === 'string' ||
+            typeof rawPayload?.awb === 'string' ||
+            typeof rawPayload?.reference_id === 'string' ||
+            typeof rawPayload?.order_id === 'string' ||
+            typeof awb === 'string')
 
-        if (!looksLikeDelhivery && !looksLikeXpressbees) {
+        if (!looksLikeDelhivery && !looksLikeXpressbees && !looksLikeShipmozo) {
           console.warn(`⚠️ Skipping unsupported pending webhook ${event.id} (AWB: ${awb || 'N/A'})`)
           skippedCount++
           await db
@@ -131,7 +154,9 @@ export async function processPendingWebhooks() {
         const result =
           provider === 'xpressbees'
             ? await processXpressbeesWebhook(rawPayload)
-            : await processDelhiveryWebhook(rawPayload)
+            : provider === 'shipmozo'
+              ? await processShipmozoWebhook(rawPayload)
+              : await processDelhiveryWebhook(rawPayload)
 
         if (result.success) {
           processedCount++
@@ -140,7 +165,7 @@ export async function processPendingWebhooks() {
             .set({ processed_at: new Date(), status: 'processed' })
             .where(eq(pending_webhooks.id, event.id))
           console.log(
-            `✅ Replayed pending ${provider === 'xpressbees' ? 'Xpressbees' : 'Delhivery'} webhook for AWB ${awb}`,
+            `✅ Replayed pending ${providerLabel(provider)} webhook for AWB ${awb}`,
           )
           continue
         }
@@ -154,12 +179,12 @@ export async function processPendingWebhooks() {
               .set({ processed_at: new Date(), status: 'expired_order_not_found' })
               .where(eq(pending_webhooks.id, event.id))
             console.warn(
-              `⌛ Expired pending ${provider === 'xpressbees' ? 'Xpressbees' : 'Delhivery'} webhook for AWB ${awb} after ${ageMinutes}m (order still missing)`,
+              `⌛ Expired pending ${providerLabel(provider)} webhook for AWB ${awb} after ${ageMinutes}m (order still missing)`,
             )
           } else {
             deferredCount++
             console.log(
-              `⏳ Delaying pending ${provider === 'xpressbees' ? 'Xpressbees' : 'Delhivery'} webhook for AWB ${awb}: order still missing`,
+              `⏳ Delaying pending ${providerLabel(provider)} webhook for AWB ${awb}: order still missing`,
             )
           }
           continue
