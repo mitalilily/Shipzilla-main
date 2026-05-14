@@ -50,7 +50,7 @@ export const kyc = pgTable("kyc", {
   cancelledChequeUrl: text("cancelledChequeUrl"),
   boardResolutionUrl: text("boardResolutionUrl"),
   partnershipDeedUrl: text("partnershipDeedUrl"),
-  llpAgreementUrl: text("  llpAgreementUrl"),
+  llpAgreementUrl: text("llpAgreementUrl"),
 
   // ─── Field Status ─────────────────────────────────────────────
   selfieStatus: kycDocStatusEnum("selfieStatus").default("pending").notNull(),

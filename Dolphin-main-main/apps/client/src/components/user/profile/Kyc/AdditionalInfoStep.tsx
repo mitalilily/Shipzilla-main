@@ -60,8 +60,10 @@ const allowedMimeTypes: Partial<Record<keyof AdditionalKYCForm, string>> = {
   cancelledChequeUrl: "image/jpeg,image/png,application/pdf",
   partnershipDeedUrl: "application/pdf",
   boardResolutionUrl: "application/pdf",
+  llpAgreementUrl: "application/pdf",
   companyAddressProofUrl: "application/pdf,image/jpeg,image/png",
   businessPanUrl: "image/jpeg,image/png,application/pdf",
+  gstCertificateUrl: "application/pdf,image/jpeg,image/png",
 };
 
 const isFileField = (f: keyof AdditionalKYCForm) =>
@@ -78,6 +80,9 @@ const isFileField = (f: keyof AdditionalKYCForm) =>
     "msmeCert",
     "gstCertificateUrl",
   ]?.includes(f);
+
+const mimeFieldFor = (field: keyof AdditionalKYCForm) =>
+  `${String(field).replace(/Url$/, "")}Mime`;
 
 export default function AdditionalDetailsStep({
   structure = "individual",
@@ -213,11 +218,14 @@ export default function AdditionalDetailsStep({
                         onUploaded={async (files) => {
                           const file = files?.[0];
                           const fileKey = file?.key;
+                          const mimeField = mimeFieldFor(field);
                           setValue(field, fileKey);
                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           setValue(`${field}_key` as any, file?.originalName);
                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           setValue(`${field}_mime` as any, file?.mime);
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          setValue(mimeField as any, file?.mime);
                           ctrl.onChange(fileKey);
                         }}
                       />

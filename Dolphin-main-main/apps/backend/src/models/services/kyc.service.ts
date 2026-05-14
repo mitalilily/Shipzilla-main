@@ -10,36 +10,77 @@ import { userProfiles } from '../schema/userProfile'
 // Optional image clarity checker
 // import { isImageBlurrySharp } from "@/utils/imageBlurriness";
 
+const kycDocumentFields: (keyof KycDetails)[] = [
+  'aadhaarUrl',
+  'panCardUrl',
+  'partnershipDeedUrl',
+  'companyAddressProofUrl',
+  'boardResolutionUrl',
+  'cancelledChequeUrl',
+  'businessPanUrl',
+  'gstCertificateUrl',
+  'selfieUrl',
+  'cin',
+  'gstin',
+  'llpAgreementUrl',
+]
+
+const fieldToStatusMap: Partial<Record<keyof KycDetails, keyof KycDetails>> = {
+  aadhaarUrl: 'aadhaarStatus',
+  cancelledChequeUrl: 'cancelledChequeStatus',
+  selfieUrl: 'selfieStatus',
+  businessPanUrl: 'businessPanStatus',
+  llpAgreementUrl: 'llpAgreementStatus',
+  companyAddressProofUrl: 'companyAddressProofStatus',
+  gstCertificateUrl: 'gstCertificateStatus',
+  panCardUrl: 'panCardStatus',
+  partnershipDeedUrl: 'partnershipDeedStatus',
+  boardResolutionUrl: 'boardResolutionStatus',
+  cin: 'cinStatus',
+}
+
+const mimeFieldsMap: Partial<Record<keyof KycDetails, keyof KycDetails>> = {
+  aadhaarUrl: 'aadhaarMime',
+  panCardUrl: 'panCardMime',
+  llpAgreementUrl: 'llpAgreementMime',
+  companyAddressProofUrl: 'companyAddressProofMime',
+  selfieUrl: 'selfieMime',
+  cancelledChequeUrl: 'cancelledChequeMime',
+  boardResolutionUrl: 'boardResolutionMime',
+  partnershipDeedUrl: 'partnershipDeedMime',
+  businessPanUrl: 'businessPanMime',
+  gstCertificateUrl: 'gstCertificateMime',
+}
+
+const hasSubmittedValue = (value: unknown) => value !== undefined && value !== null && value !== ''
+
+const getIncomingMime = (
+  details: KycDetails,
+  field: keyof KycDetails,
+  mimeField: keyof KycDetails,
+) => {
+  const fieldName = String(field)
+  const baseName = fieldName.replace(/Url$/, '')
+  return (
+    (details as any)[mimeField] ||
+    (details as any)[`${fieldName}_mime`] ||
+    (details as any)[`${baseName}Mime`]
+  )
+}
+
+const getRejectionReasonField = (field: keyof KycDetails): keyof KycDetails | null => {
+  if (typeof field !== 'string') return null
+  if (field.endsWith('Url')) {
+    return `${field.replace('Url', '')}RejectionReason` as keyof KycDetails
+  }
+  if (field === 'cin') return 'cinRejectionReason'
+  return null
+}
+
 export const UpdateKYCDetails = async (
   userId: string,
   details: KycDetails,
 ): Promise<typeof kyc.$inferSelect> => {
-  const { structure, companyType } = details
-
-  if (!structure || !(structure in requiredKycDetails)) {
-    throw new HttpError(500, 'Invalid or missing business structure')
-  }
-
-  // ✅ Determine required fields based on structure + companyType
-  const requiredFieldsMap =
-    structure === 'company' && companyType
-      ? (
-          requiredKycFieldMap[structure] as Record<
-            CompanyType,
-            Partial<Record<keyof KycDetails, boolean>>
-          >
-        )[companyType] ?? {}
-      : (requiredKycFieldMap[structure] as Partial<Record<keyof KycDetails, boolean>>) ?? {}
-
-  // ✅ Detect missing required fields
-  const missing = Object.entries(requiredFieldsMap)
-    .filter(([field, isRequired]) => isRequired && !details[field as keyof KycDetails])
-    .map(([field]) => field)
-
-  if (missing.length) {
-    throw new HttpError(400, `Missing required fields for ${structure}: ${missing.join(', ')}`)
-  }
-
   const now = new Date()
 
   return await db.transaction(async (tx) => {
@@ -50,65 +91,59 @@ export const UpdateKYCDetails = async (
       .limit(1)
       .execute()
 
-    const kycPayload: Partial<KycDetails> = {
+    const structure = details.structure ?? existingKyc?.structure
+    const companyType = details.companyType ?? existingKyc?.companyType
+
+    if (!structure || !(structure in requiredKycDetails)) {
+      throw new HttpError(400, 'Invalid or missing business structure')
+    }
+
+    if (structure === 'company' && !companyType) {
+      throw new HttpError(400, 'Company type is required for company KYC')
+    }
+
+    const candidateDetails = {
+      ...(existingKyc ?? {}),
+      ...details,
       structure,
       companyType,
+    } as KycDetails
+
+    const requiredFieldsMap =
+      structure === 'company' && companyType
+        ? (
+            requiredKycFieldMap[structure] as Record<
+              CompanyType,
+              Partial<Record<keyof KycDetails, boolean>>
+            >
+          )[companyType as CompanyType] ?? {}
+        : (requiredKycFieldMap[structure] as Partial<Record<keyof KycDetails, boolean>>) ?? {}
+
+    const missing = Object.entries(requiredFieldsMap)
+      .filter(([field, isRequired]) => isRequired && !candidateDetails[field as keyof KycDetails])
+      .map(([field]) => field)
+
+    if (missing.length) {
+      throw new HttpError(400, `Missing required fields for ${structure}: ${missing.join(', ')}`)
+    }
+
+    const kycPayload: Partial<KycDetails> = {
+      structure: structure as KycDetails['structure'],
+      companyType: (companyType || undefined) as KycDetails['companyType'] | undefined,
       updatedAt: now,
       status: 'verification_in_progress',
     }
 
-    const docFields: (keyof KycDetails)[] = [
-      'aadhaarUrl',
-      'panCardUrl',
-      'partnershipDeedUrl',
-      'companyAddressProofUrl',
-      'boardResolutionUrl',
-      'cancelledChequeUrl',
-      'businessPanUrl',
-      'gstCertificateUrl',
-      'selfieUrl',
-      'cin',
-      'gstin',
-      'llpAgreementUrl',
-    ]
-
-    const fieldToStatusMap: Partial<Record<keyof KycDetails, keyof KycDetails>> = {
-      aadhaarUrl: 'aadhaarStatus',
-      cancelledChequeUrl: 'cancelledChequeStatus',
-      selfieUrl: 'selfieStatus',
-      businessPanUrl: 'businessPanStatus',
-      llpAgreementUrl: 'llpAgreementStatus',
-      companyAddressProofUrl: 'companyAddressProofStatus',
-      gstCertificateUrl: 'gstCertificateStatus',
-      panCardUrl: 'panCardStatus',
-      partnershipDeedUrl: 'partnershipDeedStatus',
-      boardResolutionUrl: 'boardResolutionStatus',
-      cin: 'cinStatus',
-    }
-
-    const mimeFieldsMap: Partial<Record<keyof KycDetails, keyof KycDetails>> = {
-      aadhaarUrl: 'aadhaarMime',
-      panCardUrl: 'panCardMime',
-      llpAgreementUrl: 'llpAgreementMime',
-      companyAddressProofUrl: 'companyAddressProofMime',
-      selfieUrl: 'selfieMime',
-      cancelledChequeUrl: 'cancelledChequeMime',
-      boardResolutionUrl: 'boardResolutionMime',
-      partnershipDeedUrl: 'partnershipDeedMime',
-      businessPanUrl: 'businessPanMime',
-      gstCertificateUrl: 'gstCertificateMime',
-    }
-
-    for (const field of docFields) {
+    for (const field of kycDocumentFields) {
       const newVal = details[field] as any
       const oldVal = existingKyc?.[field]
 
-      if (newVal && newVal !== oldVal) {
+      if (hasSubmittedValue(newVal) && newVal !== oldVal) {
         kycPayload[field] = newVal
 
         const mimeField = mimeFieldsMap[field]
         if (mimeField) {
-          const mime = (details as any)[mimeField]
+          const mime = getIncomingMime(details, field, mimeField)
           if (mime) {
             kycPayload[mimeField] = mime
           }
@@ -117,6 +152,10 @@ export const UpdateKYCDetails = async (
         const statusField = fieldToStatusMap[field]
         if (statusField) {
           kycPayload[statusField] = 'pending' as any
+          const rejectionReasonField = getRejectionReasonField(field)
+          if (rejectionReasonField) {
+            kycPayload[rejectionReasonField] = null as any
+          }
         }
       }
     }

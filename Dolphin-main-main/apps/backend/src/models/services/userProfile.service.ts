@@ -18,6 +18,25 @@ import { userProfiles } from '../schema/userProfile'
 import { userPlans } from '../schema/userPlans'
 import { users } from '../schema/users'
 
+const EMPTY_COMPANY_INFO: CompanyInfo = {
+  businessName: '',
+  contactPerson: '',
+  POCEmailVerified: false,
+  POCPhoneVerified: false,
+  companyAddress: '',
+  pincode: '',
+  state: '',
+  city: '',
+  profilePicture: '',
+  contactNumber: '',
+  contactEmail: '',
+  companyContactNumber: '',
+  brandName: '',
+  companyEmail: '',
+  companyLogoUrl: '',
+  website: '',
+}
+
 /**
  * Fetch the profile for a specific userId (returns null if none exists)
  */
@@ -55,6 +74,33 @@ export const upsertUserProfile = async (userId: string, input: IUserProfileDB) =
   const payload: any = Object.fromEntries(
     Object.entries(input).filter(([, v]) => v !== undefined),
   ) as IUserProfileDB
+
+  if (!existing) {
+    const [created] = await db
+      .insert(userProfiles)
+      .values({
+        userId,
+        onboardingStep: payload.onboardingStep ?? 0,
+        monthlyOrderCount: payload.monthlyOrderCount ?? '0-100',
+        salesChannels: payload.salesChannels ?? {},
+        companyInfo: {
+          ...EMPTY_COMPANY_INFO,
+          ...(payload.companyInfo ?? {}),
+        },
+        domesticKyc: payload.domesticKyc ?? { status: 'pending', updatedAt: null },
+        bankDetails: payload.bankDetails ?? null,
+        gstDetails: payload.gstDetails ?? null,
+        businessType: payload.businessType ?? [],
+        approved: payload.approved ?? false,
+        rejectionReason: payload.rejectionReason ?? null,
+        onboardingComplete: payload.onboardingComplete ?? false,
+        profileComplete: payload.profileComplete ?? false,
+        approvedAt: payload.approvedAt ? new Date(payload.approvedAt) : null,
+      })
+      .returning()
+
+    return created
+  }
 
   // Merge JSONB blocks (keeps untouched keys intact)
   const merged = {

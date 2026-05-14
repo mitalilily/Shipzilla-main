@@ -99,11 +99,13 @@ const StatusChip = ({ status }: { status?: string }) => {
 const PreviewBlock = ({
   labelKey,
   url,
+  mimeType,
   loading,
   kyc,
 }: {
   labelKey: string
   url?: string | null
+  mimeType?: string | null
   loading?: boolean
   kyc?: KycDetails
 }) => {
@@ -111,8 +113,8 @@ const PreviewBlock = ({
   const icon = iconMap[labelKey] || <MdImage />
   const status = getStatus(kyc, labelKey)
   const rejectionReason = getRejection(kyc, labelKey)
-  const mimeType = url ? getMimeType(url) : ''
-  const isPdf = mimeType.includes('pdf')
+  const resolvedMimeType = mimeType || (url ? getMimeType(url) : '')
+  const isPdf = resolvedMimeType.includes('pdf')
 
   if (loading) {
     return (
@@ -413,6 +415,7 @@ const KycDetailsCard = ({
           <PreviewBlock
             labelKey="selfieUrl"
             url={urlMap['selfieUrl']}
+            mimeType={mimeMap['selfieUrl']}
             loading={loading}
             kyc={kyc}
           />
@@ -447,6 +450,7 @@ const KycDetailsCard = ({
                   key={field}
                   labelKey={field}
                   url={urlMap[field]}
+                  mimeType={mimeMap[field]}
                   loading={loading}
                   kyc={kyc}
                 />

@@ -38,7 +38,7 @@ exports.kyc = (0, pg_core_1.pgTable)("kyc", {
     cancelledChequeUrl: (0, pg_core_1.text)("cancelledChequeUrl"),
     boardResolutionUrl: (0, pg_core_1.text)("boardResolutionUrl"),
     partnershipDeedUrl: (0, pg_core_1.text)("partnershipDeedUrl"),
-    llpAgreementUrl: (0, pg_core_1.text)("  llpAgreementUrl"),
+    llpAgreementUrl: (0, pg_core_1.text)("llpAgreementUrl"),
     // ─── Field Status ─────────────────────────────────────────────
     selfieStatus: (0, exports.kycDocStatusEnum)("selfieStatus").default("pending").notNull(),
     selfieRejectionReason: (0, pg_core_1.text)("selfieRejectionReason"),
