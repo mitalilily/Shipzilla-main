@@ -16,6 +16,7 @@ import {
   useCourierCredentials,
   useUpdateDelhiveryCredentials,
   useUpdateEkartCredentials,
+  useUpdateShipmozoCredentials,
   useUpdateXpressbeesCredentials,
 } from 'hooks/useCouriers'
 
@@ -25,6 +26,7 @@ const CourierCredentials = () => {
   const updateDelhivery = useUpdateDelhiveryCredentials()
   const updateEkart = useUpdateEkartCredentials()
   const updateXpressbees = useUpdateXpressbeesCredentials()
+  const updateShipmozo = useUpdateShipmozoCredentials()
 
   const [form, setForm] = useState({
     apiBase: '',
@@ -43,6 +45,14 @@ const CourierCredentials = () => {
     username: '',
     password: '',
     apiKey: '',
+    webhookSecret: '',
+  })
+  const [shipmozoForm, setShipmozoForm] = useState({
+    apiBase: '',
+    username: '',
+    password: '',
+    publicKey: '',
+    privateKey: '',
     webhookSecret: '',
   })
 
@@ -69,6 +79,16 @@ const CourierCredentials = () => {
         username: data.xpressbees.username || '',
         password: '',
         apiKey: '',
+        webhookSecret: '',
+      })
+    }
+    if (data?.shipmozo) {
+      setShipmozoForm({
+        apiBase: data.shipmozo.apiBase || '',
+        username: data.shipmozo.username || '',
+        password: '',
+        publicKey: data.shipmozo.publicKey || '',
+        privateKey: '',
         webhookSecret: '',
       })
     }
@@ -149,6 +169,37 @@ const CourierCredentials = () => {
         onError: (err) => {
           toast({
             title: 'Failed to update Xpressbees credentials',
+            description: err?.message,
+            status: 'error',
+          })
+        },
+      },
+    )
+  }
+
+  const handleSaveShipmozo = () => {
+    updateShipmozo.mutate(
+      {
+        apiBase: shipmozoForm.apiBase,
+        username: shipmozoForm.username,
+        publicKey: shipmozoForm.publicKey,
+        ...(shipmozoForm.password ? { password: shipmozoForm.password } : {}),
+        ...(shipmozoForm.privateKey ? { privateKey: shipmozoForm.privateKey } : {}),
+        ...(shipmozoForm.webhookSecret ? { webhookSecret: shipmozoForm.webhookSecret } : {}),
+      },
+      {
+        onSuccess: () => {
+          toast({ title: 'Shipmozo credentials updated', status: 'success' })
+          setShipmozoForm((prev) => ({
+            ...prev,
+            password: '',
+            privateKey: '',
+            webhookSecret: '',
+          }))
+        },
+        onError: (err) => {
+          toast({
+            title: 'Failed to update Shipmozo credentials',
             description: err?.message,
             status: 'error',
           })
@@ -398,6 +449,109 @@ const CourierCredentials = () => {
               alignSelf="flex-start"
             >
               Save Xpressbees Credentials
+            </Button>
+          </VStack>
+        </Box>
+
+        <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
+          <VStack spacing={4} align="stretch">
+            <Flex justify="space-between" align="center">
+              <Text fontWeight="semibold">Shipmozo</Text>
+              <Badge colorScheme={data?.shipmozo?.hasPrivateKey ? 'green' : 'orange'}>
+                {data?.shipmozo?.hasPrivateKey ? 'API keys set' : 'Missing API keys'}
+              </Badge>
+            </Flex>
+
+            <FormControl>
+              <FormLabel>API Base URL</FormLabel>
+              <Input
+                value={shipmozoForm.apiBase}
+                onChange={(e) =>
+                  setShipmozoForm((prev) => ({ ...prev, apiBase: e.target.value }))
+                }
+                placeholder="https://shipping-api.com/app/api/v1"
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Username</FormLabel>
+              <Input
+                value={shipmozoForm.username}
+                onChange={(e) =>
+                  setShipmozoForm((prev) => ({ ...prev, username: e.target.value }))
+                }
+                placeholder="Shipmozo panel username"
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Password</FormLabel>
+              <Input
+                type="password"
+                value={shipmozoForm.password}
+                onChange={(e) =>
+                  setShipmozoForm((prev) => ({ ...prev, password: e.target.value }))
+                }
+                placeholder="Leave blank to keep existing password"
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Public Key</FormLabel>
+              <Input
+                value={shipmozoForm.publicKey}
+                onChange={(e) =>
+                  setShipmozoForm((prev) => ({ ...prev, publicKey: e.target.value }))
+                }
+                placeholder="Shipmozo public_key"
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Private Key</FormLabel>
+              <Input
+                type="password"
+                value={shipmozoForm.privateKey}
+                onChange={(e) =>
+                  setShipmozoForm((prev) => ({ ...prev, privateKey: e.target.value }))
+                }
+                placeholder={data?.shipmozo?.privateKeyMasked || 'Shipmozo private_key'}
+              />
+              {!!data?.shipmozo?.privateKeyMasked && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Current key: {data.shipmozo.privateKeyMasked}
+                </Text>
+              )}
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Webhook Secret</FormLabel>
+              <Input
+                type="password"
+                value={shipmozoForm.webhookSecret}
+                onChange={(e) =>
+                  setShipmozoForm((prev) => ({ ...prev, webhookSecret: e.target.value }))
+                }
+                placeholder="Leave blank to keep existing webhook secret"
+              />
+              {data?.shipmozo?.hasWebhookSecret && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Webhook secret already configured on Shipmozo.
+                </Text>
+              )}
+            </FormControl>
+
+            <Text fontSize="xs" color="gray.500">
+              Save public/private keys from Shipmozo login, or save username/password so the backend can fetch keys before API calls.
+            </Text>
+
+            <Button
+              colorScheme="blue"
+              onClick={handleSaveShipmozo}
+              isLoading={updateShipmozo.isPending}
+              alignSelf="flex-start"
+            >
+              Save Shipmozo Credentials
             </Button>
           </VStack>
         </Box>

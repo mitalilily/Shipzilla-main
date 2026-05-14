@@ -61,6 +61,7 @@ import { b2bPincodes, b2bZoneToZoneRates, zones } from '../schema/zones'
 import { calculateB2BRate } from './b2bAdmin.service'
 import { DelhiveryService } from './couriers/delhivery.service'
 import { EkartService } from './couriers/ekart.service'
+import { ShipmozoService } from './couriers/shipmozo.service'
 import { XpressbeesService } from './couriers/xpressbees.service'
 import { calculateOrderWeights } from './courierWeightCalculation.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
@@ -996,7 +997,7 @@ export const fetchAvailableCouriersWithRates = async (
 
     // Build registry of enabled couriers by service provider
     // Filter by business type: check if business_type JSONB array contains 'b2c'
-    const SUPPORTED_PROVIDERS = ['delhivery', 'ekart', 'xpressbees']
+    const SUPPORTED_PROVIDERS = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
     const systemCourierRows = await db
       .select({
         id: couriers.id,
@@ -1351,6 +1352,58 @@ export const fetchAvailableCouriersWithRates = async (
       })
     }
 
+    let shipmozoAvailable = false
+    let shipmozoResp: any = null
+    if (enabledProviders.has('shipmozo')) {
+      const shipmozo = new ShipmozoService()
+      const originPincode = normalizePincode(params.origin ?? params.source_pincode)?.toString()
+      const destinationPincode = normalizePincode(
+        params.destination ?? params.destination_pincode,
+      )?.toString()
+      const orderAmountValue = Number(params.order_amount ?? params.orderAmount ?? 0)
+
+      if (originPincode && destinationPincode && orderAmountValue > 0) {
+        try {
+          shipmozoResp = await shipmozo.checkServiceability({
+            origin: originPincode,
+            destination: destinationPincode,
+            payment_type: params.payment_type === 'cod' ? 'cod' : 'prepaid',
+            order_amount: String(orderAmountValue),
+            weight: String(Number(params.weight ?? 0)),
+            length: String(Number(params.length ?? 0)),
+            breadth: String(Number(params.breadth ?? 0)),
+            height: String(Number(params.height ?? 0)),
+          })
+          shipmozoAvailable = shipmozoResp.serviceable === true
+          console.log('[Serviceability] Shipmozo response', {
+            serviceable: shipmozoResp.serviceable,
+            records: shipmozoResp.records?.length ?? 0,
+          })
+        } catch (err: any) {
+          console.error('Shipmozo serviceability error:', err?.response?.data || err?.message || err)
+        }
+      }
+    }
+
+    if (shipmozoAvailable) {
+      registerServiceableProvider('shipmozo', {
+        providerId: 'shipmozo',
+        providerName: 'Shipmozo',
+        codAvailable: shipmozoResp?.codAvailable ?? true,
+        prepaidAvailable: shipmozoResp?.prepaidAvailable ?? true,
+        edd: '3-5 Days',
+        raw: shipmozoResp,
+      })
+
+      console.log('[Serviceability] Shipmozo candidate couriers prepared', {
+        mode: isCalculator ? 'calculator' : 'standard',
+        destination: params.destination?.toString(),
+        available: shipmozoAvailable,
+        records: shipmozoResp?.records?.length ?? 0,
+        candidates: providerCourierBuckets.get('shipmozo')?.rows.length ?? 0,
+      })
+    }
+
     for (const [providerKey, bucket] of providerCourierBuckets.entries()) {
       const providerMeta = serviceableProviders.get(providerKey)
       if (!providerMeta) continue
@@ -1362,6 +1415,15 @@ export const fetchAvailableCouriersWithRates = async (
                 (record: any) => String(record?.id || '').trim() === String(courier.id).trim(),
               )
             : null
+        const shipmozoRecord =
+          providerKey === 'shipmozo'
+            ? shipmozoResp?.records?.find((record: any) => {
+                const recordId =
+                  record?.courier_id ?? record?.id ?? record?.courierId ?? record?.carrier_id
+                return String(recordId || '').trim() === String(courier.id).trim()
+              })
+            : null
+        const providerRecord = xpressbeesRecord || shipmozoRecord
         providerMeta.matchedCourierIds.add(Number(courier.id))
         combinedCouriers.push({
           id: courier.id,
@@ -1374,14 +1436,16 @@ export const fetchAvailableCouriersWithRates = async (
           approxZone: null,
           createdAt: courier.createdAt,
           courier_cost_estimate:
-            xpressbeesRecord?.total_charges ??
-            xpressbeesRecord?.freight_charges ??
+            providerRecord?.total_charges ??
+            providerRecord?.freight_charges ??
+            providerRecord?.rate ??
+            providerRecord?.charge ??
             null,
-          freight_charges: xpressbeesRecord?.freight_charges ?? null,
-          cod_charges: xpressbeesRecord?.cod_charges ?? null,
-          total_charges: xpressbeesRecord?.total_charges ?? null,
-          chargeable_weight: xpressbeesRecord?.chargeable_weight ?? null,
-          provider_serviceability: xpressbeesRecord ?? null,
+          freight_charges: providerRecord?.freight_charges ?? null,
+          cod_charges: providerRecord?.cod_charges ?? null,
+          total_charges: providerRecord?.total_charges ?? null,
+          chargeable_weight: providerRecord?.chargeable_weight ?? null,
+          provider_serviceability: providerRecord ?? null,
         })
       }
     }
@@ -2084,7 +2148,7 @@ export interface ShipmentParams {
   package_length?: number
   package_breadth?: number
   package_height?: number
-  integration_type?: 'delhivery' | 'ekart' | string
+  integration_type?: 'delhivery' | 'ekart' | 'xpressbees' | 'shipmozo' | string
   provider_code?: string // Opaque provider code (alternative to integration_type)
   request_auto_pickup?: 'yes' | 'no'
   shipping_charges?: number
@@ -2548,10 +2612,15 @@ export const createB2CShipmentService = async (
           console.log(
             `✅ Derived integration_type: ${params.integration_type} from courier_id: ${params.courier_id} (courier: ${matchedCourier.name})`,
           )
+        } else if (serviceProvider === 'xpressbees' || serviceProvider === 'shipmozo') {
+          params.integration_type = serviceProvider
+          console.log(
+            `Derived integration_type: ${params.integration_type} from courier_id: ${params.courier_id} (courier: ${matchedCourier.name})`,
+          )
         } else {
           throw new HttpError(
             400,
-            `Unsupported serviceProvider: ${serviceProvider}. Supported providers: delhivery, ekart.`,
+            `Unsupported serviceProvider: ${serviceProvider}. Supported providers: delhivery, ekart, xpressbees, shipmozo.`,
           )
         }
       } else {
@@ -3031,20 +3100,26 @@ export const createB2CShipmentService = async (
   try {
     // 1️⃣ CREATE SHIPMENT
     const requestedIntegrationType = String(params.integration_type || '').toLowerCase()
-    const allowedIntegrationTypes = ['delhivery', 'ekart', 'xpressbees']
+    const allowedIntegrationTypes = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
     if (!requestedIntegrationType || !allowedIntegrationTypes.includes(requestedIntegrationType)) {
       throw new Error(
-        `Invalid integration_type: ${params.integration_type}. Supported values: delhivery, ekart, xpressbees.`,
+        `Invalid integration_type: ${params.integration_type}. Supported values: delhivery, ekart, xpressbees, shipmozo.`,
       )
     }
 
-    const integrationType = requestedIntegrationType as 'delhivery' | 'ekart' | 'xpressbees'
+    const integrationType = requestedIntegrationType as
+      | 'delhivery'
+      | 'ekart'
+      | 'xpressbees'
+      | 'shipmozo'
     const providerName =
       integrationType === 'delhivery'
         ? 'Delhivery'
         : integrationType === 'ekart'
           ? 'Ekart Logistics'
-          : 'Xpressbees'
+          : integrationType === 'xpressbees'
+            ? 'Xpressbees'
+            : 'Shipmozo'
 
     let manifestFailure: DelhiveryManifestError | null = null
     let shipmentSuccessPackage: any = null
@@ -3325,6 +3400,70 @@ export const createB2CShipmentService = async (
             : null,
         label: xpressbeesPackage?.label ?? undefined,
         manifest: xpressbeesPackage?.manifest ?? undefined,
+        courier_cost: providerCourierCost,
+        sort_code: providerSortCode,
+      }
+    } else if (integrationType === 'shipmozo') {
+      console.log(
+        isReverseShipment ? 'Using Shipmozo Return Order API...' : 'Using Shipmozo API...',
+      )
+
+      const shipmozo = new ShipmozoService()
+      const shipmozoParams = params as ShipmentParams & {
+        collectable_amount?: number
+        return_reason_id?: number
+        customer_request?: string
+        reason_comment?: string
+      }
+
+      shipmentData = isReverseShipment
+        ? await shipmozo.createReverseShipment(shipmozoParams)
+        : await shipmozo.createShipment({
+            ...shipmozoParams,
+            collectable_amount:
+              params.payment_type === 'cod'
+                ? Number(shipmozoParams.collectable_amount ?? params.order_amount ?? 0)
+                : 0,
+          })
+
+      const shipmozoPackage = shipmentData?.data || shipmentData
+      const shipmozoWaybill = shipmozoPackage?.awb_number ?? null
+
+      if (!shipmentData?.status || !shipmozoWaybill) {
+        console.error('Invalid Shipmozo shipment:', shipmentData)
+        throw new HttpError(500, 'Shipmozo shipment creation failed')
+      }
+
+      const shipmozoCourierName =
+        shipmozoPackage?.courier_company_service ||
+        shipmozoPackage?.courier_company ||
+        shipmozoPackage?.courier ||
+        'Shipmozo'
+
+      shipmentSuccessPackage = {
+        waybill: shipmozoWaybill,
+        label: shipmozoPackage?.label ?? null,
+        manifest: shipmozoPackage?.manifest ?? null,
+        courier_name: shipmozoCourierName,
+        courier_id: params?.courier_id ?? null,
+        status: shipmentData?.message ?? null,
+        sort_code: null,
+      }
+
+      providerCourierCost = params?.courier_cost ?? null
+      providerSortCode = null
+
+      shipmentMeta = {
+        shipment_id:
+          shipmozoPackage?.reference_id ??
+          shipmozoPackage?.order_id ??
+          shipmozoWaybill ??
+          undefined,
+        awb_number: shipmozoWaybill,
+        courier_name: shipmozoCourierName,
+        courier_id: params.courier_id ? Number(params.courier_id) : null,
+        label: shipmozoPackage?.label ?? undefined,
+        manifest: shipmozoPackage?.manifest ?? undefined,
         courier_cost: providerCourierCost,
         sort_code: providerSortCode,
       }
@@ -6470,6 +6609,38 @@ const mapDelhiveryTracking = (raw: any, order: OrderSummary): ProviderNormalized
   }
 }
 
+const mapShipmozoTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
+  const data = raw?.data ?? raw ?? {}
+  const history: TrackingHistoryItem[] = []
+  const scans = Array.isArray(data?.scan_detail) ? data.scan_detail : []
+
+  scans.forEach((scan: any) => {
+    pushHistoryEvent(history, {
+      statusCode: scan?.status_code ?? scan?.status ?? scan?.current_status,
+      message: scan?.status ?? scan?.message ?? scan?.remarks ?? scan?.current_status,
+      location: scan?.location,
+      time: scan?.scan_time ?? scan?.status_time ?? scan?.time,
+    })
+  })
+
+  if (data?.current_status) {
+    pushHistoryEvent(history, {
+      statusCode: data.current_status,
+      message: data.current_status,
+      location: data?.location,
+      time: data?.status_time,
+    })
+  }
+
+  return {
+    history,
+    status: sanitizeString(data?.current_status ?? order.order_status, order.order_status ?? ''),
+    edd: sanitizeString(data?.expected_delivery_date ?? '') || undefined,
+    shipment_info: sanitizeString(data?.message ?? ''),
+    courier_name: sanitizeString(data?.courier ?? data?.courier_company ?? 'Shipmozo', 'Shipmozo'),
+  }
+}
+
 const buildTrackingResponse = (
   order: OrderSummary,
   providerData: ProviderNormalizedTracking,
@@ -6612,9 +6783,10 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
 
   let providerKey = sanitizeString(order.integration_type ?? 'delhivery').toLowerCase()
 
-  if (!['delhivery'].includes(providerKey) && order.courier_partner) {
+  if (!['delhivery', 'shipmozo'].includes(providerKey) && order.courier_partner) {
     const partner = order.courier_partner.toLowerCase()
     if (partner.includes('delhivery')) providerKey = 'delhivery'
+    if (partner.includes('shipmozo')) providerKey = 'shipmozo'
   }
 
   let providerData: ProviderNormalizedTracking
@@ -6624,6 +6796,10 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
       const delhiveryService = new DelhiveryService()
       const raw = await delhiveryService.trackShipment(awb)
       providerData = mapDelhiveryTracking(raw, order)
+    } else if (providerKey === 'shipmozo') {
+      const shipmozoService = new ShipmozoService()
+      const raw = await shipmozoService.trackOrder(awb)
+      providerData = mapShipmozoTracking(raw, order)
     } else {
       throw new HttpError(400, 'Unsupported integration_type for tracking')
     }

@@ -9,6 +9,7 @@ import {
   importShippingRatesController,
   updateDelhiveryCredentialsController,
   updateEkartCredentialsController,
+  updateShipmozoCredentialsController,
   updateXpressbeesCredentialsController,
   updateShippingRateController,
 } from '../../controllers/admin/courier.controller'
@@ -53,6 +54,12 @@ router.put(
   requireAuth,
   isAdminMiddleware,
   updateXpressbeesCredentialsController,
+)
+router.put(
+  '/credentials/shipmozo',
+  requireAuth,
+  isAdminMiddleware,
+  updateShipmozoCredentialsController,
 )
 router.delete(
   '/shipping-rates/:planId/:id',

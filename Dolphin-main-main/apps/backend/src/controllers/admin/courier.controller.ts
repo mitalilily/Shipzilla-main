@@ -12,9 +12,11 @@ import {
 } from '../../models/services/courierIntegration.service'
 import {
   DEFAULT_EKART_BASE_URL,
+  DEFAULT_SHIPMOZO_BASE_URL,
   normalizeEkartBaseUrl,
 } from '../../models/services/courierCredentials.service'
 import { EkartService } from '../../models/services/couriers/ekart.service'
+import { ShipmozoService } from '../../models/services/couriers/shipmozo.service'
 import { XpressbeesService } from '../../models/services/couriers/xpressbees.service'
 import { fetchAvailableCouriersWithRatesAdmin } from '../../models/services/shiprocket.service'
 import { courier_credentials } from '../../models/schema/courierCredentials'
@@ -244,7 +246,7 @@ export const updateCourierStatusController = async (req: Request, res: Response)
 export const getServiceProvidersController = async (req: Request, res: Response) => {
   try {
     // Only expose the main integrated service providers in the enable/disable UI
-    const allowedProviders = ['delhivery', 'ekart', 'xpressbees']
+    const allowedProviders = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
 
     const rows = await db
       .select({
@@ -290,7 +292,7 @@ export const updateServiceProviderStatusController = async (req: Request, res: R
   const { isEnabled } = req.body
 
   try {
-    const allowedProviders = ['delhivery', 'ekart', 'xpressbees']
+    const allowedProviders = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
 
     if (!serviceProvider || typeof isEnabled !== 'boolean') {
       return res.status(400).json({
@@ -346,7 +348,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         webhookSecret: courier_credentials.webhookSecret,
       })
       .from(courier_credentials)
-      .where(inArray(courier_credentials.provider, ['delhivery', 'ekart', 'xpressbees']))
+      .where(inArray(courier_credentials.provider, ['delhivery', 'ekart', 'xpressbees', 'shipmozo']))
 
     const defaults = {
       delhivery: {
@@ -370,6 +372,16 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         username: '',
         hasApiKey: false,
         apiKeyMasked: '',
+        hasPassword: false,
+        hasWebhookSecret: false,
+      },
+      shipmozo: {
+        provider: 'shipmozo',
+        apiBase: DEFAULT_SHIPMOZO_BASE_URL,
+        username: '',
+        publicKey: '',
+        hasPrivateKey: false,
+        privateKeyMasked: '',
         hasPassword: false,
         hasWebhookSecret: false,
       },
@@ -411,6 +423,22 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           hasApiKey: Boolean(apiKey.trim()),
           apiKeyMasked: apiKey
             ? `${apiKey.slice(0, 4)}${'*'.repeat(Math.max(apiKey.length - 8, 0))}${apiKey.slice(-4)}`
+            : '',
+          hasPassword,
+          hasWebhookSecret,
+        }
+      } else if (provider === 'shipmozo') {
+        const privateKey = row.apiKey || ''
+        const hasPassword = Boolean((row.password || '').trim())
+        const hasWebhookSecret = Boolean((row.webhookSecret || '').trim())
+        acc.shipmozo = {
+          provider: 'shipmozo',
+          apiBase: row.apiBase || DEFAULT_SHIPMOZO_BASE_URL,
+          username: row.username || '',
+          publicKey: row.clientId || '',
+          hasPrivateKey: Boolean(privateKey.trim()),
+          privateKeyMasked: privateKey
+            ? `${privateKey.slice(0, 4)}${'*'.repeat(Math.max(privateKey.length - 8, 0))}${privateKey.slice(-4)}`
             : '',
           hasPassword,
           hasWebhookSecret,
@@ -673,6 +701,102 @@ export const updateXpressbeesCredentialsController = async (req: Request, res: R
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update Xpressbees credentials' })
+  }
+}
+
+export const updateShipmozoCredentialsController = async (req: Request, res: Response) => {
+  const { apiBase, username, password, publicKey, privateKey, webhookSecret } = req.body || {}
+
+  try {
+    const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextUsername = typeof username === 'string' ? username.trim() : undefined
+    const nextPassword = typeof password === 'string' ? password.trim() : undefined
+    const nextPublicKey = typeof publicKey === 'string' ? publicKey.trim() : undefined
+    const nextPrivateKey = typeof privateKey === 'string' ? privateKey.trim() : undefined
+    const nextWebhookSecret =
+      typeof webhookSecret === 'string' ? webhookSecret.trim() : undefined
+    const hasPassword = typeof nextPassword === 'string' && nextPassword.length > 0
+    const hasPrivateKey = typeof nextPrivateKey === 'string' && nextPrivateKey.length > 0
+    const hasWebhookSecret =
+      typeof nextWebhookSecret === 'string' && nextWebhookSecret.length > 0
+
+    const [existing] = await db
+      .select({ id: courier_credentials.id })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'shipmozo'))
+      .limit(1)
+
+    if (existing) {
+      const updatePayload: Record<string, any> = {
+        updatedAt: new Date(),
+      }
+      if (nextApiBase !== undefined) {
+        updatePayload.apiBase = nextApiBase || DEFAULT_SHIPMOZO_BASE_URL
+      }
+      if (nextUsername !== undefined) {
+        updatePayload.username = nextUsername
+      }
+      if (nextPublicKey !== undefined) {
+        updatePayload.clientId = nextPublicKey
+      }
+      if (hasPassword) {
+        updatePayload.password = nextPassword
+      }
+      if (hasPrivateKey) {
+        updatePayload.apiKey = nextPrivateKey
+      }
+      if (hasWebhookSecret) {
+        updatePayload.webhookSecret = nextWebhookSecret
+      }
+
+      await db
+        .update(courier_credentials)
+        .set(updatePayload)
+        .where(eq(courier_credentials.provider, 'shipmozo'))
+    } else {
+      await db.insert(courier_credentials).values({
+        provider: 'shipmozo',
+        apiBase: nextApiBase || DEFAULT_SHIPMOZO_BASE_URL,
+        clientName: '',
+        apiKey: hasPrivateKey ? nextPrivateKey : '',
+        clientId: nextPublicKey || '',
+        username: nextUsername || '',
+        password: hasPassword ? nextPassword : '',
+        webhookSecret: hasWebhookSecret ? nextWebhookSecret : '',
+      })
+    }
+
+    ShipmozoService.clearCachedConfig()
+
+    const [saved] = await db
+      .select({
+        apiBase: courier_credentials.apiBase,
+        username: courier_credentials.username,
+        clientId: courier_credentials.clientId,
+        password: courier_credentials.password,
+        apiKey: courier_credentials.apiKey,
+        webhookSecret: courier_credentials.webhookSecret,
+      })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'shipmozo'))
+      .limit(1)
+
+    res.json({
+      success: true,
+      message: 'Shipmozo credentials updated successfully',
+      data: {
+        provider: 'shipmozo',
+        apiBase: saved?.apiBase || DEFAULT_SHIPMOZO_BASE_URL,
+        username: saved?.username || '',
+        publicKey: saved?.clientId || '',
+        hasPassword: Boolean((saved?.password || '').trim()),
+        hasPrivateKey: Boolean((saved?.apiKey || '').trim()),
+        hasWebhookSecret: Boolean((saved?.webhookSecret || '').trim()),
+      },
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ success: false, message: 'Failed to update Shipmozo credentials' })
   }
 }
 

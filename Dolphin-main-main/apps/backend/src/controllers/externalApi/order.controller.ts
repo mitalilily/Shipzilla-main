@@ -3,6 +3,7 @@ import { Response } from 'express'
 import { db } from '../../models/client'
 import { DelhiveryService } from '../../models/services/couriers/delhivery.service'
 import { EkartService } from '../../models/services/couriers/ekart.service'
+import { ShipmozoService } from '../../models/services/couriers/shipmozo.service'
 import { XpressbeesService } from '../../models/services/couriers/xpressbees.service'
 import {
   createB2CShipmentService,
@@ -303,11 +304,11 @@ export const cancelOrderController = async (req: any, res: Response) => {
 
     let cancellationResult: any = null
     const provider = String(order.integration_type || '').toLowerCase()
-    if (!['delhivery', 'ekart', 'xpressbees'].includes(provider)) {
+    if (!['delhivery', 'ekart', 'xpressbees', 'shipmozo'].includes(provider)) {
       return res.status(400).json({
         success: false,
         error: 'Unsupported provider',
-        message: `Only Delhivery, Ekart and Xpressbees are supported for cancellation. Found: ${order.integration_type}`,
+        message: `Only Delhivery, Ekart, Xpressbees and Shipmozo are supported for cancellation. Found: ${order.integration_type}`,
       })
     }
 
@@ -326,6 +327,12 @@ export const cancelOrderController = async (req: any, res: Response) => {
       } else if (provider === 'ekart') {
         const ekart = new EkartService()
         cancellationResult = await ekart.cancelShipment(order.awb_number)
+      } else if (provider === 'shipmozo') {
+        const shipmozo = new ShipmozoService()
+        cancellationResult = await shipmozo.cancelShipment({
+          orderId: order.order_number || order.id,
+          awbNumber: order.awb_number,
+        })
       } else {
         const xpressbees = new XpressbeesService()
         cancellationResult = await xpressbees.cancelShipment(order.awb_number)
@@ -341,6 +348,7 @@ export const cancelOrderController = async (req: any, res: Response) => {
 
     const providerCancelAccepted =
       cancellationResult?.success === true ||
+      cancellationResult?.result === '1' ||
       cancellationResult?.Success === true ||
       cancellationResult?.status === true ||
       cancellationResult?.status === 'Success' ||

@@ -45,7 +45,10 @@ const OrdersTable = ({
     [],
   )
 
-  const supportedCancellationProviders = useMemo(() => new Set(['delhivery']), [])
+  const supportedCancellationProviders = useMemo(
+    () => new Set(['delhivery', 'ekart', 'xpressbees', 'shipmozo']),
+    [],
+  )
 
   const captions = [
     'Order ID',

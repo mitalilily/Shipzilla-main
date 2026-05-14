@@ -3,7 +3,7 @@ import { db } from '../client'
 import { courierCredentials } from '../schema/courierCredentials'
 
 export type BusinessType = 'b2b' | 'b2c'
-export type ServiceProviderId = 'delhivery' | 'shipway' | 'xpressbees' | 'ekart'
+export type ServiceProviderId = 'delhivery' | 'shipway' | 'xpressbees' | 'ekart' | 'shipmozo'
 
 export type DelhiveryConfig = {
   apiKey?: string
@@ -19,6 +19,15 @@ export type XpressbeesConfig = {
   apiToken?: string
   email?: string
   password?: string
+}
+
+export type ShipmozoConfig = {
+  apiBase?: string
+  publicKey?: string
+  privateKey?: string
+  username?: string
+  password?: string
+  webhookSecret?: string
 }
 
 export type EkartConfig = {
@@ -53,6 +62,7 @@ export type CourierConfig =
   | ShipwayConfig
   | XpressbeesConfig
   | EkartConfig
+  | ShipmozoConfig
 
 export interface CourierCredentialsUpsertPayload {
   serviceProvider: ServiceProviderId
@@ -80,8 +90,15 @@ export interface CourierCredentialsMeta {
   }
 }
 
-const KNOWN_PROVIDERS: ServiceProviderId[] = ['delhivery', 'shipway', 'xpressbees', 'ekart']
+const KNOWN_PROVIDERS: ServiceProviderId[] = [
+  'delhivery',
+  'shipway',
+  'xpressbees',
+  'ekart',
+  'shipmozo',
+]
 export const DEFAULT_EKART_BASE_URL = 'https://app.elite.ekartlogistics.in'
+export const DEFAULT_SHIPMOZO_BASE_URL = 'https://shipping-api.com/app/api/v1'
 
 const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessType): boolean => {
   if (provider === 'delhivery') {
@@ -103,6 +120,15 @@ const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessTy
       process.env.EKART_PASSWORD ||
       process.env.EKART_BASE_API ||
       process.env.EKART_BASE_AUTH
+    )
+  }
+  if (provider === 'shipmozo') {
+    return !!(
+      process.env.SHIPMOZO_API_TOKEN ||
+      process.env.SHIPMOZO_API_KEY ||
+      process.env.SHIPMOZO_USERNAME ||
+      process.env.SHIPMOZO_PASSWORD ||
+      process.env.SHIPMOZO_API_BASE
     )
   }
   return false
@@ -146,6 +172,18 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
     const cfg: ShipwayConfig = {
       username: normalize(row.username),
       password: normalize(row.password),
+    }
+    return cfg
+  }
+
+  if (provider === 'shipmozo') {
+    const cfg: ShipmozoConfig = {
+      apiBase: normalize(row.apiBase),
+      publicKey: normalize(row.clientId),
+      privateKey: normalize(row.apiKey),
+      username: normalize(row.username),
+      password: normalize(row.password),
+      webhookSecret: normalize(row.webhookSecret),
     }
     return cfg
   }

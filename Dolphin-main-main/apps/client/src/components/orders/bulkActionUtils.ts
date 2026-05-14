@@ -61,6 +61,9 @@ export const getB2CManifestProvider = (order: BulkOrderDocumentShape) => {
   if (integrationType.includes('xpressbees') || courierPartner.includes('xpressbees')) {
     return 'xpressbees'
   }
+  if (integrationType.includes('shipmozo') || courierPartner.includes('shipmozo')) {
+    return 'shipmozo'
+  }
 
   if (integrationType.includes('ekart') || courierPartner.includes('ekart')) {
     return 'ekart'
