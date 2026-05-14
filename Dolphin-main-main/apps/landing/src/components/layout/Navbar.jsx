@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import LogoMark from "../brand/LogoMark";
 import { navLinks } from "../../data/siteData";
+import { CLIENT_AUTH_URL } from "../../utils/appLinks";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -31,17 +32,17 @@ export default function Navbar() {
           <div className="site-header__actions">
             <Button
               className="button-ghost"
-              component={Link}
-              to="/login"
+              component="a"
+              href={CLIENT_AUTH_URL}
               variant="outlined"
             >
               Demo Login
             </Button>
             <Button
               className="button-primary"
-              component={Link}
+              component="a"
               endIcon={<NorthEastRounded />}
-              to="/rate-calculator"
+              href={CLIENT_AUTH_URL}
               variant="contained"
             >
               Start Shipping
@@ -84,9 +85,9 @@ export default function Navbar() {
           ))}
           <Button
             className="button-primary mobile-drawer__cta"
-            component={Link}
+            component="a"
+            href={CLIENT_AUTH_URL}
             onClick={() => setMobileOpen(false)}
-            to="/rate-calculator"
             variant="contained"
           >
             Start Shipping

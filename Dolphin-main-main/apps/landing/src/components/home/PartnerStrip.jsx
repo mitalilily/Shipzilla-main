@@ -1,11 +1,13 @@
 import { motion } from "framer-motion";
 
+const MotionDiv = motion.div;
+
 export default function PartnerStrip({ partners }) {
   const repeatedPartners = [...partners, ...partners];
 
   return (
     <div className="partner-strip">
-      <motion.div
+      <MotionDiv
         animate={{ x: ["0%", "-50%"] }}
         className="partner-strip__track"
         transition={{ duration: 20, ease: "linear", repeat: Infinity }}
@@ -15,7 +17,7 @@ export default function PartnerStrip({ partners }) {
             <span>{partner}</span>
           </div>
         ))}
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 }

@@ -435,9 +435,9 @@ export const footerGroups = [
   {
     title: "Company",
     links: [
-      { label: "Portal Login", to: "/login" },
+      { label: "Portal Login", to: "/login", clientAuth: true },
       { label: "Contact", to: "/contact" },
-      { label: "Start Shipping", to: "/rate-calculator" },
+      { label: "Start Shipping", to: "/rate-calculator", clientAuth: true },
     ],
   },
 ];

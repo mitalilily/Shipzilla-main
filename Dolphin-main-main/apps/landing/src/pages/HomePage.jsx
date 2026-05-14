@@ -10,6 +10,7 @@ import {
   partnerLogos,
   testimonials,
 } from "../data/siteData";
+import { CLIENT_AUTH_URL } from "../utils/appLinks";
 
 const featurePosters = [
   "https://fship.in/assets-new/images/Frame-197-img.png",
@@ -80,9 +81,9 @@ export default function HomePage() {
               Experience modern logistics solutions tailored to revolutionize your e-commerce business.
             </p>
             <div className="landing-hero__actions landing-hero__actions--compact">
-              <Link className="landing-button landing-button--primary" to="/rate-calculator">
+              <a className="landing-button landing-button--primary" href={CLIENT_AUTH_URL}>
                 Get Started
-              </Link>
+              </a>
               <Link className="landing-button landing-button--secondary" to="/contact">
                 Book a Demo
                 <ArrowForwardRounded fontSize="small" />
@@ -110,9 +111,9 @@ export default function HomePage() {
                 Discover why modern ecommerce teams trust Shipzilla for courier comparison, branded tracking, fast dispatch, and dependable shipping operations.
               </p>
               <div className="trusted-brands-panel__cta">
-                <Link className="landing-button landing-button--primary" to="/rate-calculator">
+                <a className="landing-button landing-button--primary" href={CLIENT_AUTH_URL}>
                   Start Shipping
-                </Link>
+                </a>
               </div>
             </div>
             <div className="trusted-brands-panel__logo-grid">
@@ -165,9 +166,9 @@ export default function HomePage() {
           </div>
 
           <div className="section-cta-row">
-            <Link className="landing-button landing-button--primary" to="/rate-calculator">
+            <a className="landing-button landing-button--primary" href={CLIENT_AUTH_URL}>
               Get Started
-            </Link>
+            </a>
           </div>
         </div>
       </section>
@@ -247,9 +248,9 @@ export default function HomePage() {
               </p>
             </div>
             <div className="landing-hero__actions">
-              <Link className="landing-button landing-button--light" to="/rate-calculator">
+              <a className="landing-button landing-button--light" href={CLIENT_AUTH_URL}>
                 Get Started
-              </Link>
+              </a>
               <Link className="landing-button landing-button--outline-light" to="/contact">
                 Contact Sales
               </Link>

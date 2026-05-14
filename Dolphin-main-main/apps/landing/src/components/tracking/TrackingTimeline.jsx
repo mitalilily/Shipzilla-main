@@ -8,6 +8,8 @@ import {
 import { Paper, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 
+const MotionDiv = motion.div;
+
 const iconMap = {
   placed: <ReceiptLongRounded />,
   dispatched: <Inventory2Rounded />,
@@ -23,7 +25,7 @@ export default function TrackingTimeline({ timeline, activeStep = 0 }) {
         const completed = index <= activeStep;
 
         return (
-          <motion.div
+          <MotionDiv
             key={item.key}
             className="tracking-timeline__row"
             initial={{ opacity: 0, y: 16 }}
@@ -49,7 +51,7 @@ export default function TrackingTimeline({ timeline, activeStep = 0 }) {
                 <span>{item.time}</span>
               </div>
             </Paper>
-          </motion.div>
+          </MotionDiv>
         );
       })}
     </div>

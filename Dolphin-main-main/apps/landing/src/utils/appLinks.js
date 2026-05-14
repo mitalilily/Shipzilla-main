@@ -1,8 +1,12 @@
 const stripTrailingSlash = (url) => url.replace(/\/+$/, "");
+const withPlatformPath = (path) => `${PLATFORM_URL}/${String(path).replace(/^\/+/, "")}`;
 
 export const PLATFORM_URL = stripTrailingSlash(
   import.meta.env.VITE_PLATFORM_URL || "https://app.shipzilla.in/",
 );
+
+export const CLIENT_AUTH_URL =
+  import.meta.env.VITE_CLIENT_AUTH_URL || withPlatformPath("/login");
 
 export const TRACKING_URL =
   import.meta.env.VITE_TRACKING_URL ||

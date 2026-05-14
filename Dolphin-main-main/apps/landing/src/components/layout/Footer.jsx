@@ -10,6 +10,7 @@ import { IconButton, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
 import LogoMark from "../brand/LogoMark";
 import { brand, footerGroups, socialLinks } from "../../data/siteData";
+import { CLIENT_AUTH_URL } from "../../utils/appLinks";
 
 const socialIconMap = {
   LinkedIn: <LinkedIn fontSize="small" />,
@@ -52,11 +53,17 @@ export default function Footer() {
               {group.title}
             </Typography>
             <div className="site-footer__links">
-              {group.links.map((linkItem) => (
-                <Link key={linkItem.label} className="site-footer__link" to={linkItem.to}>
-                  {linkItem.label}
-                </Link>
-              ))}
+              {group.links.map((linkItem) =>
+                linkItem.clientAuth ? (
+                  <a key={linkItem.label} className="site-footer__link" href={CLIENT_AUTH_URL}>
+                    {linkItem.label}
+                  </a>
+                ) : (
+                  <Link key={linkItem.label} className="site-footer__link" to={linkItem.to}>
+                    {linkItem.label}
+                  </Link>
+                ),
+              )}
             </div>
           </div>
         ))}
