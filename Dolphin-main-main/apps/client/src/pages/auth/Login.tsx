@@ -220,6 +220,14 @@ export default function Login() {
               maskImage: 'linear-gradient(to bottom, transparent 0%, transparent 14%, #000 26%, #000 100%)',
               pointerEvents: 'none',
               userSelect: 'none',
+              '@media (max-height: 840px)': {
+                left: { md: '-4%', lg: 0, xl: '1%' },
+                width: { md: '140%', lg: '130%', xl: '128%' },
+              },
+              '@media (max-height: 760px)': {
+                left: { md: '-2%', lg: '1%', xl: '2%' },
+                width: { md: '134%', lg: '124%', xl: '122%' },
+              },
             }}
           />
 
