@@ -11,6 +11,7 @@ import { db } from '../client'
 import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
 import { billingInvoices } from '../schema/billingInvoices'
+import { invoiceGenerationRuns } from '../schema/invoiceGenerationRuns'
 import { invoicePayments } from '../schema/invoicePayments'
 import { userProfiles } from '../schema/userProfile'
 import { users } from '../schema/users'
@@ -39,6 +40,71 @@ const BILLABLE_ORDER_STATUSES = [
   'rto_delivered',
 ] as const
 
+type InvoiceGenerationRunSource = 'cron' | 'manual' | 'regeneration' | 'script'
+type InvoiceGenerationRunStatus = 'started' | 'succeeded' | 'skipped' | 'failed'
+
+const toDateOnly = (value: Date) => dayjs(value).format('YYYY-MM-DD')
+
+const createInvoiceGenerationRun = async (
+  userId: string,
+  startDate: Date,
+  endDate: Date,
+  source: InvoiceGenerationRunSource,
+) => {
+  try {
+    const [run] = await db
+      .insert(invoiceGenerationRuns)
+      .values({
+        sellerId: userId,
+        source,
+        status: 'started',
+        billingStart: toDateOnly(startDate),
+        billingEnd: toDateOnly(endDate),
+        startedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning({ id: invoiceGenerationRuns.id })
+
+    return run?.id ?? null
+  } catch (err: any) {
+    console.error('Failed to create invoice generation run:', err?.message || err)
+    return null
+  }
+}
+
+const updateInvoiceGenerationRun = async (
+  runId: string | null,
+  values: {
+    status?: InvoiceGenerationRunStatus
+    invoiceId?: string
+    invoiceNo?: string
+    ordersCount?: number
+    totalAmount?: string | number
+    message?: string
+    error?: string
+    metadata?: Record<string, unknown>
+    completedAt?: Date
+  },
+) => {
+  if (!runId) return
+
+  try {
+    const terminalStatus =
+      values.status === 'succeeded' || values.status === 'skipped' || values.status === 'failed'
+
+    await db
+      .update(invoiceGenerationRuns)
+      .set({
+        ...values,
+        updatedAt: new Date(),
+        ...(terminalStatus && !values.completedAt ? { completedAt: new Date() } : {}),
+      } as any)
+      .where(eq(invoiceGenerationRuns.id, runId))
+  } catch (err: any) {
+    console.error('Failed to update invoice generation run:', err?.message || err)
+  }
+}
+
 export const generateInvoiceForUser = async (
   userId: string,
   { startDate, endDate }: GenerateInvoiceParams,
@@ -51,6 +117,9 @@ export const generateInvoiceForUser = async (
 
   // 1️⃣ Fetch billable orders
   // Bill any shipment that has moved beyond pending/cancelled into an active or completed courier flow.
+  const generationRunId = await createInvoiceGenerationRun(userId, startDate, endDate, 'cron')
+
+  try {
   const billableStatuses = [...BILLABLE_ORDER_STATUSES]
 
   const b2cOrders = await db
@@ -84,6 +153,12 @@ export const generateInvoiceForUser = async (
         ', ',
       )})`,
     )
+    await updateInvoiceGenerationRun(generationRunId, {
+      status: 'skipped',
+      ordersCount: 0,
+      message: 'No billable orders found for the selected period.',
+      metadata: { billableStatuses },
+    })
     return null
   }
 
@@ -1089,7 +1164,28 @@ export const generateInvoiceForUser = async (
     // Don't fail invoice generation if auto-paid check fails
   }
 
+  await updateInvoiceGenerationRun(generationRunId, {
+    status: 'succeeded',
+    invoiceId: invoice.id,
+    invoiceNo,
+    ordersCount: allOrders.length,
+    totalAmount,
+    message: 'Invoice generated successfully.',
+    metadata: {
+      pdfKey,
+      csvKey,
+      type: 'monthly_summary',
+    },
+  })
+
   return invoice
+  } catch (err: any) {
+    await updateInvoiceGenerationRun(generationRunId, {
+      status: 'failed',
+      error: err?.message || String(err),
+    })
+    throw err
+  }
 }
 
 // Regenerate invoice PDF/CSV with adjustments included

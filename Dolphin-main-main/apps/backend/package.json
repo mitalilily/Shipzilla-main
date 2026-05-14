@@ -12,6 +12,7 @@
     "check:rate-apis": "node -r ts-node/register src/scripts/checkRateCalculatorApis.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "drizzle-kit push",
+    "migrate:invoice-generation-runs": "ts-node src/scripts/ensureInvoiceGenerationRunsTable.ts",
     "seed:holidays": "ts-node src/scripts/seedHolidays.ts",
     "seed:holidays:year": "ts-node src/scripts/seedHolidays.ts",
     "seed:delhivery-b2c": "ts-node src/scripts/seedDelhiveryB2CRatecard.ts",

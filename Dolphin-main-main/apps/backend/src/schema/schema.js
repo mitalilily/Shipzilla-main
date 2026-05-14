@@ -26,6 +26,7 @@ __exportStar(require("../models/schema/courierPriority"), exports);
 __exportStar(require("../models/schema/couriers"), exports);
 __exportStar(require("../models/schema/courierSummary"), exports);
 __exportStar(require("../models/schema/employees"), exports);
+__exportStar(require("../models/schema/invoiceGenerationRuns"), exports);
 __exportStar(require("../models/schema/invoicePreferences"), exports);
 __exportStar(require("../models/schema/invoices"), exports);
 __exportStar(require("../models/schema/kyc"), exports);
