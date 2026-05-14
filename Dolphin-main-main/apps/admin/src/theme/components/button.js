@@ -21,7 +21,7 @@ export const buttonStyles = {
             boxShadow: 'none',
           },
           _hover: {
-            bg: 'rgba(155, 49, 80, 0.08)',
+            bg: 'rgba(93, 35, 148, 0.08)',
           },
         },
       },

@@ -6,7 +6,7 @@ const CardHeader = {
     justifyContent: 'space-between',
     gap: '16px',
     pb: '16px',
-    borderBottom: '1px solid rgba(12,59,128,0.08)',
+    borderBottom: '1px solid rgba(93,35,148,0.08)',
   },
 }
 

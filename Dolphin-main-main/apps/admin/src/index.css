@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
 :root {
   --rdp-background-color: transparent;
 }
@@ -11,7 +13,7 @@
 }
 
 .light .rdp {
-  --rdp-accent-color: #10324A; /* brand primary */
-  --rdp-accent-color-dark: #0B2232; /* brand-700 */
-  --rdp-text-color: #1A1A1A; /* text-primary */
+  --rdp-accent-color: #5D2394;
+  --rdp-accent-color-dark: #43166D;
+  --rdp-text-color: #1D1730;
 }

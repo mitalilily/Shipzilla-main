@@ -4,9 +4,9 @@ import React, { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { adminBrand } from 'theme/brand'
 
-const NAVY = adminBrand.ink
-const ORANGE = adminBrand.accent
-const SKY = adminBrand.sky
+const NAVY = adminBrand.primary
+const ORANGE = adminBrand.secondaryDark
+const SKY = adminBrand.primaryLight
 const TEAL = adminBrand.success
 
 const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
@@ -14,21 +14,21 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
   const [state, setState] = React.useState({})
 
   const sidebarBg = useColorModeValue('rgba(255,255,255,0.96)', 'rgba(8, 25, 38, 0.94)')
-  const sidebarBorder = useColorModeValue('rgba(16,50,74,0.1)', 'rgba(255,255,255,0.16)')
-  const sidebarShadow = useColorModeValue('14px 0 36px rgba(15, 44, 67, 0.08)', '14px 0 36px rgba(0, 0, 0, 0.38)')
-  const activeBg = useColorModeValue('rgba(198,231,255,0.22)', 'rgba(255,255,255,0.12)')
-  const hoverBg = useColorModeValue('rgba(16,50,74,0.04)', 'rgba(255, 255, 255, 0.08)')
-  const activeBorder = useColorModeValue('rgba(198,231,255,0.4)', 'rgba(255,255,255,0.2)')
-  const hoverBorder = useColorModeValue('rgba(16,50,74,0.08)', 'rgba(255,255,255,0.14)')
+  const sidebarBorder = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(255,255,255,0.16)')
+  const sidebarShadow = useColorModeValue('14px 0 36px rgba(67, 22, 109, 0.08)', '14px 0 36px rgba(0, 0, 0, 0.38)')
+  const activeBg = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(255,255,255,0.12)')
+  const hoverBg = useColorModeValue('rgba(86,232,19,0.08)', 'rgba(255, 255, 255, 0.08)')
+  const activeBorder = useColorModeValue('rgba(93,35,148,0.22)', 'rgba(255,255,255,0.2)')
+  const hoverBorder = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(255,255,255,0.14)')
   const textColor = useColorModeValue('gray.700', 'gray.100')
   const iconColor = useColorModeValue('gray.500', 'gray.300')
-  const dividerColor = useColorModeValue('rgba(16,50,74,0.08)', 'rgba(255,255,255,0.12)')
-  const thumbColor = useColorModeValue('rgba(16,50,74,0.22)', 'rgba(255,255,255,0.24)')
+  const dividerColor = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(255,255,255,0.12)')
+  const thumbColor = useColorModeValue('rgba(93,35,148,0.22)', 'rgba(255,255,255,0.24)')
   const brandText = useColorModeValue('gray.800', 'gray.100')
   const mutedText = useColorModeValue('rgba(95,122,143,0.78)', 'rgba(255,255,255,0.66)')
-  const collapsedLogoBg = useColorModeValue('rgba(198,231,255,0.3)', 'rgba(44,143,255,0.18)')
+  const collapsedLogoBg = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(122,61,180,0.18)')
   const panelBg = useColorModeValue('rgba(255,255,255,0.72)', 'rgba(255,255,255,0.06)')
-  const laneColor = useColorModeValue('rgba(16,50,74,0.08)', 'rgba(255,255,255,0.12)')
+  const laneColor = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(255,255,255,0.12)')
 
   const activeRoute = (routeName) => location.pathname.startsWith(routeName)
 
@@ -72,7 +72,7 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
         border="1px solid"
         borderColor={isActive ? activeBorder : 'transparent'}
         position="relative"
-        boxShadow={isActive ? '0 10px 24px rgba(23,19,16,0.08)' : 'none'}
+        boxShadow={isActive ? '0 10px 24px rgba(67,22,109,0.1)' : 'none'}
         _hover={{
           bg: hoverBg,
           transform: 'translateX(2px)',
@@ -216,7 +216,7 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
       overflowY="auto"
       overflowX="hidden"
       pr="2"
-      backgroundImage="radial-gradient(circle at 18% 4%, rgba(249,239,202,0.6) 0%, transparent 26%), radial-gradient(circle at 88% 9%, rgba(198,231,255,0.26) 0%, transparent 24%)"
+      backgroundImage="radial-gradient(circle at 18% 4%, rgba(93,35,148,0.10) 0%, transparent 26%), radial-gradient(circle at 88% 9%, rgba(86,232,19,0.10) 0%, transparent 24%)"
       css={{
         scrollbarWidth: 'thin',
         '&::-webkit-scrollbar': { width: '5px' },
@@ -232,10 +232,10 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
           <Box
             px="14px"
             py="14px"
-            borderRadius="26px"
-            bg="linear-gradient(135deg, rgba(16,50,74,0.98) 0%, rgba(11,34,50,0.98) 100%)"
+            borderRadius="24px"
+            bg="linear-gradient(135deg, rgba(67,22,109,0.98) 0%, rgba(93,35,148,0.98) 68%, rgba(122,61,180,0.98) 100%)"
             color="white"
-            boxShadow="0 18px 36px rgba(15,44,67,0.18)"
+            boxShadow="0 18px 36px rgba(67,22,109,0.2)"
             textAlign="left"
           >
             <Text fontSize="10px" fontWeight="800" letterSpacing="0.18em" textTransform="uppercase" color="rgba(255,255,255,0.62)" mb="8px">
@@ -257,7 +257,7 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
               border="1px solid rgba(255,255,255,0.1)"
             >
               <Text fontSize="11px" fontWeight="700" color="rgba(255,255,255,0.9)">
-                Brand-matched to the client experience.
+              Purple-and-green workspace matched to the client experience.
               </Text>
             </Box>
           </Box>

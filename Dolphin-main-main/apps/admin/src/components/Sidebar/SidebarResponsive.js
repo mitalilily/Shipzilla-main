@@ -24,15 +24,15 @@ function SidebarResponsive(props) {
 
   const activeRoute = (routeName) => (location.pathname === routeName ? 'active' : '')
 
-  const drawerBg = useColorModeValue('rgba(255,255,255,0.98)', 'rgba(16, 24, 40, 0.98)')
-  const activeBg = useColorModeValue('rgba(198,231,255,0.24)', 'rgba(143, 212, 255, 0.16)')
-  const hoverBg = useColorModeValue('rgba(255,221,174,0.22)', 'rgba(255, 255, 255, 0.08)')
+  const drawerBg = useColorModeValue('rgba(255,255,255,0.98)', 'rgba(23, 16, 54, 0.98)')
+  const activeBg = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(122, 61, 180, 0.18)')
+  const hoverBg = useColorModeValue('rgba(86,232,19,0.08)', 'rgba(255, 255, 255, 0.08)')
   const textColor = useColorModeValue('gray.700', 'gray.100')
   const iconColor = useColorModeValue('gray.500', 'gray.300')
   const activeTextColor = adminBrand.ink
-  const dividerColor = useColorModeValue('rgba(16, 50, 74, 0.1)', 'rgba(143, 212, 255, 0.18)')
-  const hamburgerSurface = useColorModeValue('rgba(255,255,255,0.72)', 'rgba(16, 24, 40, 0.82)')
-  const hamburgerBorder = useColorModeValue('rgba(12,59,128,0.12)', 'rgba(255,255,255,0.12)')
+  const dividerColor = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(122,61,180,0.18)')
+  const hamburgerSurface = useColorModeValue('rgba(255,255,255,0.72)', 'rgba(23,16,54,0.82)')
+  const hamburgerBorder = useColorModeValue('rgba(93,35,148,0.12)', 'rgba(255,255,255,0.12)')
   const defaultHamburgerColor = useColorModeValue('gray.700', 'gray.200')
   const hamburgerColor = props.secondary ? 'white' : defaultHamburgerColor
 
@@ -68,7 +68,7 @@ function SidebarResponsive(props) {
               borderRadius="18px"
               w="100%"
               border="1px solid"
-              borderColor={isActive ? 'rgba(198,231,255,0.4)' : 'transparent'}
+              borderColor={isActive ? 'rgba(93,35,148,0.22)' : 'transparent'}
               _hover={{ bg: hoverBg, transform: 'translateX(2px)' }}
               _active={{ bg: 'inherit', transform: 'none' }}
               _focus={{ boxShadow: 'none' }}
@@ -76,7 +76,7 @@ function SidebarResponsive(props) {
             >
               <Flex align="center">
                 <IconBox
-                  bg={isActive ? 'rgba(198,231,255,0.48)' : 'rgba(198,231,255,0.18)'}
+                  bg={isActive ? 'rgba(93,35,148,0.14)' : 'rgba(93,35,148,0.08)'}
                   color={isActive ? activeTextColor : iconColor}
                   h="34px"
                   w="34px"
@@ -123,7 +123,7 @@ function SidebarResponsive(props) {
         bg={hamburgerSurface}
         border="1px solid"
         borderColor={hamburgerBorder}
-        boxShadow="0 12px 24px rgba(36,26,27,0.08)"
+        boxShadow="0 12px 24px rgba(67,22,109,0.08)"
       >
         <HamburgerIcon color={hamburgerColor} w="20px" h="20px" />
       </Box>
@@ -139,8 +139,8 @@ function SidebarResponsive(props) {
           maxW="296px"
           borderRadius="0 26px 26px 0"
           bg={drawerBg}
-          borderRight="1px solid rgba(16,50,74,0.08)"
-          boxShadow="0 28px 56px rgba(15,44,67,0.16)"
+          borderRight="1px solid rgba(93,35,148,0.08)"
+          boxShadow="0 28px 56px rgba(67,22,109,0.16)"
         >
           <DrawerCloseButton _focus={{ boxShadow: 'none' }} color={textColor} />
           <DrawerBody px="14px" pt="2">

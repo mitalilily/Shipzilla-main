@@ -11,8 +11,8 @@ import { SearchIcon } from '@chakra-ui/icons'
 export function SearchBar(props) {
   const { variant, children, ...rest } = props
   const searchIconColor = useColorModeValue('brand.500', 'brand.200')
-  const inputBg = useColorModeValue('rgba(255,255,255,0.76)', 'rgba(22,30,46,0.82)')
-  const inputBorder = useColorModeValue('rgba(12,59,128,0.12)', 'rgba(255,255,255,0.12)')
+  const inputBg = useColorModeValue('rgba(255,255,255,0.76)', 'rgba(43,35,64,0.82)')
+  const inputBorder = useColorModeValue('rgba(93,35,148,0.12)', 'rgba(255,255,255,0.12)')
   const placeholderColor = useColorModeValue('gray.500', 'gray.300')
 
   return (
@@ -22,7 +22,7 @@ export function SearchBar(props) {
       border="1px solid"
       borderColor={inputBorder}
       w={{ base: '100%', md: '240px' }}
-      boxShadow="0 14px 28px rgba(36,26,27,0.06)"
+      boxShadow="0 14px 28px rgba(67,22,109,0.06)"
       overflow="hidden"
       {...rest}
     >

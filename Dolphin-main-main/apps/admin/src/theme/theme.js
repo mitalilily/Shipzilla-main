@@ -14,19 +14,19 @@ import { breakpoints } from './foundations/breakpoints'
 import { globalStyles } from './styles'
 
 const fieldBase = {
-  borderRadius: '20px',
-  borderColor: 'rgba(16,50,74,0.12)',
+  borderRadius: '18px',
+  borderColor: 'rgba(93,35,148,0.14)',
   bg: 'rgba(255,255,255,0.88)',
   fontWeight: '600',
   _placeholder: {
     color: 'gray.500',
   },
   _hover: {
-    borderColor: 'rgba(16,50,74,0.22)',
+    borderColor: 'rgba(93,35,148,0.26)',
   },
   _focusVisible: {
     borderColor: 'brand.500',
-    boxShadow: '0 0 0 4px rgba(198, 231, 255, 0.34)',
+    boxShadow: '0 0 0 4px rgba(93, 35, 148, 0.14)',
     bg: 'rgba(255,255,255,0.94)',
   },
 }
@@ -35,7 +35,7 @@ const dividerStyles = {
   components: {
     Divider: {
       baseStyle: {
-        borderColor: 'rgba(16,50,74,0.08)',
+        borderColor: 'rgba(93,35,148,0.08)',
         borderWidth: '1px',
       },
       defaultProps: {
@@ -112,7 +112,7 @@ const componentOverrides = {
                 fontWeight: '800',
                 fontSize: '11px',
                 color: 'gray.600',
-                borderColor: 'rgba(16,50,74,0.1)',
+                borderColor: 'rgba(93,35,148,0.1)',
                 bg: 'transparent',
                 pb: '10px',
               },
@@ -122,7 +122,7 @@ const componentOverrides = {
             tr: {
               td: {
                 bg: 'rgba(255,255,255,0.9)',
-                borderColor: 'rgba(16,50,74,0.08)',
+                borderColor: 'rgba(93,35,148,0.08)',
                 fontSize: '14px',
                 color: 'gray.800',
                 py: '16px',
@@ -158,8 +158,8 @@ const componentOverrides = {
           p: '6px',
           borderRadius: '999px',
           bg: 'rgba(255,255,255,0.72)',
-          border: '1px solid rgba(16,50,74,0.08)',
-          boxShadow: '0 14px 28px rgba(15,44,67,0.06)',
+          border: '1px solid rgba(93,35,148,0.08)',
+          boxShadow: '0 14px 28px rgba(67,22,109,0.08)',
         },
       },
     },
@@ -168,27 +168,27 @@ const componentOverrides = {
         dialog: {
           borderRadius: '30px',
           borderWidth: '1px',
-          borderColor: 'rgba(16,50,74,0.12)',
-          boxShadow: '0 34px 72px rgba(15,44,67,0.18)',
+          borderColor: 'rgba(93,35,148,0.12)',
+          boxShadow: '0 34px 72px rgba(67,22,109,0.18)',
           bg: 'rgba(255, 255, 255, 0.98)',
           overflow: 'hidden',
           backdropFilter: 'blur(16px)',
         },
         header: {
           fontWeight: '800',
-          fontFamily: "'Poppins', ui-sans-serif, system-ui, sans-serif",
-          borderBottom: '1px solid rgba(16,50,74,0.08)',
+          fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+          borderBottom: '1px solid rgba(93,35,148,0.08)',
           pb: '18px',
         },
         body: {
           py: '20px',
         },
         footer: {
-          borderTop: '1px solid rgba(16,50,74,0.08)',
+          borderTop: '1px solid rgba(93,35,148,0.08)',
           pt: '18px',
         },
         overlay: {
-          bg: 'rgba(16, 50, 74, 0.32)',
+          bg: 'rgba(29, 23, 48, 0.38)',
           backdropFilter: 'blur(10px)',
         },
       },
@@ -209,8 +209,8 @@ const componentOverrides = {
     },
   },
   fonts: {
-    heading: "'Poppins', ui-sans-serif, system-ui, sans-serif",
-    body: "'Poppins', ui-sans-serif, system-ui, sans-serif",
+    heading: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+    body: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
   },
 }
 

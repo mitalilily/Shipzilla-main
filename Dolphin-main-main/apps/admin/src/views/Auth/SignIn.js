@@ -35,21 +35,21 @@ function isTokenValid(token) {
 }
 
 function SignIn() {
-  const pageBg = useColorModeValue(adminBrand.page, '#071521')
-  const shellBg = useColorModeValue('rgba(255,255,255,0.94)', 'rgba(8, 25, 38, 0.92)')
-  const shellBorder = useColorModeValue('rgba(16,50,74,0.08)', 'rgba(255,255,255,0.12)')
+  const pageBg = useColorModeValue(adminBrand.page, '#171036')
+  const shellBg = useColorModeValue('rgba(255,255,255,0.94)', 'rgba(23, 16, 54, 0.92)')
+  const shellBorder = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(255,255,255,0.12)')
   const sideBg = useColorModeValue(
-    'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,241,223,0.94) 100%)',
-    'linear-gradient(180deg, rgba(8,25,38,0.96) 0%, rgba(16,50,74,0.94) 100%)',
+    'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,243,251,0.94) 100%)',
+    'linear-gradient(180deg, rgba(23,16,54,0.96) 0%, rgba(67,22,109,0.94) 100%)',
   )
   const textPrimary = useColorModeValue(adminBrand.ink, 'whiteAlpha.900')
   const textSecondary = useColorModeValue(adminBrand.inkSoft, 'whiteAlpha.700')
-  const inputBg = useColorModeValue('rgba(255,255,255,0.94)', 'rgba(38, 30, 25, 0.72)')
-  const inputBorder = useColorModeValue('rgba(16,50,74,0.12)', 'rgba(255,255,255,0.18)')
-  const iconHoverBg = useColorModeValue('rgba(16,50,74,0.06)', 'rgba(255,255,255,0.12)')
-  const chipBg = useColorModeValue('rgba(198,231,255,0.22)', 'rgba(255,255,255,0.08)')
-  const chipBorder = useColorModeValue('rgba(16,50,74,0.1)', 'rgba(255,255,255,0.14)')
-  const brand = useColorModeValue(adminBrand.ink, '#F3E9DE')
+  const inputBg = useColorModeValue('rgba(255,255,255,0.94)', 'rgba(43, 35, 64, 0.72)')
+  const inputBorder = useColorModeValue('rgba(93,35,148,0.14)', 'rgba(255,255,255,0.18)')
+  const iconHoverBg = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(255,255,255,0.12)')
+  const chipBg = useColorModeValue('rgba(93,35,148,0.10)', 'rgba(255,255,255,0.08)')
+  const chipBorder = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(255,255,255,0.14)')
+  const brand = useColorModeValue(adminBrand.primary, '#F7F3FB')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -128,8 +128,8 @@ function SignIn() {
         position="absolute"
         inset="0"
         bgImage={useColorModeValue(
-          'radial-gradient(circle at 10% 8%, rgba(249,239,202,0.5) 0%, transparent 38%), radial-gradient(circle at 94% 2%, rgba(198,231,255,0.32) 0%, transparent 28%)',
-          'radial-gradient(circle at 10% 8%, rgba(255,255,255,0.1) 0%, transparent 38%), radial-gradient(circle at 94% 2%, rgba(198,231,255,0.12) 0%, transparent 28%)',
+          'radial-gradient(circle at 10% 8%, rgba(93,35,148,0.12) 0%, transparent 38%), radial-gradient(circle at 94% 2%, rgba(86,232,19,0.10) 0%, transparent 28%)',
+          'radial-gradient(circle at 10% 8%, rgba(255,255,255,0.1) 0%, transparent 38%), radial-gradient(circle at 94% 2%, rgba(122,61,180,0.18) 0%, transparent 28%)',
         )}
       />
 
@@ -143,9 +143,9 @@ function SignIn() {
         bg={shellBg}
         border="1px solid"
         borderColor={shellBorder}
-        borderRadius={{ base: '24px', lg: '32px' }}
+        borderRadius={{ base: '24px', lg: '28px' }}
         boxShadow={useColorModeValue(
-          '0 28px 72px rgba(15,44,67,0.12)',
+          '0 28px 72px rgba(67,22,109,0.14)',
           '0 28px 72px rgba(0,0,0,0.38)',
         )}
         overflow="hidden"
@@ -164,7 +164,7 @@ function SignIn() {
           minH={{ base: '240px', '2xl': 'unset' }}
           position="relative"
           overflow="hidden"
-          borderRight={{ base: 'none', '2xl': '1px solid rgba(16,50,74,0.08)' }}
+          borderRight={{ base: 'none', '2xl': '1px solid rgba(93,35,148,0.08)' }}
         >
           <VStack align="flex-start" spacing={4} position="relative" zIndex="1">
             <HStack spacing={2.5} flexWrap="wrap">
@@ -199,7 +199,7 @@ function SignIn() {
             </HStack>
 
             <Heading
-              fontFamily="'Plus Jakarta Sans', 'Barlow', sans-serif"
+              fontFamily="'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif"
               fontSize={{ base: '3xl', md: '4xl' }}
               fontWeight="800"
               lineHeight="0.98"
@@ -272,7 +272,7 @@ function SignIn() {
                     py={1.5}
                     borderRadius="999px"
                     bg="rgba(255,255,255,0.78)"
-                    border="1px solid rgba(23,19,16,0.08)"
+                    border="1px solid rgba(93,35,148,0.08)"
                   >
                     <Text fontSize="xs" fontWeight="700" color={textPrimary}>
                       {pill}
@@ -297,7 +297,7 @@ function SignIn() {
                   _hover={{ borderColor: 'brand.400' }}
                   _focus={{
                     borderColor: 'brand.500',
-                    boxShadow: '0 0 0 4px rgba(198,231,255,0.34)',
+                    boxShadow: '0 0 0 4px rgba(93,35,148,0.14)',
                   }}
                 />
               </FormControl>
@@ -320,7 +320,7 @@ function SignIn() {
                     _hover={{ borderColor: 'brand.400' }}
                     _focus={{
                       borderColor: 'brand.500',
-                      boxShadow: '0 0 0 4px rgba(198,231,255,0.34)',
+                      boxShadow: '0 0 0 4px rgba(93,35,148,0.14)',
                     }}
                   />
                   <InputRightElement h="54px" pr="10px">
@@ -341,13 +341,13 @@ function SignIn() {
                 type="submit"
                 h="54px"
                 borderRadius="999px"
-                bg="brand.500"
+                bgGradient="linear(to-r, brand.500, brand.400)"
                 color="white"
                 fontWeight="700"
                 isLoading={loading}
                 loadingText="Signing in"
-                _hover={{ bg: 'brand.600' }}
-                _active={{ bg: 'brand.700' }}
+                _hover={{ bgGradient: 'linear(to-r, brand.600, brand.500)' }}
+                _active={{ bgGradient: 'linear(to-r, brand.700, brand.600)' }}
               >
                 Sign In
               </Button>

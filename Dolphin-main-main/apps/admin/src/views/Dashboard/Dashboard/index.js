@@ -47,12 +47,12 @@ const toNum = (value) => {
 }
 
 function MetricCard({ title, value, subtitle, icon, color = 'brand.500' }) {
-  const textPrimary = useColorModeValue('#241A1B', 'gray.100')
-  const textSecondary = useColorModeValue('#6A5E59', 'gray.400')
-  const iconBg = useColorModeValue('rgba(12,59,128,0.06)', 'rgba(148,163,184,0.14)')
+  const textPrimary = useColorModeValue('#1D1730', 'gray.100')
+  const textSecondary = useColorModeValue('#6E6483', 'gray.400')
+  const iconBg = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(148,163,184,0.14)')
 
   return (
-    <Card borderRadius="24px" h="full" bg={useColorModeValue('rgba(255,253,248,0.96)', 'rgba(18,27,45,0.9)')} borderWidth="1px" borderColor={useColorModeValue('rgba(12,59,128,0.1)', 'rgba(255,255,255,0.08)')}>
+    <Card borderRadius="24px" h="full" bg={useColorModeValue('rgba(255,255,255,0.96)', 'rgba(23,16,54,0.9)')} borderWidth="1px" borderColor={useColorModeValue('rgba(93,35,148,0.1)', 'rgba(255,255,255,0.08)')}>
       <CardBody p={4.5}>
         <HStack justify="space-between" align="flex-start" mb={2}>
           <Text fontSize="xs" color={textSecondary} fontWeight="700" textTransform="uppercase" letterSpacing="0.45px">
@@ -77,12 +77,12 @@ export default function Dashboard() {
   const history = useHistory()
   const { data: statsData, isLoading, error, refetch, isRefetching } = useDashboardStats()
 
-  const pageBg = useColorModeValue('#F7EBDD', '#142238')
-  const panelBg = useColorModeValue('rgba(255,253,248,0.96)', '#101D36')
-  const borderColor = useColorModeValue('rgba(12,59,128,0.12)', 'rgba(148,163,184,0.2)')
-  const textPrimary = useColorModeValue('#241A1B', 'gray.100')
-  const textSecondary = useColorModeValue('#6A5E59', 'gray.400')
-  const tileBg = useColorModeValue('rgba(255,244,232,0.8)', 'rgba(148,163,184,0.1)')
+  const pageBg = useColorModeValue('#FAF9FC', '#171036')
+  const panelBg = useColorModeValue('rgba(255,255,255,0.96)', '#171036')
+  const borderColor = useColorModeValue('rgba(93,35,148,0.12)', 'rgba(148,163,184,0.2)')
+  const textPrimary = useColorModeValue('#1D1730', 'gray.100')
+  const textSecondary = useColorModeValue('#6E6483', 'gray.400')
+  const tileBg = useColorModeValue('rgba(247,243,251,0.82)', 'rgba(148,163,184,0.1)')
 
   const stats = statsData?.data || {}
   const todayOps = stats.todayOperations || {}
@@ -378,7 +378,7 @@ export default function Dashboard() {
                   (geographic.topOriginCities || []).slice(0, 5).map((item) => (
                     <HStack key={`origin-${item.city}`} justify="space-between" p={3} borderRadius="16px" borderWidth="1px" borderColor={borderColor} bg={tileBg}>
                       <HStack spacing={2}>
-                        <IconMapPin size={16} color="#0C3B80" />
+                        <IconMapPin size={16} color="#5D2394" />
                         <Text color={textPrimary} fontSize="sm">{item.city}</Text>
                       </HStack>
                       <Badge>{toNum(item.count)}</Badge>
@@ -401,7 +401,7 @@ export default function Dashboard() {
                   (geographic.topDestinationCities || []).slice(0, 5).map((item) => (
                     <HStack key={`dest-${item.city}`} justify="space-between" p={3} borderRadius="16px" borderWidth="1px" borderColor={borderColor} bg={tileBg}>
                       <HStack spacing={2}>
-                        <IconMapPin size={16} color="#F57C00" />
+                        <IconMapPin size={16} color="#36B309" />
                         <Text color={textPrimary} fontSize="sm">{item.city}</Text>
                       </HStack>
                       <Badge>{toNum(item.count)}</Badge>

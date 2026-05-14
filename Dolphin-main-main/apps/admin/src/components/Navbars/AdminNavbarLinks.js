@@ -29,18 +29,18 @@ export default function HeaderLinks({ variant, children, fixed, secondary, onOpe
   const settingsRef = useRef()
   const { isLoggedIn, logout } = useAuthStore()
   const inputBg = useColorModeValue('rgba(255, 255, 255, 0.74)', 'rgba(20, 34, 56, 0.72)')
-  const inputBorder = useColorModeValue('rgba(12,59,128,0.16)', 'rgba(44,143,255,0.22)')
-  const hoverBg = useColorModeValue('rgba(12,59,128,0.08)', 'rgba(255, 255, 255, 0.08)')
+  const inputBorder = useColorModeValue('rgba(93,35,148,0.16)', 'rgba(122,61,180,0.24)')
+  const hoverBg = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(255, 255, 255, 0.08)')
   const mainTextColor = useColorModeValue('gray.700', 'gray.100')
   const navbarIconColor = useColorModeValue('gray.600', 'gray.200')
-  const searchIconColor = useColorModeValue('brand.500', 'blue.200')
+  const searchIconColor = useColorModeValue('brand.500', 'brand.200')
   const placeholder = useColorModeValue('gray.400', 'gray.500')
 
   const styles = {
-    accent: '#171310',
-    accentSecondary: '#D97943',
-    accentSky: '#BFA58C',
-    accentSuccess: '#2D7A63',
+    accent: adminBrand.primary,
+    accentSecondary: adminBrand.primaryLight,
+    accentSky: adminBrand.secondaryDark,
+    accentSuccess: adminBrand.success,
     inputBg,
     inputBorder,
     hoverBg,
@@ -63,7 +63,7 @@ export default function HeaderLinks({ variant, children, fixed, secondary, onOpe
         transition="all 0.2s ease"
         _focusWithin={{
           borderColor: styles.accent,
-          boxShadow: '0 0 0 3px rgba(12,59,128,0.12)',
+          boxShadow: '0 0 0 3px rgba(93,35,148,0.12)',
         }}
       >
         <InputLeftElement pointerEvents="none" pl="14px">
@@ -104,7 +104,7 @@ export default function HeaderLinks({ variant, children, fixed, secondary, onOpe
                   _hover={{
                     bg: styles.hoverBg,
                     color: styles.accentSecondary,
-                    borderColor: 'rgba(245,124,0,0.18)',
+                    borderColor: 'rgba(122,61,180,0.18)',
                   }}
                 >
                   <Text display={{ base: 'none', '2xl': 'flex' }}>Logout</Text>
@@ -175,7 +175,7 @@ export default function HeaderLinks({ variant, children, fixed, secondary, onOpe
         _hover={{
           bg: styles.hoverBg,
           color: styles.accentSky,
-          borderColor: 'rgba(44,143,255,0.18)',
+          borderColor: 'rgba(86,232,19,0.18)',
         }}
       />
 

@@ -17,12 +17,12 @@ export default function AuthNavbar(props) {
 
   const defaultMainText = useColorModeValue(adminBrand.ink, 'gray.100')
   const defaultMutedText = useColorModeValue(adminBrand.inkSoft, 'gray.400')
-  const defaultNavbarBg = useColorModeValue('rgba(255,255,255,0.9)', 'rgba(8,25,38,0.94)')
-  const defaultNavbarBorder = useColorModeValue('1px solid rgba(16,50,74,0.08)', '1px solid rgba(255,255,255,0.12)')
-  const defaultNavbarShadow = useColorModeValue('0 18px 36px rgba(15,44,67,0.1)', '0 18px 36px rgba(0, 0, 0, 0.42)')
-  const navShellBg = useColorModeValue('rgba(247,241,223,0.72)', 'rgba(255,255,255,0.06)')
-  const navShellBorder = useColorModeValue('rgba(16,50,74,0.08)', 'rgba(255,255,255,0.12)')
-  const navHoverBg = useColorModeValue('rgba(198,231,255,0.38)', 'rgba(255,255,255,0.08)')
+  const defaultNavbarBg = useColorModeValue('rgba(255,255,255,0.9)', 'rgba(23,16,54,0.94)')
+  const defaultNavbarBorder = useColorModeValue('1px solid rgba(93,35,148,0.08)', '1px solid rgba(255,255,255,0.12)')
+  const defaultNavbarShadow = useColorModeValue('0 18px 36px rgba(67,22,109,0.1)', '0 18px 36px rgba(0, 0, 0, 0.42)')
+  const navShellBg = useColorModeValue('rgba(247,243,251,0.72)', 'rgba(255,255,255,0.06)')
+  const navShellBorder = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(255,255,255,0.12)')
+  const navHoverBg = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(255,255,255,0.08)')
   const mainText = secondary ? 'white' : defaultMainText
   const mutedText = secondary ? 'whiteAlpha.700' : defaultMutedText
   const navbarBg = secondary ? 'none' : defaultNavbarBg
