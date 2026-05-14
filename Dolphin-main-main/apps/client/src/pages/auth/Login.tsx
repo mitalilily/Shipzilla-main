@@ -313,9 +313,9 @@ export default function Login() {
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
                 px: { xs: 2.4, sm: 4.2, md: 5.55, lg: 5.55 },
-                py: { xs: 3.2, sm: 4.2, md: 4.8, lg: 5.3 },
-                pt: { xs: 3.2, sm: 4.2, md: 10.6, lg: 11.2 },
-                pb: { xs: 3.2, sm: 4.2, md: 4.8, lg: 5.3 },
+                py: { xs: 3.2, sm: 4.2, md: 3.8, lg: 4.2 },
+                pt: { xs: 3.2, sm: 4.2, md: 5.4, lg: 5.8 },
+                pb: { xs: 3.2, sm: 4.2, md: 3.8, lg: 4.2 },
                 borderRadius: { xs: '24px', md: '26px' },
                 background: 'rgba(255,255,255,0.94)',
                 border: `1px solid ${alpha(brand.ink, 0.08)}`,
@@ -324,13 +324,13 @@ export default function Login() {
                 scrollbarWidth: 'thin',
                 '@media (max-height: 840px)': {
                   py: { md: 3.1, lg: 3.2 },
-                  pt: { md: 4.6, lg: 5 },
+                  pt: { md: 3, lg: 3.2 },
                   pb: { md: 3.1, lg: 3.2 },
                   px: { md: 4, lg: 4.2 },
                 },
                 '@media (max-height: 760px)': {
                   py: { md: 2.5, lg: 2.6 },
-                  pt: { md: 3, lg: 3.2 },
+                  pt: { md: 2.4, lg: 2.6 },
                   pb: { md: 2.5, lg: 2.6 },
                 },
               }}
@@ -358,12 +358,12 @@ export default function Login() {
                   },
                 }}
               >
-                <Stack spacing={{ xs: 1.1, md: 2.7 }}>
+                <Stack spacing={{ xs: 1.1, md: 1.45 }}>
                   <Typography
                     component="h2"
                     sx={{
                       color: '#171036',
-                      fontSize: { xs: '2.25rem', md: '2.7rem', lg: '3rem' },
+                      fontSize: { xs: '2.25rem', md: '2.35rem', lg: '2.55rem' },
                       fontWeight: 900,
                       lineHeight: 1.08,
                       letterSpacing: 0,
@@ -374,8 +374,8 @@ export default function Login() {
                   <Typography
                     sx={{
                       color: brand.inkSoft,
-                      lineHeight: 1.72,
-                      fontSize: { xs: '0.98rem', md: '1.06rem', lg: '1.12rem' },
+                      lineHeight: 1.58,
+                      fontSize: { xs: '0.98rem', md: '0.98rem', lg: '1.02rem' },
                       maxWidth: 590,
                     }}
                   >
@@ -387,7 +387,7 @@ export default function Login() {
 
                 <Box
                   sx={{
-                    mt: { xs: 2.2, md: 4.35 },
+                    mt: { xs: 2.2, md: 2.4 },
                     p: 0.45,
                     minHeight: { xs: 58, md: 62 },
                     borderRadius: 999,
@@ -427,7 +427,7 @@ export default function Login() {
                   })}
                 </Box>
 
-                <Box sx={{ mt: { xs: 2.2, md: 4.6 } }}>
+                <Box sx={{ mt: { xs: 2.2, md: 2.4 } }}>
                   {mode === 'otp' ? <OtpLoginPanel /> : <CredentialAuthForm mode="login" />}
                 </Box>
               </Box>

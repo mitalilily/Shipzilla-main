@@ -42,6 +42,7 @@ export default function CustomIconLoadingButton({
         ...styles,
         px: 3,
         py: 1.25,
+        minHeight: 52,
         textTransform: 'none',
         fontWeight: 700,
         gap: 1,
@@ -64,7 +65,7 @@ export default function CustomIconLoadingButton({
           transform: variant === 'solid' ? 'translateY(-1px)' : 'none',
         },
         '&:disabled': {
-          opacity: 0.58,
+          opacity: variant === 'solid' ? 0.78 : 0.58,
           cursor: 'not-allowed',
           background: variant === 'solid' ? brandGradients.button : 'rgba(255,255,255,0.72)',
           color: textColor ?? (variant === 'solid' ? '#FFFFFF' : alpha(brand.ink, 0.62)),

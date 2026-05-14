@@ -119,12 +119,22 @@ export default function OtpLoginPanel() {
   }
 
   return (
-    <Stack spacing={{ xs: 2.2, md: 2.7 }} sx={{ minWidth: 0 }}>
+    <Stack spacing={{ xs: 2.2, md: 2.1 }} sx={{ minWidth: 0 }}>
       <Stack spacing={{ xs: 0.8, md: 1.05 }}>
         <Typography sx={{ color: brand.ink, fontWeight: 800, fontSize: { xs: '1.18rem', md: '1.28rem' } }}>
           Continue with Email Verification
         </Typography>
-        <Typography sx={{ color: brand.inkSoft, lineHeight: { xs: 1.7, md: 1.82 }, fontSize: { xs: '0.92rem', md: '1rem' } }}>
+        <Typography
+          sx={{
+            color: brand.inkSoft,
+            lineHeight: { xs: 1.7, md: 1.62 },
+            fontSize: { xs: '0.92rem', md: '0.94rem' },
+            display: { md: '-webkit-box' },
+            WebkitLineClamp: { md: 2 },
+            WebkitBoxOrient: { md: 'vertical' },
+            overflow: { md: 'hidden' },
+          }}
+        >
           {UI_ONLY_AUTH
             ? 'Use your registered business email to securely access the Shipzilla seller dashboard. Enter the 6-digit verification code sent to your inbox to continue and manage orders, shipping, billing, and operations seamlessly.'
             : 'Use your registered business email to securely access the Shipzilla seller dashboard. Enter the 6-digit verification code sent to your inbox to continue and manage orders, shipping, billing, and operations seamlessly.'}
@@ -162,7 +172,7 @@ export default function OtpLoginPanel() {
           />
 
           <FormControlLabel
-            sx={{ mt: { xs: 1.2, md: 2 }, mb: { xs: 2.2, md: 2.8 }, alignItems: 'flex-start' }}
+            sx={{ mt: { xs: 1.2, md: 1.45 }, mb: { xs: 2.2, md: 1.8 }, alignItems: 'flex-start' }}
             control={
               <CustomCheckbox
                 checked={termsChecked}
@@ -191,7 +201,7 @@ export default function OtpLoginPanel() {
             loading={requesting}
             loadingText="Sending..."
             disabled={Boolean(emailError) || !termsChecked}
-            styles={{ width: '100%' }}
+            styles={{ width: '100%', minHeight: 58 }}
             textColor="#fff"
           />
         </Box>
