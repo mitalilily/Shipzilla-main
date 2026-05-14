@@ -9,10 +9,15 @@
     { "key": "password", "value": "" },
     { "key": "publicKey", "value": "" },
     { "key": "privateKey", "value": "" },
-    { "key": "orderId", "value": "SZTEST-{{$timestamp}}" },
+    { "key": "orderId", "value": "SZTEST-001" },
+    { "key": "returnOrderId", "value": "SZTEST-RET-001" },
     { "key": "awbNumber", "value": "" },
-    { "key": "warehouseId", "value": "" },
-    { "key": "courierId", "value": "" }
+    { "key": "warehouseId", "value": "1" },
+    { "key": "warehouseNumericId", "value": "1" },
+    { "key": "courierId", "value": "1" },
+    { "key": "returnReasonId", "value": "9" },
+    { "key": "pickupPincode", "value": "122001" },
+    { "key": "deliveryPincode", "value": "110001" }
   ],
   "event": [
     {
@@ -20,11 +25,13 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "pm.test('Shipmozo response has result/message/data', function () {",
+          "pm.test('Shipmozo response has result/message', function () {",
           "  var body = pm.response.json();",
           "  pm.expect(body).to.have.property('result');",
           "  pm.expect(body).to.have.property('message');",
-          "  pm.expect(body).to.have.property('data');",
+          "  if (body.result === '1') {",
+          "    pm.expect(body).to.have.property('data');",
+          "  }",
           "});"
         ]
       }
@@ -33,6 +40,22 @@
   "item": [
     {
       "name": "Info",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var body = pm.response.json();",
+              "pm.test('Info returns exact success payload', function () {",
+              "  pm.expect(body.result).to.eql('1');",
+              "  pm.expect(body.message).to.eql('Success');",
+              "  pm.expect(body.data.Info).to.eql('Hello External V1 Api World!');",
+              "});"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/info"
@@ -79,7 +102,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"pickup_pincode\":122001,\"delivery_pincode\":110001}"
+          "raw": "{\"pickup_pincode\":{{pickupPincode}},\"delivery_pincode\":{{deliveryPincode}}}"
         },
         "url": "{{baseUrl}}/pincode-serviceability"
       }
@@ -95,9 +118,39 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"order_id\":\"\",\"pickup_pincode\":122001,\"delivery_pincode\":110001,\"payment_type\":\"PREPAID\",\"shipment_type\":\"FORWARD\",\"order_amount\":1000,\"type_of_package\":\"SPS\",\"rov_type\":\"ROV_OWNER\",\"cod_amount\":\"\",\"weight\":500,\"dimensions\":[{\"no_of_box\":\"1\",\"length\":\"22\",\"width\":\"10\",\"height\":\"10\"}]}"
+          "raw": "{\"order_id\":\"\",\"pickup_pincode\":{{pickupPincode}},\"delivery_pincode\":{{deliveryPincode}},\"payment_type\":\"PREPAID\",\"shipment_type\":\"FORWARD\",\"order_amount\":1000,\"type_of_package\":\"SPS\",\"rov_type\":\"ROV_OWNER\",\"cod_amount\":\"\",\"weight\":500,\"dimensions\":[{\"no_of_box\":\"1\",\"length\":\"22\",\"width\":\"10\",\"height\":\"10\"}]}"
         },
         "url": "{{baseUrl}}/rate-calculator"
+      }
+    },
+    {
+      "name": "Create Warehouse",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var body = pm.response.json();",
+              "if (body.result === '1' && body.data && body.data.warehouse_id) {",
+              "  pm.collectionVariables.set('warehouseId', String(body.data.warehouse_id));",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"address_title\":\"Shipzilla Test {{$timestamp}}\",\"name\":\"Shipzilla Test\",\"phone\":9876543210,\"alternate_phone\":9876543210,\"email\":\"test@example.com\",\"address_line_one\":\"Delhi Railway Station\",\"address_line_two\":\"New Delhi\",\"pin_code\":141211}"
+        },
+        "url": "{{baseUrl}}/create-warehouse"
       }
     },
     {
@@ -112,6 +165,109 @@
       }
     },
     {
+      "name": "Push Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order_id\":\"{{orderId}}\",\"order_date\":\"2024-01-06\",\"order_type\":\"ESSENTIALS\",\"consignee_name\":\"John\",\"consignee_phone\":8000042323,\"consignee_alternate_phone\":8000042323,\"consignee_email\":\"johnhelp@gmail.com\",\"consignee_address_line_one\":\"Sector 49\",\"consignee_address_line_two\":\"Sohna Road\",\"consignee_pin_code\":122001,\"consignee_city\":\"Gurgaon\",\"consignee_state\":\"Haryana\",\"product_detail\":[{\"name\":\"Laptop\",\"sku_number\":\"22\",\"quantity\":1,\"discount\":\"\",\"hsn\":\"#123\",\"unit_price\":1000,\"product_category\":\"Other\"}],\"payment_type\":\"PREPAID\",\"cod_amount\":\"\",\"weight\":200,\"length\":10,\"width\":20,\"height\":15,\"warehouse_id\":\"{{warehouseId}}\",\"gst_ewaybill_number\":\"\",\"gstin_number\":\"\"}"
+        },
+        "url": "{{baseUrl}}/push-order"
+      }
+    },
+    {
+      "name": "Assign Courier",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order_id\":\"{{orderId}}\",\"courier_id\":{{courierId}}}"
+        },
+        "url": "{{baseUrl}}/assign-courier"
+      }
+    },
+    {
+      "name": "Auto Assign Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var body = pm.response.json();",
+              "if (body.result === '1' && body.data && body.data.awb_number) {",
+              "  pm.collectionVariables.set('awbNumber', String(body.data.awb_number));",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order_id\":\"{{orderId}}\"}"
+        },
+        "url": "{{baseUrl}}/auto-assign-order"
+      }
+    },
+    {
+      "name": "Schedule Pickup",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var body = pm.response.json();",
+              "if (body.result === '1' && body.data && body.data.awb_number) {",
+              "  pm.collectionVariables.set('awbNumber', String(body.data.awb_number));",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order_id\":\"{{orderId}}\"}"
+        },
+        "url": "{{baseUrl}}/schedule-pickup"
+      }
+    },
+    {
+      "name": "Get Order Detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" }
+        ],
+        "url": "{{baseUrl}}/get-order-detail/{{orderId}}"
+      }
+    },
+    {
       "name": "Get Return Reasons",
       "request": {
         "method": "GET",
@@ -123,6 +279,49 @@
       }
     },
     {
+      "name": "Push Return Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order_id\":\"{{returnOrderId}}\",\"order_date\":\"2024-07-27\",\"order_type\":\"ESSENTIALS\",\"pickup_name\":\"John\",\"pickup_phone\":8000042323,\"pickup_email\":\"johnhelp@gmail.com\",\"pickup_address_line_one\":\"Sector 49\",\"pickup_address_line_two\":\"Sohna Road\",\"pickup_pin_code\":122001,\"pickup_city\":\"Gurgaon\",\"pickup_state\":\"Haryana\",\"product_detail\":[{\"name\":\"Product Name\",\"sku_number\":\"22\",\"quantity\":1,\"discount\":\"\",\"hsn\":\"#123\",\"unit_price\":1000,\"product_category\":\"Other\"}],\"payment_type\":\"PREPAID\",\"weight\":2,\"length\":10,\"width\":500,\"height\":15,\"warehouse_id\":\"{{warehouseId}}\",\"return_reason_id\":{{returnReasonId}},\"customer_request\":\"REFUND\",\"reason_comment\":\"\"}"
+        },
+        "url": "{{baseUrl}}/push-return-order"
+      }
+    },
+    {
+      "name": "Update Warehouse",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order_id\":\"{{orderId}}\",\"warehouse_id\":{{warehouseNumericId}}}"
+        },
+        "url": "{{baseUrl}}/order/update-warehouse"
+      }
+    },
+    {
+      "name": "Get Order Label",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" }
+        ],
+        "url": "{{baseUrl}}/get-order-label/{{awbNumber}}"
+      }
+    },
+    {
       "name": "Track Order",
       "request": {
         "method": "GET",
@@ -131,6 +330,22 @@
           { "key": "private_key", "value": "{{privateKey}}" }
         ],
         "url": "{{baseUrl}}/track-order?awb_number={{awbNumber}}"
+      }
+    },
+    {
+      "name": "Cancel Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "public_key", "value": "{{publicKey}}" },
+          { "key": "private_key", "value": "{{privateKey}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order_id\":\"{{orderId}}\",\"awb_number\":\"{{awbNumber}}\"}"
+        },
+        "url": "{{baseUrl}}/cancel-order"
       }
     }
   ]
