@@ -92,7 +92,7 @@ export const UpdateKYCDetails = async (
       .execute()
 
     const structure = details.structure ?? existingKyc?.structure
-    const companyType = details.companyType ?? existingKyc?.companyType
+    const companyType = structure === 'company' ? details.companyType ?? existingKyc?.companyType : null
 
     if (!structure || !(structure in requiredKycDetails)) {
       throw new HttpError(400, 'Invalid or missing business structure')
@@ -129,7 +129,7 @@ export const UpdateKYCDetails = async (
 
     const kycPayload: Partial<KycDetails> = {
       structure: structure as KycDetails['structure'],
-      companyType: (companyType || undefined) as KycDetails['companyType'] | undefined,
+      companyType: (companyType || null) as any,
       updatedAt: now,
       status: 'verification_in_progress',
     }

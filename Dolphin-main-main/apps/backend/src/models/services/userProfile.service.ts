@@ -74,44 +74,67 @@ export const upsertUserProfile = async (userId: string, input: IUserProfileDB) =
   const payload: any = Object.fromEntries(
     Object.entries(input).filter(([, v]) => v !== undefined),
   ) as IUserProfileDB
+  const normalizedPayload = {
+    ...payload,
+    profileComplete: payload.profileComplete ?? payload.profileCompletion,
+  }
 
   if (!existing) {
     const [created] = await db
       .insert(userProfiles)
       .values({
         userId,
-        onboardingStep: payload.onboardingStep ?? 0,
-        monthlyOrderCount: payload.monthlyOrderCount ?? '0-100',
-        salesChannels: payload.salesChannels ?? {},
+        onboardingStep: normalizedPayload.onboardingStep ?? 0,
+        monthlyOrderCount: normalizedPayload.monthlyOrderCount ?? '0-100',
+        salesChannels: normalizedPayload.salesChannels ?? {},
         companyInfo: {
           ...EMPTY_COMPANY_INFO,
-          ...(payload.companyInfo ?? {}),
+          ...(normalizedPayload.companyInfo ?? {}),
         },
-        domesticKyc: payload.domesticKyc ?? { status: 'pending', updatedAt: null },
-        bankDetails: payload.bankDetails ?? null,
-        gstDetails: payload.gstDetails ?? null,
-        businessType: payload.businessType ?? [],
-        approved: payload.approved ?? false,
-        rejectionReason: payload.rejectionReason ?? null,
-        onboardingComplete: payload.onboardingComplete ?? false,
-        profileComplete: payload.profileComplete ?? false,
-        approvedAt: payload.approvedAt ? new Date(payload.approvedAt) : null,
+        domesticKyc: normalizedPayload.domesticKyc ?? { status: 'pending', updatedAt: null },
+        bankDetails: normalizedPayload.bankDetails ?? null,
+        gstDetails: normalizedPayload.gstDetails ?? null,
+        businessType: normalizedPayload.businessType ?? [],
+        approved: normalizedPayload.approved ?? false,
+        rejectionReason: normalizedPayload.rejectionReason ?? null,
+        onboardingComplete: normalizedPayload.onboardingComplete ?? false,
+        profileComplete: normalizedPayload.profileComplete ?? false,
+        approvedAt: normalizedPayload.approvedAt ? new Date(normalizedPayload.approvedAt) : null,
       })
       .returning()
 
     return created
   }
 
-  // Merge JSONB blocks (keeps untouched keys intact)
+  // Merge profile fields while stripping joined/read-only values like currentPlanName.
   const merged = {
     ...existing,
-    ...payload, // new/updated blocks overwrite existing ones
+    ...normalizedPayload,
+    companyInfo: normalizedPayload.companyInfo
+      ? {
+          ...EMPTY_COMPANY_INFO,
+          ...(existing.companyInfo ?? {}),
+          ...normalizedPayload.companyInfo,
+        }
+      : existing.companyInfo,
   }
 
   const [updated] = await db
     .update(userProfiles)
     .set({
-      ...merged,
+      onboardingStep: merged.onboardingStep,
+      monthlyOrderCount: merged.monthlyOrderCount,
+      salesChannels: merged.salesChannels,
+      companyInfo: merged.companyInfo,
+      domesticKyc: merged.domesticKyc,
+      bankDetails: merged.bankDetails,
+      gstDetails: merged.gstDetails,
+      businessType: merged.businessType,
+      approved: merged.approved,
+      rejectionReason: merged.rejectionReason,
+      onboardingComplete: merged.onboardingComplete,
+      profileComplete: merged.profileComplete,
+      approvedAt: merged.approvedAt ? new Date(merged.approvedAt as any) : null,
       updatedAt: new Date(),
     })
     .where(eq(userProfiles.userId, userId))
