@@ -72,6 +72,11 @@ const toPhone = (value: unknown) => Number(toDigits(value).slice(-10) || 0)
 
 const toPincode = (value: unknown) => Number(toDigits(value).slice(0, 6) || 0)
 
+const toAwbPayloadValue = (value: unknown) => {
+  const raw = trim(value)
+  return /^\d+$/.test(raw) ? Number(raw) : raw
+}
+
 const toDateOnly = (value: unknown) => {
   const raw = trim(value)
   if (raw) {
@@ -647,7 +652,7 @@ export class ShipmozoService {
     return this.finalizeShipment(orderId, payload?.courier_id)
   }
 
-  async cancelShipment(input: { orderId: string; awbNumber: string } | string) {
+  async cancelShipment(input: { orderId: string; awbNumber: string | number } | string) {
     const orderId = typeof input === 'string' ? '' : input.orderId
     const awbNumber = typeof input === 'string' ? input : input.awbNumber
     if (!orderId) {
@@ -655,7 +660,7 @@ export class ShipmozoService {
     }
     const raw = await this.post<any>('/cancel-order', {
       order_id: orderId,
-      awb_number: awbNumber,
+      awb_number: toAwbPayloadValue(awbNumber),
     })
     return this.assertSuccess(raw, 'Shipmozo cancel order')
   }
