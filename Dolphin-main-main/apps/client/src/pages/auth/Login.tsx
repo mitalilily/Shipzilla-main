@@ -190,18 +190,6 @@ export default function Login() {
                 Deliver Better.
               </Box>
             </Typography>
-            <Typography
-              sx={{
-                mt: { md: 1.7, lg: 1.8 },
-                color: brand.inkSoft,
-                fontSize: { md: '1.18rem', lg: '1.34rem' },
-                fontWeight: 500,
-                lineHeight: 1.45,
-                maxWidth: 430,
-              }}
-            >
-              Power your e-commerce business with fast, reliable, and simple shipping.
-            </Typography>
           </Box>
 
           <Box
