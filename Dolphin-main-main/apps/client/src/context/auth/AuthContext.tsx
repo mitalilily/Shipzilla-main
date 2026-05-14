@@ -19,6 +19,7 @@ import {
   storeUiSession,
   UI_ONLY_AUTH,
 } from '../../utils/authMode'
+import { withAppBasePath } from '../../utils/basePath'
 import { emptyUserProfile } from '../../utils/utility'
 
 /* ---------- context shape ---------- */
@@ -114,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     if (UI_ONLY_AUTH) {
       clearTokens()
-      window.location.href = '/login'
+      window.location.href = withAppBasePath('/login')
       return
     }
 
@@ -124,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Logout error ignored:', e)
     }
     clearTokens()
-    window.location.href = '/login'
+    window.location.href = withAppBasePath('/login')
   }
 
   const value: AuthCtx = {

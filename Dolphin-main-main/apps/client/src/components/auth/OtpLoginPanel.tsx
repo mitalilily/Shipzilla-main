@@ -119,7 +119,7 @@ export default function OtpLoginPanel() {
   }
 
   return (
-    <Stack spacing={{ xs: 2.2, md: 5 }} sx={{ minWidth: 0 }}>
+    <Stack spacing={{ xs: 2.2, md: 2.7 }} sx={{ minWidth: 0 }}>
       <Stack spacing={{ xs: 0.8, md: 1.05 }}>
         <Typography sx={{ color: brand.ink, fontWeight: 800, fontSize: { xs: '1.18rem', md: '1.28rem' } }}>
           Continue with Email Verification
@@ -142,7 +142,7 @@ export default function OtpLoginPanel() {
       />
 
       {step === 'request' ? (
-        <Box component="form" onSubmit={handleRequest} sx={{ pt: { md: 3 } }}>
+        <Box component="form" onSubmit={handleRequest}>
           <CustomInput
             type="email"
             label="Work Email"
@@ -162,7 +162,7 @@ export default function OtpLoginPanel() {
           />
 
           <FormControlLabel
-            sx={{ mt: { xs: 1.2, md: 2 }, mb: { xs: 2.2, md: 7.2 }, alignItems: 'flex-start' }}
+            sx={{ mt: { xs: 1.2, md: 2 }, mb: { xs: 2.2, md: 2.8 }, alignItems: 'flex-start' }}
             control={
               <CustomCheckbox
                 checked={termsChecked}
@@ -192,6 +192,7 @@ export default function OtpLoginPanel() {
             loadingText="Sending..."
             disabled={Boolean(emailError) || !termsChecked}
             styles={{ width: '100%' }}
+            textColor="#fff"
           />
         </Box>
       ) : (
@@ -224,6 +225,7 @@ export default function OtpLoginPanel() {
             loadingText="Verifying..."
             disabled={code.length !== 6}
             styles={{ width: '100%' }}
+            textColor="#fff"
           />
 
           <CustomIconLoadingButton

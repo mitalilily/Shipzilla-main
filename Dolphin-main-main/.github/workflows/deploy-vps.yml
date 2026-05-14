@@ -1,0 +1,53 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SSH password helper
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Package source
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='**/node_modules' \
+            --exclude='**/dist' \
+            --exclude='**/build' \
+            --exclude='**/*.log' \
+            --exclude='apps/backend/uploads' \
+            -czf "$RUNNER_TEMP/shipzilla-source.tgz" .
+
+      - name: Upload and deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$SSHPASS"
+
+          SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          sshpass -e ssh $SSH_OPTS root@"$VPS_HOST" "mkdir -p /tmp/shipzilla-deploy /var/www/shipzilla/source"
+          sshpass -e scp $SSH_OPTS "$RUNNER_TEMP/shipzilla-source.tgz" root@"$VPS_HOST":/tmp/shipzilla-deploy/shipzilla-source.tgz
+          sshpass -e ssh $SSH_OPTS root@"$VPS_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          APP_DIR=/var/www/shipzilla/source
+          test "$APP_DIR" = "/var/www/shipzilla/source"
+          rm -rf "$APP_DIR"
+          mkdir -p "$APP_DIR"
+          tar -xzf /tmp/shipzilla-deploy/shipzilla-source.tgz -C "$APP_DIR"
+          cd "$APP_DIR"
+          bash deploy/vps-deploy.sh
+          REMOTE

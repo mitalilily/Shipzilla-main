@@ -45,8 +45,8 @@ echo "ðŸ”¨ Running build with production environment variables..."
 
 # Set production API URL
 # React apps need REACT_APP_ prefix for environment variables
-export REACT_APP_API_BASE_URL="${REACT_APP_API_BASE_URL:-https://shipzilla-backend.onrender.com/api}"
-export REACT_APP_SOCKET_URL="${REACT_APP_SOCKET_URL:-https://shipzilla-backend.onrender.com}"
+export REACT_APP_API_BASE_URL="${REACT_APP_API_BASE_URL:-/api}"
+export REACT_APP_SOCKET_URL="${REACT_APP_SOCKET_URL:-/}"
 
 echo "ðŸ“¡ Using production API URL: ${REACT_APP_API_BASE_URL}"
 echo ""

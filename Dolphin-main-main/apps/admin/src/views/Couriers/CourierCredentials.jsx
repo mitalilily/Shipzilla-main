@@ -529,7 +529,7 @@ const CourierCredentials = () => {
               <Input
                 value={
                   data?.shipmozo?.webhookUrl ||
-                  'https://shipzilla-backend.onrender.com/api/webhook/shipmozo'
+                  'https://api.shipzilla.in/api/webhook/shipmozo'
                 }
                 isReadOnly
               />

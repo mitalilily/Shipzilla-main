@@ -5,7 +5,9 @@ import {
   mockTrackShipment,
 } from "./mockApi";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim();
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim() || "";
+const USE_MOCK_API =
+  import.meta.env.VITE_USE_MOCK_API === "true" || (!import.meta.env.PROD && !API_BASE_URL);
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -26,7 +28,7 @@ async function request(path, options = {}) {
 }
 
 export async function loginUser(credentials) {
-  if (!API_BASE_URL) {
+  if (USE_MOCK_API) {
     return mockLogin(credentials);
   }
 
@@ -37,7 +39,7 @@ export async function loginUser(credentials) {
 }
 
 export async function searchTracking(trackingId) {
-  if (!API_BASE_URL) {
+  if (USE_MOCK_API) {
     return mockTrackShipment(trackingId);
   }
 
@@ -45,7 +47,7 @@ export async function searchTracking(trackingId) {
 }
 
 export async function requestRateQuote(formValues) {
-  if (!API_BASE_URL) {
+  if (USE_MOCK_API) {
     return mockCalculateRates(formValues);
   }
 
@@ -56,7 +58,7 @@ export async function requestRateQuote(formValues) {
 }
 
 export async function submitContact(payload) {
-  if (!API_BASE_URL) {
+  if (USE_MOCK_API) {
     return mockSubmitContact(payload);
   }
 

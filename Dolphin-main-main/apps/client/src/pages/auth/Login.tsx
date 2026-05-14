@@ -306,7 +306,8 @@ export default function Login() {
                 minWidth: 0,
                 height: { md: 'calc(100svh - 76px)' },
                 minHeight: { md: 'calc(100svh - 76px)' },
-                overflow: 'hidden',
+                overflowY: 'auto',
+                overflowX: 'hidden',
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
@@ -320,6 +321,7 @@ export default function Login() {
                 border: `1px solid ${alpha(brand.ink, 0.08)}`,
                 boxShadow: '0 24px 64px rgba(41,22,70,0.16)',
                 backdropFilter: 'blur(18px)',
+                scrollbarWidth: 'thin',
                 '@media (max-height: 840px)': {
                   py: { md: 3.1, lg: 3.2 },
                   pt: { md: 4.6, lg: 5 },

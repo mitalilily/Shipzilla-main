@@ -1,5 +1,5 @@
-const DEFAULT_API_BASE_URL = 'https://shipzilla-backend.onrender.com/api'
-const DEFAULT_SOCKET_URL = 'https://shipzilla-backend.onrender.com'
+const DEFAULT_API_BASE_URL = 'https://api.shipzilla.in/api'
+const DEFAULT_SOCKET_URL = 'https://api.shipzilla.in'
 const FALLBACK_API_BASE_URLS = [DEFAULT_API_BASE_URL]
 const ACTIVE_ADMIN_API_BASE_URL_KEY = 'activeAdminApiBaseUrl'
 
@@ -41,14 +41,16 @@ export const setPreferredAdminApiBaseUrl = (value) => {
 
 export const getAdminApiBaseUrlCandidates = () => {
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : ''
-  const isHostedFrontend =
-    currentHost.endsWith('netlify.app') || currentHost.endsWith('vercel.app')
   const isLocalhost =
     currentHost === 'localhost' || currentHost === '127.0.0.1' || currentHost === '0.0.0.0'
 
   const configured = normalizeBaseUrl(process.env.REACT_APP_API_BASE_URL, { ensureApi: true })
   const stored = readStoredApiBaseUrl()
-  const candidates = [configured, stored, ...FALLBACK_API_BASE_URLS]
+  const sameOriginApi =
+    typeof window !== 'undefined' && !isLocalhost
+      ? normalizeBaseUrl('/api', { ensureApi: true })
+      : null
+  const candidates = [configured, stored, sameOriginApi, ...FALLBACK_API_BASE_URLS]
     .filter(Boolean)
     .filter((value, index, list) => list.indexOf(value) === index)
 
@@ -56,7 +58,7 @@ export const getAdminApiBaseUrlCandidates = () => {
     try {
       const parsed = new URL(candidate)
       const pointsBackToFrontend = parsed.hostname === currentHost
-      if (pointsBackToFrontend && (isHostedFrontend || !isLocalhost)) {
+      if (pointsBackToFrontend && !isLocalhost && parsed.pathname === '/') {
         return false
       }
       return true

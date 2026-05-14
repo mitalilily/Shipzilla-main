@@ -47,7 +47,7 @@ export default function CustomIconLoadingButton({
         gap: 1,
         borderRadius: 999,
         background: variant === 'solid' ? brandGradients.button : 'rgba(255,255,255,0.72)',
-        color: textColor ?? (variant === 'solid' ? brand.ink : brand.ink),
+        color: textColor ?? (variant === 'solid' ? '#FFFFFF' : brand.ink),
         border:
           variant === 'text'
             ? `1px solid ${alpha(brand.ink, 0.12)}`
@@ -67,7 +67,7 @@ export default function CustomIconLoadingButton({
           opacity: 0.58,
           cursor: 'not-allowed',
           background: variant === 'solid' ? brandGradients.button : 'rgba(255,255,255,0.72)',
-          color: textColor ?? alpha(brand.ink, 0.62),
+          color: textColor ?? (variant === 'solid' ? '#FFFFFF' : alpha(brand.ink, 0.62)),
           borderColor: variant === 'text' ? alpha(brand.ink, 0.08) : alpha('#FFFFFF', 0.18),
         },
       }}

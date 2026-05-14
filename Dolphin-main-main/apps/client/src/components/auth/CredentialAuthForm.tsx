@@ -297,6 +297,7 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
             loadingText={mode === 'signup' ? 'Creating...' : 'Checking...'}
             disabled={Boolean(nameError || emailError || passwordError) || !termsChecked}
             styles={{ width: '100%' }}
+            textColor="#fff"
           />
         </Stack>
       ) : (
@@ -337,6 +338,7 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
             loadingText="Verifying..."
             disabled={code.length !== 8}
             styles={{ width: '100%' }}
+            textColor="#fff"
           />
 
           <CustomIconLoadingButton

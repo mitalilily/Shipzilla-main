@@ -10,6 +10,7 @@ import NavigationLoader from '../components/UI/loader/NavigationLoader'
 import Login from '../pages/auth/Login'
 import Signup from '../pages/auth/Signup'
 import ClientPreview from '../pages/preview/ClientPreview'
+import { APP_BASE_PATH } from '../utils/basePath'
 import AppEntry from './AppEntry'
 import GlobalRedirectHandler from './WalletRedirectHandler'
 
@@ -100,7 +101,7 @@ const ApiIntegration = lazy(() => import('../pages/settings/ApiIntegration'))
 
 export default function AppRoutes() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={APP_BASE_PATH || undefined}>
       <NavigationLoader />
       <GlobalRedirectHandler />
       <Suspense fallback={<FullScreenLoader />}>

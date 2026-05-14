@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { UI_ONLY_AUTH } from '../utils/authMode'
+import { withAppBasePath } from '../utils/basePath'
 import { clearAuthTokens, getAuthTokens, setAuthTokens } from './tokenVault'
 
 const RAW_API_BASE_URL = import.meta.env.VITE_API_URL
@@ -17,9 +18,10 @@ const getApiBaseUrl = () => {
     const isLocalhost =
       currentHost === 'localhost' || currentHost === '127.0.0.1' || currentHost === '0.0.0.0'
     const pointsBackToFrontend = candidate.hostname === currentHost
+    const isRelativeApiUrl = RAW_API_BASE_URL.trim().startsWith('/')
 
     // Hosted frontends often cannot proxy API posts back through the same origin.
-    if (pointsBackToFrontend && (isHostedFrontend || !isLocalhost)) {
+    if (!isRelativeApiUrl && pointsBackToFrontend && (isHostedFrontend || !isLocalhost)) {
       return fallback
     }
 
@@ -67,7 +69,7 @@ api.interceptors.response.use(
       }
 
       clearAuthTokens()
-      window.location.href = '/login'
+      window.location.href = withAppBasePath('/login')
       return Promise.reject(err)
     }
 
@@ -97,7 +99,7 @@ api.interceptors.response.use(
       clearAuthTokens()
 
       if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
+        window.location.href = withAppBasePath('/login')
       }
 
       return Promise.reject(e)
