@@ -18,7 +18,7 @@ This repository brings the Shipzilla platform together in one monorepo: landing 
 
 ## GitHub Actions VPS Deploy
 
-The root workflow `.github/workflows/deploy-vps.yml` deploys to the VPS on every push to `main` that changes the app source. It packages the `Dolphin-main-main` app directory, uploads it to `/var/www/shipzilla/source`, and runs `deploy/vps-deploy.sh`.
+The root workflow `.github/workflows/deploy-vps.yml` deploys to the VPS on every push to `main`. It packages the `Dolphin-main-main` app directory, uploads it to `/var/www/shipzilla/source`, and runs `deploy/vps-deploy.sh`.
 
 Required repository secrets:
 

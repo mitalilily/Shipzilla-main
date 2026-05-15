@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - ".github/workflows/deploy-vps.yml"
-      - "Dolphin-main-main/**"
-      - "render.yaml"
   workflow_dispatch:
 
 concurrency:
