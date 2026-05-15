@@ -196,6 +196,7 @@ export default function RateCalculatorPage() {
               ? [0, 1, 2].map((index) => <LoadingCard key={index} className="courier-loading-card" lines={6} />)
               : result?.options?.map((option) => <CourierOptionCard key={option.id} option={option} />)}
           </div>
+          {!loading && result?.notice ? <Alert severity="info">{result.notice}</Alert> : null}
           {!loading && result && !result.options?.length ? (
             <Alert severity="info">No courier rates were found for this lane. Try another pincode or package weight.</Alert>
           ) : null}

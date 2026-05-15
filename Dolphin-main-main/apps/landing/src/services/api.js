@@ -49,7 +49,7 @@ async function request(path, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
+    throw new Error(data.message || data.error || "Request failed.");
   }
 
   return data;
@@ -127,6 +127,15 @@ function mapRateOptions(couriers, formValues, summary) {
       ].filter(Boolean),
     };
   });
+}
+
+function buildEstimatedRateResponse(formValues, summary, notice) {
+  return {
+    summary,
+    options: generateCourierQuotes(formValues),
+    source: "estimated",
+    notice,
+  };
 }
 
 function formatTimelineDate(value) {
@@ -228,21 +237,39 @@ export async function requestRateQuote(formValues) {
     throw new Error("Enter valid pin codes, package weight, and dimensions to calculate shipping rates.");
   }
 
-  const response = await request("/couriers/available-to-guest", {
-    method: "POST",
-    body: JSON.stringify(buildRatePayload(formValues)),
-  });
+  try {
+    const response = await request("/couriers/available-to-guest", {
+      method: "POST",
+      body: JSON.stringify(buildRatePayload(formValues)),
+    });
 
-  if (!response.success) {
-    throw new Error(response.error || response.message || "Failed to calculate rates.");
+    if (!response.success) {
+      throw new Error(response.error || response.message || "Failed to calculate rates.");
+    }
+
+    const options = mapRateOptions(response.data || [], formValues, summary);
+
+    if (!options.length) {
+      return buildEstimatedRateResponse(
+        formValues,
+        summary,
+        "No live courier rates were returned for this lane, so estimated rates are shown.",
+      );
+    }
+
+    return {
+      summary,
+      options,
+      source: "live",
+      notice: "",
+    };
+  } catch (error) {
+    return buildEstimatedRateResponse(
+      formValues,
+      summary,
+      `Live courier rates are temporarily unavailable (${error.message}). Estimated rates are shown instead.`,
+    );
   }
-
-  const options = mapRateOptions(response.data || [], formValues, summary);
-
-  return {
-    summary,
-    options: options.length ? options : generateCourierQuotes(formValues),
-  };
 }
 
 export async function submitContact(payload) {
