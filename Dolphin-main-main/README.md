@@ -16,6 +16,20 @@ This repository brings the Shipzilla platform together in one monorepo: landing 
 - Landing: `cd apps/landing && npm install && npm run dev`
 - Backend: `cd apps/backend && npm install && npm run dev`
 
+## GitHub Actions VPS Deploy
+
+The root workflow `.github/workflows/deploy-vps.yml` deploys to the VPS on every push to `main` that changes the app source. It packages the `Dolphin-main-main` app directory, uploads it to `/var/www/shipzilla/source`, and runs `deploy/vps-deploy.sh`.
+
+Required repository secrets:
+
+- `VPS_HOST` - VPS hostname or IP address.
+- `VPS_PASSWORD` or `VPS_SSH_KEY` - SSH authentication for the VPS.
+
+Optional repository secrets:
+
+- `VPS_USER` - SSH user, defaults to `root`.
+- `VPS_PORT` - SSH port, defaults to `22`.
+
 ## Reconnect Deployments To This Repo
 
 Keep the same environment variables and secrets. Only update the connected repository and app directory after you have verified the first deployment.
