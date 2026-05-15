@@ -138,7 +138,7 @@ export default function RateCalculatorPage() {
                 </div>
 
                 <Alert severity="info">
-                  Review the live preview panel and courier options below; estimates refresh automatically as shipment details change.
+                  Check the right panel for the live billable preview; courier options refresh automatically as shipment details change.
                 </Alert>
               </form>
 
