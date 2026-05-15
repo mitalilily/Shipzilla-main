@@ -22,11 +22,11 @@ The root workflow `.github/workflows/deploy-vps.yml` deploys to the VPS on every
 
 Required repository secrets:
 
-- `VPS_HOST` - VPS hostname or IP address.
 - `VPS_PASSWORD` or `VPS_SSH_KEY` - SSH authentication for the VPS.
 
-Optional repository secrets:
+Optional repository secrets or variables:
 
+- `VPS_HOST` - VPS hostname or IP address, defaults to `72.60.96.97`.
 - `VPS_USER` - SSH user, defaults to `root`.
 - `VPS_PORT` - SSH port, defaults to `22`.
 
