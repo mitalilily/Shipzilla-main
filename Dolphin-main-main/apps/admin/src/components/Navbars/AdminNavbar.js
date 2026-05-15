@@ -4,7 +4,6 @@ import {
   Flex,
   HStack,
   Text,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import PropTypes from "prop-types";
 import { NavLink } from "react-router-dom";
@@ -22,42 +21,22 @@ const navItems = [
 export default function AdminNavbar(props) {
   const { fixed, secondary, onOpen, sidebarWidth = 275, brandText, ...rest } = props;
 
-  const mainText = useColorModeValue(adminBrand.ink, "gray.100");
-  const secondaryText = useColorModeValue(adminBrand.inkSoft, "gray.400");
-  const navbarShadow = useColorModeValue(
-    "0 18px 36px rgba(67,22,109,0.08)",
-    "0 18px 36px rgba(0, 0, 0, 0.4)"
-  );
-  const defaultNavbarBg = useColorModeValue(
-    "rgba(255,255,255,0.9)",
-    "linear-gradient(110deg, rgba(23,16,54,0.94) 0%, rgba(67,22,109,0.94) 100%)"
-  );
-  const defaultNavbarBorder = useColorModeValue(
-    "1px solid rgba(93,35,148,0.08)",
-    "1px solid rgba(255,255,255,0.12)"
-  );
-  const activeBg = useColorModeValue(
-    "rgba(93,35,148,0.1)",
-    "rgba(255,255,255,0.08)"
-  );
-  const navShellBg = useColorModeValue(
-    "rgba(255,255,255,0.72)",
-    "rgba(255,255,255,0.06)"
-  );
-  const navShellBorder = useColorModeValue(
-    "rgba(93,35,148,0.08)",
-    "rgba(255,255,255,0.12)"
-  );
-  const navbarBg = secondary ? "transparent" : defaultNavbarBg;
-  const navbarBorder = secondary ? "none" : defaultNavbarBorder;
+  const mainText = adminBrand.ink;
+  const secondaryText = adminBrand.inkSoft;
+  const navbarShadow = "0 18px 36px rgba(67,22,109,0.08)";
+  const activeBg = "rgba(93,35,148,0.1)";
+  const navShellBg = "rgba(247,243,251,0.86)";
+  const navShellBorder = "rgba(93,35,148,0.1)";
+  const navbarBg = "rgba(255,255,255,0.96)";
+  const navbarBorder = "1px solid rgba(93,35,148,0.1)";
 
   return (
     <Flex
       position={fixed || !secondary ? "fixed" : "absolute"}
-      boxShadow={secondary ? "none" : navbarShadow}
+      boxShadow={navbarShadow}
       bg={navbarBg}
       border={navbarBorder}
-      backdropFilter={secondary ? "none" : "blur(14px)"}
+      backdropFilter="blur(14px)"
       transition="all 0.3s ease"
       alignItems="center"
       borderRadius="20px"

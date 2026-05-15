@@ -456,9 +456,17 @@ const CourierCredentials = () => {
         <Box borderWidth="1px" borderRadius="lg" p={5} minW="320px" flex="1" maxW="520px">
           <VStack spacing={4} align="stretch">
             <Flex justify="space-between" align="center">
-              <Text fontWeight="semibold">Shipmozo</Text>
-              <Badge colorScheme={data?.shipmozo?.hasPrivateKey ? 'green' : 'orange'}>
-                {data?.shipmozo?.hasPrivateKey ? 'API keys set' : 'Missing API keys'}
+              <Text fontWeight="semibold">Shipmozo Courier</Text>
+              <Badge
+                colorScheme={
+                  data?.shipmozo?.hasPrivateKey || data?.shipmozo?.hasPassword
+                    ? 'green'
+                    : 'orange'
+                }
+              >
+                {data?.shipmozo?.hasPrivateKey || data?.shipmozo?.hasPassword
+                  ? 'Credentials set'
+                  : 'Missing credentials'}
               </Badge>
             </Flex>
 
@@ -494,6 +502,11 @@ const CourierCredentials = () => {
                 }
                 placeholder="Leave blank to keep existing password"
               />
+              {data?.shipmozo?.hasPassword && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Login password already configured on Shipmozo.
+                </Text>
+              )}
             </FormControl>
 
             <FormControl>

@@ -28,12 +28,9 @@ import NotificationMenu from './NotificationMenu'
 export default function HeaderLinks({ variant, children, fixed, secondary, onOpen, ...rest }) {
   const settingsRef = useRef()
   const { isLoggedIn, logout } = useAuthStore()
-  const inputBg = useColorModeValue('rgba(255, 255, 255, 0.74)', 'rgba(20, 34, 56, 0.72)')
-  const inputBorder = useColorModeValue('rgba(93,35,148,0.16)', 'rgba(122,61,180,0.24)')
-  const hoverBg = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(255, 255, 255, 0.08)')
-  const mainTextColor = useColorModeValue('gray.700', 'gray.100')
-  const navbarIconColor = useColorModeValue('gray.600', 'gray.200')
-  const searchIconColor = useColorModeValue('brand.500', 'brand.200')
+  const inputBg = useColorModeValue('rgba(255, 255, 255, 0.74)', 'rgba(255, 255, 255, 0.78)')
+  const inputBorder = useColorModeValue('rgba(93,35,148,0.16)', 'rgba(93,35,148,0.18)')
+  const hoverBg = useColorModeValue('rgba(93,35,148,0.08)', 'rgba(93,35,148,0.1)')
   const placeholder = useColorModeValue('gray.400', 'gray.500')
 
   const styles = {
@@ -44,9 +41,9 @@ export default function HeaderLinks({ variant, children, fixed, secondary, onOpe
     inputBg,
     inputBorder,
     hoverBg,
-    mainText: secondary ? 'white' : mainTextColor,
-    navbarIcon: secondary ? 'white' : navbarIconColor,
-    searchIcon: secondary ? 'whiteAlpha.700' : searchIconColor,
+    mainText: adminBrand.ink,
+    navbarIcon: adminBrand.inkSoft,
+    searchIcon: adminBrand.primary,
     placeholder,
   }
 
