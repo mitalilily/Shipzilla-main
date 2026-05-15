@@ -62,7 +62,7 @@ jobs:
             --exclude='apps/backend/uploads' \
             -czf "$RUNNER_TEMP/shipzilla-source.tgz" .
 
-      - name: Upload and deploy
+      - name: Prepare SSH credentials
         env:
           VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST || '72.60.96.97' }}
           VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
@@ -75,26 +75,108 @@ jobs:
           VPS_USER="${VPS_USER:-root}"
           VPS_PORT="${VPS_PORT:-22}"
 
-          ssh_args=(-p "$VPS_PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
-          scp_args=(-P "$VPS_PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
-
           if [ -n "${VPS_SSH_KEY:-}" ]; then
             mkdir -p ~/.ssh
             printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/shipzilla_deploy_key
             chmod 600 ~/.ssh/shipzilla_deploy_key
-            ssh_base=(ssh -i ~/.ssh/shipzilla_deploy_key "${ssh_args[@]}")
-            scp_base=(scp -i ~/.ssh/shipzilla_deploy_key "${scp_args[@]}")
           else
             sudo apt-get update
             sudo apt-get install -y sshpass
-            export SSHPASS="$VPS_PASSWORD"
-            ssh_base=(sshpass -e ssh "${ssh_args[@]}")
-            scp_base=(sshpass -e scp "${scp_args[@]}")
           fi
 
-          "${ssh_base[@]}" "$VPS_USER@$VPS_HOST" "mkdir -p /tmp/shipzilla-deploy"
-          "${scp_base[@]}" "$RUNNER_TEMP/shipzilla-source.tgz" "$VPS_USER@$VPS_HOST:/tmp/shipzilla-deploy/shipzilla-source.tgz"
-          "${ssh_base[@]}" "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          cat > "$RUNNER_TEMP/shipzilla-ssh.sh" <<'HELPER'
+          configure_shipzilla_ssh() {
+            VPS_USER="${VPS_USER:-root}"
+            VPS_PORT="${VPS_PORT:-22}"
+            SSH_DEST="$VPS_USER@$VPS_HOST"
+            SSH_BASE=(ssh -p "$VPS_PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+            SCP_BASE=(scp -P "$VPS_PORT" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+
+            if [ -n "${VPS_SSH_KEY:-}" ]; then
+              SSH_BASE+=(-i ~/.ssh/shipzilla_deploy_key)
+              SCP_BASE+=(-i ~/.ssh/shipzilla_deploy_key)
+            else
+              export SSHPASS="$VPS_PASSWORD"
+              SSH_BASE=(sshpass -e "${SSH_BASE[@]}")
+              SCP_BASE=(sshpass -e "${SCP_BASE[@]}")
+            fi
+          }
+          HELPER
+
+      - name: Check SSH connection
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST || '72.60.96.97' }}
+          VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || vars.VPS_PORT }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -Eeuo pipefail
+          source "$RUNNER_TEMP/shipzilla-ssh.sh"
+          configure_shipzilla_ssh
+
+          "${SSH_BASE[@]}" "$SSH_DEST" "echo '[deploy] SSH connection OK'"
+
+      - name: Upload source
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST || '72.60.96.97' }}
+          VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || vars.VPS_PORT }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -Eeuo pipefail
+          source "$RUNNER_TEMP/shipzilla-ssh.sh"
+          configure_shipzilla_ssh
+
+          "${SSH_BASE[@]}" "$SSH_DEST" "mkdir -p /tmp/shipzilla-deploy"
+          "${SCP_BASE[@]}" "$RUNNER_TEMP/shipzilla-source.tgz" "$SSH_DEST:/tmp/shipzilla-deploy/shipzilla-source.tgz"
+
+      - name: Check VPS prerequisites
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST || '72.60.96.97' }}
+          VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || vars.VPS_PORT }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -Eeuo pipefail
+          source "$RUNNER_TEMP/shipzilla-ssh.sh"
+          configure_shipzilla_ssh
+
+          "${SSH_BASE[@]}" "$SSH_DEST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+
+          for cmd in node npm nginx pm2 tar bash; do
+            command -v "$cmd" >/dev/null || {
+              echo "::error title=VPS preflight failed::Missing required command on VPS: $cmd"
+              exit 1
+            }
+          done
+
+          BACKEND_ENV="${BACKEND_ENV:-/etc/shipzilla/backend.env}"
+          test -f "$BACKEND_ENV" || {
+            echo "::error title=VPS preflight failed::Missing backend env file: $BACKEND_ENV"
+            exit 1
+          }
+
+          echo "[deploy] VPS prerequisites OK"
+          REMOTE
+
+      - name: Deploy on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST || '72.60.96.97' }}
+          VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || vars.VPS_PORT }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -Eeuo pipefail
+          source "$RUNNER_TEMP/shipzilla-ssh.sh"
+          configure_shipzilla_ssh
+
+          set +e
+          "${SSH_BASE[@]}" "$SSH_DEST" 'bash -s' <<'REMOTE' 2>&1 | tee "$RUNNER_TEMP/shipzilla-deploy.log"
           set -Eeuo pipefail
 
           APP_DIR="/var/www/shipzilla/source"
@@ -105,3 +187,12 @@ jobs:
           cd "$APP_DIR"
           bash deploy/vps-deploy.sh
           REMOTE
+          deploy_status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$deploy_status" -ne 0 ]; then
+            tail -n 40 "$RUNNER_TEMP/shipzilla-deploy.log" > "$RUNNER_TEMP/shipzilla-deploy-tail.log"
+            summary="$(sed -e 's/%/%25/g' -e 's/\r/%0D/g' -e ':a;N;$!ba;s/\n/%0A/g' "$RUNNER_TEMP/shipzilla-deploy-tail.log")"
+            echo "::error title=VPS deploy failed::Last deploy log lines: $summary"
+            exit "$deploy_status"
+          fi
