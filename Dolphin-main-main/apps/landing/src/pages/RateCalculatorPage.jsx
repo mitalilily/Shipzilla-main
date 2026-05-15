@@ -1,5 +1,5 @@
-import { useDeferredValue, useMemo, useState, startTransition } from "react";
-import { Alert, Button, Paper, Typography } from "@mui/material";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { Alert, Paper, Typography } from "@mui/material";
 import LoadingCard from "../components/common/LoadingCard";
 import MotionFade from "../components/common/MotionFade";
 import PageHero from "../components/common/PageHero";
@@ -15,6 +15,7 @@ export default function RateCalculatorPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const deferredForm = useDeferredValue(formValues);
+  const requestIdRef = useRef(0);
 
   const previewSummary = useMemo(() => buildRateSummary(deferredForm), [deferredForm]);
 
@@ -25,25 +26,48 @@ export default function RateCalculatorPage() {
     }));
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  useEffect(() => {
+    requestIdRef.current += 1;
+    const requestId = requestIdRef.current;
+
+    if (!previewSummary.valid) {
+      startTransition(() => {
+        setResult(null);
+        setError("");
+      });
+      setLoading(false);
+      return undefined;
+    }
+
     setLoading(true);
     setError("");
 
-    try {
-      const response = await requestRateQuote(formValues);
-      startTransition(() => {
-        setResult(response);
-      });
-    } catch (rateError) {
-      startTransition(() => {
-        setResult(null);
-        setError(rateError.message);
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await requestRateQuote(deferredForm);
+        if (requestId !== requestIdRef.current) return;
+
+        startTransition(() => {
+          setResult(response);
+        });
+      } catch (rateError) {
+        if (requestId !== requestIdRef.current) return;
+
+        startTransition(() => {
+          setResult(null);
+          setError(rateError.message);
+        });
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+        }
+      }
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [deferredForm, previewSummary.valid]);
 
   return (
     <div className="inner-page">
@@ -64,7 +88,12 @@ export default function RateCalculatorPage() {
                 Built for prepaid and COD shipments with billable-weight logic and production-ready API behavior.
               </Typography>
 
-              <form className="calculator-form" onSubmit={handleSubmit}>
+              <form
+                className="calculator-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                }}
+              >
                 <div className="form-grid">
                   <input
                     className="field-input"
@@ -108,9 +137,9 @@ export default function RateCalculatorPage() {
                   </select>
                 </div>
 
-                <Button className="button-primary" disabled={loading} type="submit" variant="contained">
-                  {loading ? "Calculating..." : "Calculate rates"}
-                </Button>
+                <Alert severity="info">
+                  Review the live preview panel and courier options below; estimates refresh automatically as shipment details change.
+                </Alert>
               </form>
 
               {error ? <Alert severity="error">{error}</Alert> : null}
