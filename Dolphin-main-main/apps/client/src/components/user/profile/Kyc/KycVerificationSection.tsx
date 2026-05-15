@@ -108,9 +108,15 @@ const KYCVerificationStep: React.FC<{
             folder: 'kyc',
           })
 
-          await axios.put(presign.uploadUrl, file, {
-            headers: { 'Content-Type': file.type },
-          })
+          if (presign.storageMode === 'local') {
+            await axiosInstance.put(presign.uploadUrl, file, {
+              headers: { 'Content-Type': file.type },
+            })
+          } else {
+            await axios.put(presign.uploadUrl, file, {
+              headers: { 'Content-Type': file.type },
+            })
+          }
 
           selfieUrl = presign?.key
         }

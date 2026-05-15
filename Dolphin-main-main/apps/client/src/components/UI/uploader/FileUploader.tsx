@@ -237,12 +237,19 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             folder: folderKey,
           })
 
-          // Upload directly to R2 using presigned URL - no credentials needed
-          await axios.put(data.uploadUrl, file, {
-            withCredentials: false, // Don't send credentials for presigned URL uploads
-            headers: { 'Content-Type': contentType },
-            onUploadProgress: (e) => e.total && setProgress(Math.round((e.loaded * 100) / e.total)),
-          })
+          if (data.storageMode === 'local') {
+            await axiosInstance.put(data.uploadUrl, file, {
+              headers: { 'Content-Type': contentType },
+              onUploadProgress: (e) => e.total && setProgress(Math.round((e.loaded * 100) / e.total)),
+            })
+          } else {
+            // Upload directly to R2 using presigned URL - no credentials needed
+            await axios.put(data.uploadUrl, file, {
+              withCredentials: false,
+              headers: { 'Content-Type': contentType },
+              onUploadProgress: (e) => e.total && setProgress(Math.round((e.loaded * 100) / e.total)),
+            })
+          }
 
           uploaded.push({
             url: data.publicUrl,
