@@ -28,8 +28,14 @@ export function calculateVolumetricWeight(length, breadth, height, divisor = 500
   return Number(((l * b * h) / divisor).toFixed(2));
 }
 
-export function getBillableWeight(actualWeight, volumetricWeight) {
-  return Number(Math.max(toNumber(actualWeight), toNumber(volumetricWeight)).toFixed(2));
+export function getBillableWeight(actualWeight, volumetricWeight, minimumWeight = 0.5) {
+  const rawBillableWeight = Math.max(toNumber(actualWeight), toNumber(volumetricWeight));
+
+  if (rawBillableWeight <= 0) {
+    return 0;
+  }
+
+  return Number(Math.max(rawBillableWeight, toNumber(minimumWeight)).toFixed(2));
 }
 
 export function resolveZone(originPincode, destinationPincode) {
@@ -57,7 +63,8 @@ export function buildRateSummary(formValues) {
   const actualWeight = Number(toNumber(formValues.weight).toFixed(2));
   const billableWeight = getBillableWeight(actualWeight, volumetricWeight);
   const zone = resolveZone(formValues.originPincode, formValues.destinationPincode);
-  const paymentSurcharge = formValues.paymentType === "COD" ? 32 : 0;
+  const orderAmount = toNumber(formValues.orderAmount);
+  const paymentSurcharge = formValues.paymentType === "COD" ? Math.max(32, orderAmount * 0.02) : 0;
 
   const valid =
     billableWeight > 0 &&

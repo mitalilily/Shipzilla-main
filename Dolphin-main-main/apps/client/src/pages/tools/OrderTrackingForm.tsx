@@ -42,6 +42,15 @@ type FormValues = {
   contact: string
 }
 
+const formatDateOrText = (value?: string | null) => {
+  if (!value) return '—'
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+
+  return parsed.toLocaleDateString()
+}
+
 export default function OrderTrackingForm() {
   const [mode, setMode] = useState<'awb' | 'order'>('awb')
   const [error, setError] = useState<string>('')
@@ -310,9 +319,7 @@ export default function OrderTrackingForm() {
                   <Typography variant="body2" color="text.secondary">
                     Estimated Delivery
                   </Typography>
-                  <Typography fontWeight={600}>
-                    {tracking.edd ? new Date(tracking.edd).toLocaleDateString() : '—'}
-                  </Typography>
+                  <Typography fontWeight={600}>{formatDateOrText(tracking.edd)}</Typography>
                 </Grid>
               </Grid>
               {tracking.shipment_info && (

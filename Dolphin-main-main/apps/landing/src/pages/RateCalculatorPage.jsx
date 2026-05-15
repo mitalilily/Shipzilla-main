@@ -1,5 +1,5 @@
 import { useDeferredValue, useMemo, useState, startTransition } from "react";
-import { Alert, Button, MenuItem, Paper, Typography } from "@mui/material";
+import { Alert, Button, Paper, Typography } from "@mui/material";
 import LoadingCard from "../components/common/LoadingCard";
 import MotionFade from "../components/common/MotionFade";
 import PageHero from "../components/common/PageHero";
@@ -90,6 +90,15 @@ export default function RateCalculatorPage() {
                 </div>
                 <div className="form-grid">
                   <input className="field-input" onChange={handleChange("height")} placeholder="Height (cm)" value={formValues.height} />
+                  <input
+                    className="field-input"
+                    inputMode="numeric"
+                    onChange={handleChange("orderAmount")}
+                    placeholder="Order amount (INR)"
+                    value={formValues.orderAmount}
+                  />
+                </div>
+                <div className="form-grid">
                   <select className="field-input" onChange={handleChange("paymentType")} value={formValues.paymentType}>
                     {paymentModes.map((mode) => (
                       <option key={mode} value={mode}>
@@ -187,6 +196,9 @@ export default function RateCalculatorPage() {
               ? [0, 1, 2].map((index) => <LoadingCard key={index} className="courier-loading-card" lines={6} />)
               : result?.options?.map((option) => <CourierOptionCard key={option.id} option={option} />)}
           </div>
+          {!loading && result && !result.options?.length ? (
+            <Alert severity="info">No courier rates were found for this lane. Try another pincode or package weight.</Alert>
+          ) : null}
         </div>
       </section>
     </div>

@@ -55,6 +55,7 @@ import { locations } from '../schema/locations'
 import { addresses, pickupAddresses } from '../schema/pickupAddresses'
 import { plans } from '../schema/plans'
 import { shippingRates } from '../schema/shippingRates'
+import { tracking_events } from '../schema/trackingEvents'
 import { userPlans } from '../schema/userPlans'
 import { userProfiles } from '../schema/userProfile'
 import { b2bPincodes, b2bZoneToZoneRates, zones } from '../schema/zones'
@@ -6547,6 +6548,59 @@ const sortHistoryDescending = (history: TrackingHistoryItem[]) => {
   history.sort((a, b) => new Date(b.event_time).getTime() - new Date(a.event_time).getTime())
 }
 
+const mergeTrackingHistory = (
+  primary: TrackingHistoryItem[] = [],
+  fallback: TrackingHistoryItem[] = [],
+) => {
+  const seen = new Set<string>()
+  const merged: TrackingHistoryItem[] = []
+
+  for (const item of [...primary, ...fallback]) {
+    const key = [
+      sanitizeString(item.status_code).toLowerCase(),
+      sanitizeString(item.message).toLowerCase(),
+      sanitizeString(item.location).toLowerCase(),
+      toIsoString(item.event_time),
+    ].join('|')
+
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push(item)
+  }
+
+  return merged
+}
+
+const loadLocalTrackingData = async (
+  order: OrderSummary,
+): Promise<ProviderNormalizedTracking> => {
+  const rows = await db
+    .select()
+    .from(tracking_events)
+    .where(eq(tracking_events.order_id, order.id))
+    .orderBy(desc(tracking_events.created_at))
+
+  const history = rows.map((row) => {
+    const statusText = sanitizeString(row.status_text ?? row.status_code ?? 'Status Update')
+
+    return {
+      status_code: sanitizeString(row.status_code ?? statusText),
+      location: sanitizeString(row.location),
+      event_time: toIsoString(row.created_at),
+      message: statusText,
+    }
+  })
+
+  const latest = rows[0]
+
+  return {
+    history,
+    status: latest ? sanitizeString(latest.status_text ?? latest.status_code) : undefined,
+    courier_name: latest ? sanitizeString(latest.courier ?? order.courier_partner ?? '') : undefined,
+    shipment_info: latest ? sanitizeString(latest.status_text ?? latest.status_code) : undefined,
+  }
+}
+
 const mapDelhiveryTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
   const history: TrackingHistoryItem[] = []
   const shipmentWrapper = Array.isArray(raw?.ShipmentData)
@@ -6774,11 +6828,12 @@ const findOrderByAwb = async (awb: string): Promise<OrderSummary | null> => {
 }
 
 export const trackByAwbService = async (awb: string): Promise<TrackingServiceResponse> => {
-  if (!awb) throw new HttpError(400, 'AWB number is required')
+  const normalizedAwb = sanitizeString(awb)
+  if (!normalizedAwb) throw new HttpError(400, 'AWB number is required')
 
-  const order = await findOrderByAwb(awb)
+  const order = await findOrderByAwb(normalizedAwb)
   if (!order) {
-    throw new HttpError(404, `No order found for AWB: ${awb}`)
+    throw new HttpError(404, `No order found for AWB: ${normalizedAwb}`)
   }
 
   let providerKey = sanitizeString(order.integration_type ?? 'delhivery').toLowerCase()
@@ -6790,21 +6845,36 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
   }
 
   let providerData: ProviderNormalizedTracking
+  const localTrackingData = await loadLocalTrackingData(order)
 
   try {
     if (providerKey === 'delhivery') {
       const delhiveryService = new DelhiveryService()
-      const raw = await delhiveryService.trackShipment(awb)
+      const raw = await delhiveryService.trackShipment(normalizedAwb)
       providerData = mapDelhiveryTracking(raw, order)
     } else if (providerKey === 'shipmozo') {
       const shipmozoService = new ShipmozoService()
-      const raw = await shipmozoService.trackOrder(awb)
+      const raw = await shipmozoService.trackOrder(normalizedAwb)
       providerData = mapShipmozoTracking(raw, order)
     } else {
+      if (localTrackingData.history.length) {
+        return buildTrackingResponse(order, localTrackingData)
+      }
       throw new HttpError(400, 'Unsupported integration_type for tracking')
+    }
+
+    providerData = {
+      ...providerData,
+      history: mergeTrackingHistory(providerData.history, localTrackingData.history),
+      status: providerData.status || localTrackingData.status,
+      courier_name: providerData.courier_name || localTrackingData.courier_name,
+      shipment_info: providerData.shipment_info || localTrackingData.shipment_info,
     }
   } catch (err: any) {
     if (err instanceof HttpError) throw err
+    if (localTrackingData.history.length) {
+      return buildTrackingResponse(order, localTrackingData)
+    }
     const status = err?.status ?? err?.response?.status ?? 500
     const message =
       err?.response?.data?.message ?? err?.message ?? 'Failed to fetch tracking information'
@@ -6828,12 +6898,18 @@ export const trackByOrderService = async ({
   }
 
   // 1️⃣ Find user
+  const contactConditions: SQL[] = []
+  if (email) {
+    contactConditions.push(sql`lower(${users.email}) = ${email.toLowerCase()}`)
+  }
+  if (phone) {
+    contactConditions.push(sql`regexp_replace(coalesce(${users.phone}, ''), '\\D', '', 'g') = ${phone}`)
+  }
+
   const user = await db
     .select()
     .from(users)
-    .where(
-      or(email ? eq(users.email, email) : undefined, phone ? eq(users.phone, phone) : undefined),
-    )
+    .where(or(...contactConditions))
     .limit(1)
 
   if (!user[0]) throw new Error('User not found with provided contact details')

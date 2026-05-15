@@ -42,11 +42,27 @@ const statusLabels = {
   EX: 'Exception',
 }
 
+const getStatusLabel = (statusCode) => statusLabels[statusCode] || statusCode || ''
+
+const getStageIndex = (value) => {
+  const normalized = String(value || '')
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+
+  if (!normalized) return -1
+  if (normalized.includes('deliver') && !normalized.includes('out for delivery')) return 4
+  if (normalized.includes('ofd') || normalized.includes('out for delivery')) return 3
+  if (normalized.includes('transit') || normalized.includes('shipped')) return 2
+  if (normalized.includes('pickup') || normalized.includes('manifest')) return 1
+  if (normalized.includes('book') || normalized.includes('created') || normalized.includes('placed')) return 0
+
+  return -1
+}
+
 export default function TrackingDetails({ data, isLoading, error }) {
   const cardBg = useColorModeValue('white', 'gray.800')
   const detailItemBg = useColorModeValue('gray.50', 'gray.700')
   const historyBorderColor = useColorModeValue('gray.200', 'gray.600')
-  console.log(data)
   if (isLoading) {
     return (
       <Flex direction="column" align="center" justify="center" py={12}>
@@ -72,10 +88,13 @@ export default function TrackingDetails({ data, isLoading, error }) {
     )
   }
 
-  const currentStage =
-    data?.history?.findIndex(
-      (h) => statusLabels[h.status_code]?.toLowerCase() === data.status?.toLowerCase(),
-    ) ?? 0
+  const historyStage = Math.max(
+    -1,
+    ...(data?.history || []).map((h) =>
+      Math.max(getStageIndex(h.status_code), getStageIndex(getStatusLabel(h.status_code)), getStageIndex(h.message)),
+    ),
+  )
+  const currentStage = Math.max(getStageIndex(data.status), historyStage, 0)
 
   return (
     <Container maxW="6xl" py={8}>
@@ -162,7 +181,7 @@ export default function TrackingDetails({ data, isLoading, error }) {
                     }
                     mb={2}
                   >
-                    {statusLabels[h.status_code] || h.status_code}
+                    {getStatusLabel(h.status_code)}
                   </Badge>
                   {h.location && (
                     <Text fontSize="sm">

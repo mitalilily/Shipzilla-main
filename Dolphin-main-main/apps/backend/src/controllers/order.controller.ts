@@ -387,13 +387,14 @@ export const trackOrderController = async (req: Request, res: Response) => {
   try {
     const { awb, orderNumber, contact } = req.query
 
-    let awbNumber: string | undefined = awb ? String(awb) : undefined
+    let awbNumber: string | undefined = awb ? String(awb).trim() : undefined
 
     if (!awbNumber && orderNumber && contact) {
       // Determine if contact is email or phone
-      const contactStr = String(contact)
+      const contactStr = String(contact).trim()
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactStr)
-      const isPhone = /^\d{7,15}$/.test(contactStr)
+      const normalizedPhone = contactStr.replace(/\D/g, '')
+      const isPhone = normalizedPhone.length >= 7 && normalizedPhone.length <= 15
 
       if (!isEmail && !isPhone) {
         return res.status(400).json({
@@ -404,9 +405,9 @@ export const trackOrderController = async (req: Request, res: Response) => {
 
       // Get the order by orderNumber + contact
       const orderData = await trackByOrderService({
-        orderNumber: String(orderNumber),
-        email: isEmail ? contactStr : undefined,
-        phone: isPhone ? contactStr : undefined,
+        orderNumber: String(orderNumber).trim(),
+        email: isEmail ? contactStr.toLowerCase() : undefined,
+        phone: isPhone ? normalizedPhone : undefined,
       })
 
       awbNumber = orderData?.awb_number ?? ''
@@ -430,6 +431,7 @@ export const trackOrderController = async (req: Request, res: Response) => {
     })
   } catch (err: any) {
     console.error(err)
-    return res.status(500).json({ success: false, message: err.message })
+    const statusCode = typeof err?.statusCode === 'number' ? err.statusCode : err?.status || 500
+    return res.status(statusCode).json({ success: false, message: err.message })
   }
 }

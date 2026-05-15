@@ -243,7 +243,16 @@ export const fetchAvailableCouriers = async (req: Request, res: Response) => {
 
 export const fetchAvailableCouriersForGuestController = async (req: Request, res: Response) => {
   try {
-    const { origin, destination, payment_type, weight, length, breadth, height } = req.body
+    const {
+      origin,
+      destination,
+      payment_type,
+      weight,
+      length,
+      breadth,
+      height,
+      shipment_type = 'b2c',
+    } = req.body
 
     // Validate required fields
     if (!origin || !destination) {
@@ -312,6 +321,13 @@ export const fetchAvailableCouriersForGuestController = async (req: Request, res
       })
     }
 
+    if (shipment_type && shipment_type !== 'b2c') {
+      return res.status(400).json({
+        success: false,
+        error: 'Guest rate calculator only supports b2c shipments',
+      })
+    }
+
     const orderAmountResult = extractOrderAmountFromBody(req.body)
     if (orderAmountResult.invalid) {
       return res.status(400).json({
@@ -325,6 +341,11 @@ export const fetchAvailableCouriersForGuestController = async (req: Request, res
       destination: destinationNum,
       payment_type: payment_type,
       order_amount: orderAmountResult.value,
+      shipment_type: 'b2c',
+      isCalculator:
+        req.body?.isCalculator === true ||
+        req.body?.is_calculator === true ||
+        req.body?.context === 'rate_calculator',
       weight: weightNum,
       length: lengthNum,
       breadth: breadthNum,

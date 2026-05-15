@@ -356,6 +356,7 @@ export const defaultRateForm = {
   length: "28",
   breadth: "22",
   height: "16",
+  orderAmount: "1000",
   paymentType: "Prepaid",
 };
 
