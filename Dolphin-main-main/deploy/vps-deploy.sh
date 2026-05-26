@@ -6,6 +6,7 @@ PUBLIC_ROOT="${PUBLIC_ROOT:-/var/www/shipzilla/public}"
 BACKEND_ENV="${BACKEND_ENV:-/etc/shipzilla/backend.env}"
 BACKEND_PORT="${BACKEND_PORT:-5002}"
 PM2_APP_NAME="${PM2_APP_NAME:-shipzilla-api}"
+LEGACY_PM2_APP_NAMES="${LEGACY_PM2_APP_NAMES:-dolphin-api}"
 LANDING_DOMAIN="${LANDING_DOMAIN:-shipzilla.in}"
 WWW_DOMAIN="${WWW_DOMAIN:-www.shipzilla.in}"
 APP_DOMAIN="${APP_DOMAIN:-app.shipzilla.in}"
@@ -287,6 +288,13 @@ set -a
 # shellcheck disable=SC1090
 . "$BACKEND_ENV"
 set +a
+
+for legacy_app in $LEGACY_PM2_APP_NAMES; do
+  if [ "$legacy_app" != "$PM2_APP_NAME" ] && pm2 describe "$legacy_app" >/dev/null 2>&1; then
+    echo "[deploy] Stopping legacy PM2 app: $legacy_app"
+    pm2 delete "$legacy_app" || true
+  fi
+done
 
 (
   cd "$APP_ROOT/apps/backend"
