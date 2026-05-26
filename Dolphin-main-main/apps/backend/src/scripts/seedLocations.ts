@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { sql } from 'drizzle-orm'
 import XLSX from 'xlsx'
-import { db } from '../models/client'
+import { db, pool } from '../models/client'
 import { locations } from '../schema/schema'
 
 const DATA_DIR = path.resolve('src/scripts/data')
@@ -156,5 +156,7 @@ async function importXlsx(filename: string) {
   } catch (err) {
     console.error('Import failed:', (err as Error).message)
     process.exitCode = 1
+  } finally {
+    await pool.end()
   }
 })()

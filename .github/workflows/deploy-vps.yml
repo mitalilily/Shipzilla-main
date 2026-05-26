@@ -196,3 +196,78 @@ jobs:
             echo "::error title=VPS deploy failed::Last deploy log lines: $summary"
             exit "$deploy_status"
           fi
+
+      - name: Run requested database seeds
+        if: contains(github.event.head_commit.message, '[seed-vps]')
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST || '72.60.96.97' }}
+          VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || vars.VPS_PORT }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -Eeuo pipefail
+          source "$RUNNER_TEMP/shipzilla-ssh.sh"
+          configure_shipzilla_ssh
+
+          "${SSH_BASE[@]}" "$SSH_DEST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+
+          cd /var/www/shipzilla/source/apps/backend
+          set -a
+          # shellcheck disable=SC1091
+          . /etc/shipzilla/backend.env
+          set +a
+
+          LOG="/tmp/shipzilla-seeds-$(date +%Y%m%d%H%M%S).log"
+          echo "[seed] Logging to $LOG"
+
+          db_counts() {
+            node <<'NODE'
+          const { Pool } = require('pg');
+          const ssl = process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : false;
+          const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl });
+          const queries = [
+            ['locations', 'select count(*)::int as count from locations'],
+            ['basic_plans', "select count(*)::int as count from plans where name = 'Basic'"],
+            ['customer_users', "select count(*)::int as count from users where role = 'customer'"],
+            ['user_plans', 'select count(*)::int as count from user_plans'],
+          ];
+          (async () => {
+            for (const [name, sql] of queries) {
+              try {
+                const result = await pool.query(sql);
+                console.log(`${name}=${result.rows[0].count}`);
+              } catch (err) {
+                console.log(`${name}=ERROR ${err.message}`);
+              }
+            }
+            await pool.end();
+          })().catch(async (err) => {
+            console.error(err);
+            await pool.end().catch(() => undefined);
+            process.exit(1);
+          });
+          NODE
+          }
+
+          {
+            echo "[seed] before counts"
+            db_counts
+
+            echo "[seed] running seedBasicPlan.ts"
+            npx ts-node src/scripts/seedBasicPlan.ts
+
+            echo "[seed] running assignBasicPlans.ts"
+            npx ts-node src/scripts/assignBasicPlans.ts
+
+            echo "[seed] running seedLocations.ts locations.xlsx"
+            timeout 1800 npx ts-node src/scripts/seedLocations.ts locations.xlsx
+
+            echo "[seed] after counts"
+            db_counts
+          } >"$LOG" 2>&1
+
+          echo "[seed] Complete. Last 120 log lines:"
+          tail -n 120 "$LOG"
+          REMOTE
