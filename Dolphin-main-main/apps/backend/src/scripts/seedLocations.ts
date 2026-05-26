@@ -7,7 +7,7 @@ import { db, pool } from '../models/client'
 import { locations } from '../schema/schema'
 
 const DATA_DIR = path.resolve('src/scripts/data')
-const CHUNK_SIZE = 10
+const CHUNK_SIZE = 500
 
 type Row = {
   pincode: string
@@ -105,6 +105,31 @@ async function insertBatch(rows: Row[]) {
   }
 }
 
+async function ensureLocationsTable() {
+  await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pgcrypto`)
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS public.shipzilla_locations (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      pincode varchar(15) NOT NULL,
+      city varchar(120) NOT NULL,
+      state varchar(120) NOT NULL,
+      country varchar(120) NOT NULL DEFAULT 'India',
+      tags jsonb NOT NULL DEFAULT '[]'::jsonb,
+      created_at timestamp with time zone NOT NULL DEFAULT now()
+    )
+  `)
+  await db.execute(sql`
+    DELETE FROM public.shipzilla_locations a
+    USING public.shipzilla_locations b
+    WHERE a.ctid < b.ctid
+      AND a.pincode = b.pincode
+  `)
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS locations_pincode_unique_idx
+    ON public.shipzilla_locations (pincode)
+  `)
+}
+
 async function importXlsx(filename: string) {
   const fullPath = path.join(DATA_DIR, filename)
   if (!fs.existsSync(fullPath)) {
@@ -112,6 +137,7 @@ async function importXlsx(filename: string) {
     return
   }
   console.log('Reading XLSX:', fullPath)
+  await ensureLocationsTable()
 
   const wb = XLSX.readFile(fullPath)
   const sheet = wb.Sheets[wb.SheetNames[0]]

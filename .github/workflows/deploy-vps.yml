@@ -5,6 +5,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      run_seeds:
+        description: Run Basic plan, Basic assignment, and locations seeds after deploy
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: vps-deploy-main
@@ -198,7 +204,7 @@ jobs:
           fi
 
       - name: Run requested database seeds
-        if: contains(github.event.head_commit.message, '[seed-vps]')
+        if: ${{ contains(github.event.head_commit.message, '[seed-vps]') || (github.event_name == 'workflow_dispatch' && inputs.run_seeds) }}
         env:
           VPS_HOST: ${{ secrets.VPS_HOST || vars.VPS_HOST || '72.60.96.97' }}
           VPS_USER: ${{ secrets.VPS_USER || vars.VPS_USER }}
@@ -228,7 +234,7 @@ jobs:
           const ssl = process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : false;
           const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl });
           const queries = [
-            ['locations', 'select count(*)::int as count from locations'],
+            ['shipzilla_locations', 'select count(*)::int as count from shipzilla_locations'],
             ['basic_plans', "select count(*)::int as count from plans where name = 'Basic'"],
             ['customer_users', "select count(*)::int as count from users where role = 'customer'"],
             ['user_plans', 'select count(*)::int as count from user_plans'],
@@ -256,13 +262,13 @@ jobs:
             db_counts
 
             echo "[seed] running seedBasicPlan.ts"
-            npx ts-node src/scripts/seedBasicPlan.ts
+            npm run seed:basic-plan
 
             echo "[seed] running assignBasicPlans.ts"
-            npx ts-node src/scripts/assignBasicPlans.ts
+            npm run seed:assign-basic-plans
 
             echo "[seed] running seedLocations.ts locations.xlsx"
-            timeout 1800 npx ts-node src/scripts/seedLocations.ts locations.xlsx
+            timeout 1800 npm run seed:locations
 
             echo "[seed] after counts"
             db_counts
