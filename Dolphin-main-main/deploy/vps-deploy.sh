@@ -7,6 +7,7 @@ BACKEND_ENV="${BACKEND_ENV:-/etc/shipzilla/backend.env}"
 BACKEND_PORT="${BACKEND_PORT:-5002}"
 PM2_APP_NAME="${PM2_APP_NAME:-shipzilla-api}"
 LEGACY_PM2_APP_NAMES="${LEGACY_PM2_APP_NAMES:-dolphin-api}"
+ENSURE_ADMIN_USER="${ENSURE_ADMIN_USER:-true}"
 LANDING_DOMAIN="${LANDING_DOMAIN:-shipzilla.in}"
 WWW_DOMAIN="${WWW_DOMAIN:-www.shipzilla.in}"
 APP_DOMAIN="${APP_DOMAIN:-app.shipzilla.in}"
@@ -298,6 +299,12 @@ done
 
 (
   cd "$APP_ROOT/apps/backend"
+
+  if [ "$ENSURE_ADMIN_USER" = "true" ]; then
+    echo "[deploy] Ensuring admin user"
+    npx ts-node src/scripts/ensureShipzillaAdmin.ts
+  fi
+
   if pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1; then
     pm2 restart "$PM2_APP_NAME" --update-env
   else

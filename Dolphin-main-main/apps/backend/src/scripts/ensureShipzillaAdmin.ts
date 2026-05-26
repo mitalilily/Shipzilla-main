@@ -4,25 +4,33 @@ import { v4 as uuidv4 } from 'uuid'
 import { db, pool } from '../models/client'
 import { users } from '../models/schema/users'
 
-const ADMIN_EMAIL = 'admin@shipzilla.in'
-const ADMIN_PASSWORD = 'Admin@12345!'
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@shipzilla.in').trim().toLowerCase()
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@12345!'
+const RESET_ADMIN_PASSWORD = process.env.RESET_ADMIN_PASSWORD === 'true'
 
 async function ensureShipzillaAdmin() {
   const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10)
   const [existing] = await db.select().from(users).where(eq(users.email, ADMIN_EMAIL))
 
   if (existing) {
+    const updateData: typeof users.$inferInsert = {
+      role: 'admin',
+      emailVerified: true,
+      updatedAt: new Date(),
+    }
+
+    if (RESET_ADMIN_PASSWORD || !existing.passwordHash) {
+      updateData.passwordHash = passwordHash
+    }
+
     await db
       .update(users)
-      .set({
-        passwordHash,
-        role: 'admin',
-        emailVerified: true,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(users.id, existing.id))
 
-    console.log(`Updated admin credentials for ${ADMIN_EMAIL}`)
+    console.log(
+      `${RESET_ADMIN_PASSWORD || !existing.passwordHash ? 'Updated credentials' : 'Ensured admin access'} for ${ADMIN_EMAIL}`,
+    )
   } else {
     await db.insert(users).values({
       id: uuidv4(),
@@ -37,8 +45,6 @@ async function ensureShipzillaAdmin() {
 
     console.log(`Created admin user ${ADMIN_EMAIL}`)
   }
-
-  console.log(`Admin login: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`)
 }
 
 ensureShipzillaAdmin()
