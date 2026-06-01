@@ -100,7 +100,7 @@ export const b2c_orders = pgTable(
   rto_details: jsonb('rto_details'), // optional, same structure as pickup_details
   is_rto_different: boolean('is_rto_different').default(false),
 
-  integration_type: varchar('integration_type').default('delhivery'),
+  integration_type: varchar('integration_type').default('shipmozo'),
 
   // Order source flag
   is_external_api: boolean('is_external_api').default(false), // true if created via external API, false if created locally

@@ -10,9 +10,7 @@ import {
   ndrReattemptController,
   ndrChangeAddressController,
   ndrChangePhoneController,
-  delhiveryPickupRescheduleController,
   ndrBulkActionController,
-  delhiveryUplStatusController,
 } from '../controllers/ndrActions.controller'
 import { exportAdminNdrCsv, getAdminNdrKpis } from '../controllers/ndr.controller'
 import { requireAuth } from '../middlewares/requireAuth'
@@ -36,9 +34,6 @@ r.post('/admin/ndr/attachment', requireAuth, isAdminMiddleware, attachAdminNdrAr
 r.post('/ndr/reattempt', requireAuth, ndrReattemptController)
 r.post('/ndr/change-address', requireAuth, ndrChangeAddressController)
 r.post('/ndr/change-phone', requireAuth, ndrChangePhoneController)
-r.post('/ndr/delhivery/pickup-reschedule', requireAuth, delhiveryPickupRescheduleController)
 r.post('/ndr/bulk', requireAuth, ndrBulkActionController)
-// Delhivery UPL status proxy
-r.get('/ndr/delhivery/upl-status', requireAuth, delhiveryUplStatusController)
 
 export default r

@@ -8,7 +8,6 @@ import {
   sendDailyWeightReconciliationEmails,
   sendWeeklyWeightReconciliationEmails,
 } from './weightReconciliationEmails'
-import { pollEkartTracking } from './ekartTracking'
 
 if (isRazorpayConfigured) {
   cron.schedule('*/20 * * * *', async () => {
@@ -44,15 +43,6 @@ cron.schedule('0 9 * * 1', async () => {
     await sendWeeklyWeightReconciliationEmails()
   } catch (err) {
     console.error('[Cron] Weekly weight reconciliation reports failed:', err)
-  }
-})
-
-cron.schedule('*/15 * * * *', async () => {
-  console.log('[Cron] Ekart tracking poll')
-  try {
-    await pollEkartTracking()
-  } catch (err) {
-    console.error('[Cron] Ekart tracking poll failed:', err)
   }
 })
 

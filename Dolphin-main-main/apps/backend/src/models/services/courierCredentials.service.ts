@@ -3,7 +3,13 @@ import { db } from '../client'
 import { courierCredentials } from '../schema/courierCredentials'
 
 export type BusinessType = 'b2b' | 'b2c'
-export type ServiceProviderId = 'delhivery' | 'shipway' | 'xpressbees' | 'ekart' | 'shipmozo'
+export type ServiceProviderId =
+  | 'delhivery'
+  | 'shipway'
+  | 'xpressbees'
+  | 'ekart'
+  | 'shipmozo'
+  | 'shiprocket'
 
 export type DelhiveryConfig = {
   apiKey?: string
@@ -27,6 +33,14 @@ export type ShipmozoConfig = {
   privateKey?: string
   username?: string
   password?: string
+  webhookSecret?: string
+}
+
+export type ShiprocketConfig = {
+  apiBase?: string
+  email?: string
+  password?: string
+  apiToken?: string
   webhookSecret?: string
 }
 
@@ -63,6 +77,7 @@ export type CourierConfig =
   | XpressbeesConfig
   | EkartConfig
   | ShipmozoConfig
+  | ShiprocketConfig
 
 export interface CourierCredentialsUpsertPayload {
   serviceProvider: ServiceProviderId
@@ -90,15 +105,10 @@ export interface CourierCredentialsMeta {
   }
 }
 
-const KNOWN_PROVIDERS: ServiceProviderId[] = [
-  'delhivery',
-  'shipway',
-  'xpressbees',
-  'ekart',
-  'shipmozo',
-]
+const KNOWN_PROVIDERS: ServiceProviderId[] = ['shipmozo', 'shiprocket']
 export const DEFAULT_EKART_BASE_URL = 'https://app.elite.ekartlogistics.in'
 export const DEFAULT_SHIPMOZO_BASE_URL = 'https://shipping-api.com/app/api/v1'
+export const DEFAULT_SHIPROCKET_BASE_URL = 'https://apiv2.shiprocket.in/v1/external'
 
 const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessType): boolean => {
   if (provider === 'delhivery') {
@@ -130,6 +140,16 @@ const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessTy
       process.env.SHIPMOZO_PASSWORD ||
       process.env.SHIPMOZO_API_BASE ||
       process.env.SHIPMOZO_API_BASE_URL
+    )
+  }
+  if (provider === 'shiprocket') {
+    return !!(
+      process.env.SHIPROCKET_API_TOKEN ||
+      process.env.SHIPROCKET_API_KEY ||
+      process.env.SHIPROCKET_EMAIL ||
+      process.env.SHIPROCKET_PASSWORD ||
+      process.env.SHIPROCKET_API_BASE ||
+      process.env.SHIPROCKET_API_BASE_URL
     )
   }
   return false
@@ -184,6 +204,17 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       privateKey: normalize(row.apiKey),
       username: normalize(row.username),
       password: normalize(row.password),
+      webhookSecret: normalize(row.webhookSecret),
+    }
+    return cfg
+  }
+
+  if (provider === 'shiprocket') {
+    const cfg: ShiprocketConfig = {
+      apiBase: normalize(row.apiBase),
+      email: normalize(row.username),
+      password: normalize(row.password),
+      apiToken: normalize(row.apiKey),
       webhookSecret: normalize(row.webhookSecret),
     }
     return cfg

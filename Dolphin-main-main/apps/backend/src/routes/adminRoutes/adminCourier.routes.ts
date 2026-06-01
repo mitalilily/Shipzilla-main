@@ -7,10 +7,8 @@ import {
   getAllCouriersController,
   getShippingRatesController,
   importShippingRatesController,
-  updateDelhiveryCredentialsController,
-  updateEkartCredentialsController,
   updateShipmozoCredentialsController,
-  updateXpressbeesCredentialsController,
+  updateShiprocketCredentialsController,
   updateShippingRateController,
 } from '../../controllers/admin/courier.controller'
 import { isAdminMiddleware } from '../../middlewares/isAdmin'
@@ -38,28 +36,16 @@ router.post(
 router.post('/available', requireAuth, fetchAvailableCouriersForAdmin)
 router.get('/credentials', requireAuth, isAdminMiddleware, getCourierCredentialsController)
 router.put(
-  '/credentials/delhivery',
-  requireAuth,
-  isAdminMiddleware,
-  updateDelhiveryCredentialsController,
-)
-router.put(
-  '/credentials/ekart',
-  requireAuth,
-  isAdminMiddleware,
-  updateEkartCredentialsController,
-)
-router.put(
-  '/credentials/xpressbees',
-  requireAuth,
-  isAdminMiddleware,
-  updateXpressbeesCredentialsController,
-)
-router.put(
   '/credentials/shipmozo',
   requireAuth,
   isAdminMiddleware,
   updateShipmozoCredentialsController,
+)
+router.put(
+  '/credentials/shiprocket',
+  requireAuth,
+  isAdminMiddleware,
+  updateShiprocketCredentialsController,
 )
 router.delete(
   '/shipping-rates/:planId/:id',

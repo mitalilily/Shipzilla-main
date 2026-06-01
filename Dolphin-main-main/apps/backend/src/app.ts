@@ -6,14 +6,7 @@ import http from 'http'
 import path from 'path'
 import { initSocketServer } from './config/socketServer'
 import { shopifyOrderWebhookController } from './controllers/shopify.controller'
-import {
-  delhiveryDocumentPushHandler,
-  delhiveryScanPushHandler,
-  delhiveryWebhookHandler,
-} from './controllers/webhooks/delhivery.webhook'
-import { ekartWebhookHandler } from './controllers/webhooks/ekart.webhook'
 import { shipmozoWebhookHandler } from './controllers/webhooks/shipmozo.webhook'
-import { xpressbeesWebhookHandler } from './controllers/webhooks/xpressbees.webhook'
 import adminCourierRoutes from './routes/adminRoutes/adminCourier.routes'
 import adminSupportRoutes from './routes/adminRoutes/adminSupport.routes'
 import adminUserRoutes from './routes/adminRoutes/adminUser.routes'
@@ -217,30 +210,4 @@ app.use('/api/weight-reconciliation', weightReconciliationRoutes)
 app.use('/api', ndrRoutes)
 app.use('/api', rtoRoutes)
 app.use('/api/v1', externalApiRoutes)
-// Ekart webhook
-app.post('/api/webhook/ekart', express.json(), ekartWebhookHandler)
-app.post('/api/webhook/ekart/track', express.json(), ekartWebhookHandler)
-app.post(
-  '/api/webhook/xpressbees',
-  express.json({
-    verify: (req: any, _res, buf) => {
-      req.rawBody = buf.toString('utf8')
-    },
-  }),
-  xpressbeesWebhookHandler,
-)
-app.post(
-  '/api/webhook/xpressbees/track',
-  express.json({
-    verify: (req: any, _res, buf) => {
-      req.rawBody = buf.toString('utf8')
-    },
-  }),
-  xpressbeesWebhookHandler,
-)
-// Delhivery webhooks - separate endpoints for Scan Push and Document Push
-app.post('/api/webhook/delhivery/scan', express.json(), delhiveryScanPushHandler) // Scan Push (Status Updates)
-app.post('/api/webhook/delhivery/document', express.json(), delhiveryDocumentPushHandler) // Document Push (POD, Sorter Image, QC Image)
-// Legacy unified endpoint (auto-detects type) - kept for backward compatibility
-app.post('/api/webhook/delhivery/order', express.json(), delhiveryWebhookHandler)
 export { app, server } // âœ… named exports

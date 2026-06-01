@@ -1,10 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '../client'
 import { b2c_orders } from '../schema/b2cOrders'
-import { DelhiveryService } from './couriers/delhivery.service'
-import { EkartService } from './couriers/ekart.service'
 import { ShipmozoService } from './couriers/shipmozo.service'
-import { XpressbeesService } from './couriers/xpressbees.service'
 import { applyCancellationRefundOnce } from './webhookProcessor'
 
 export async function cancelOrderShipment(orderId: string) {
@@ -27,9 +24,9 @@ export async function cancelOrderShipment(orderId: string) {
   })
 
   const integration = (order.integration_type || '').toLowerCase()
-  if (!['delhivery', 'ekart', 'xpressbees', 'shipmozo'].includes(integration)) {
+  if (integration !== 'shipmozo') {
     console.error('❌ Unsupported integration type:', { orderId, integration })
-    throw new Error('Only Delhivery, Ekart, Xpressbees and Shipmozo are supported for cancellation')
+    throw new Error('Only Shipmozo is supported for cancellation')
   }
 
   if (!order.awb_number) {
@@ -43,23 +40,11 @@ export async function cancelOrderShipment(orderId: string) {
     integration,
   })
 
-  let cancellationResult: any = null
-  if (integration === 'delhivery') {
-    const svc = new DelhiveryService()
-    cancellationResult = await svc.cancelShipment(order.awb_number)
-  } else if (integration === 'ekart') {
-    const svc = new EkartService()
-    cancellationResult = await svc.cancelShipment(order.awb_number)
-  } else if (integration === 'shipmozo') {
-    const svc = new ShipmozoService()
-    cancellationResult = await svc.cancelShipment({
-      orderId: order.order_number || order.id,
-      awbNumber: order.awb_number,
-    })
-  } else {
-    const svc = new XpressbeesService()
-    cancellationResult = await svc.cancelShipment(order.awb_number)
-  }
+  const svc = new ShipmozoService()
+  const cancellationResult: any = await svc.cancelShipment({
+    orderId: order.order_number || order.id,
+    awbNumber: order.awb_number,
+  })
 
   // Validate courier response
   // Check for various success indicators: boolean status, string status, success flags, or cancellation remark

@@ -1,11 +1,6 @@
 import { AddIcon, DeleteIcon, SearchIcon } from '@chakra-ui/icons'
 import {
-  Alert,
-  AlertDescription,
-  AlertIcon,
-  AlertTitle,
   Badge,
-  Box,
   Button,
   Flex,
   FormControl,
@@ -44,6 +39,25 @@ import { useState } from 'react'
 
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 
+const providerOptions = [
+  { value: 'shipmozo', label: 'Shipmozo' },
+  { value: 'shiprocket', label: 'Shiprocket' },
+]
+
+const defaultFormData = { businessType: ['b2c', 'b2b'] }
+
+const formatDateTime = (value) => {
+  if (!value) return ''
+  return new Date(value).toLocaleString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
 const Couriers = () => {
   const [filters, setFilters] = useState({
     search: '',
@@ -51,7 +65,11 @@ const Couriers = () => {
   })
   const debouncedSearch = useDebounce(filters.search, 500)
 
-  const { data: couriers = [], isLoading, error } = useCouriers({
+  const {
+    data: couriers = [],
+    isLoading,
+    error,
+  } = useCouriers({
     search: debouncedSearch || undefined,
     serviceProvider: filters.serviceProvider || undefined,
   })
@@ -59,9 +77,8 @@ const Couriers = () => {
   const deleteCourier = useDeleteCourier()
   const updateCourierStatus = useUpdateCourierStatus()
   const [isModalOpen, setModalOpen] = useState(false)
-  // In your component:
   const [openPopoverId, setOpenPopoverId] = useState(null)
-  const [formData, setFormData] = useState({ businessType: ['b2c', 'b2b'] })
+  const [formData, setFormData] = useState(defaultFormData)
   const toast = useToast()
 
   const columnKeys = ['id', 'name', 'serviceProvider', 'businessType', 'isEnabled', 'createdAt']
@@ -74,6 +91,19 @@ const Couriers = () => {
     'Created At',
   ]
 
+  const setBusinessType = (type) => {
+    const currentTypes = formData?.businessType || ['b2c', 'b2b']
+    if (currentTypes.includes(type)) {
+      const nextTypes = currentTypes.filter((currentType) => currentType !== type)
+      if (nextTypes.length) {
+        setFormData((prev) => ({ ...prev, businessType: nextTypes }))
+      }
+      return
+    }
+
+    setFormData((prev) => ({ ...prev, businessType: [...currentTypes, type] }))
+  }
+
   const renderers = {
     isEnabled: (value) => (
       <Text fontWeight="semibold" color={value ? 'green.500' : 'red.500'}>
@@ -84,22 +114,13 @@ const Couriers = () => {
       const types = Array.isArray(value) ? value : value ? [value] : ['b2c', 'b2b']
 
       const handleToggle = (type) => {
-        const currentTypes = types || ['b2c', 'b2b']
         let newTypes = []
 
-        if (currentTypes.includes(type)) {
-          // Unchecking - only allow if other type is selected
-          if (type === 'b2c' && currentTypes.includes('b2b')) {
-            newTypes = ['b2b']
-          } else if (type === 'b2b' && currentTypes.includes('b2c')) {
-            newTypes = ['b2c']
-          } else {
-            // Can't uncheck the last one
-            return
-          }
+        if (types.includes(type)) {
+          if (types.length === 1) return
+          newTypes = types.filter((currentType) => currentType !== type)
         } else {
-          // Checking - add the type
-          newTypes = [...currentTypes, type]
+          newTypes = [...types, type]
         }
 
         updateCourierStatus.mutate(
@@ -125,100 +146,47 @@ const Couriers = () => {
         )
       }
 
-      const isB2CActive = types.includes('b2c')
-      const isB2BActive = types.includes('b2b')
-
       return (
         <HStack spacing={1.5}>
-          <Tooltip
-            label={
-              isB2CActive
-                ? 'Click to disable B2C support for this courier'
-                : 'Click to enable B2C support for this courier'
-            }
-            hasArrow
-            placement="top"
-          >
-            <Badge
-              as="button"
-              cursor="pointer"
-              colorScheme={isB2CActive ? 'facebook' : 'gray'}
-              variant={isB2CActive ? 'solid' : 'outline'}
-              fontSize="xs"
-              px={2}
-              py={1}
-              borderRadius="md"
-              transition="all 0.2s"
-              _hover={{
-                opacity: 0.8,
-                transform: 'scale(1.05)',
-              }}
-              _active={{
-                transform: 'scale(0.95)',
-              }}
-              opacity={isB2CActive ? 1 : 0.5}
-              onClick={() => handleToggle('b2c')}
-              disabled={updateCourierStatus.isPending}
-            >
-              B2C
-            </Badge>
-          </Tooltip>
-          <Tooltip
-            label={
-              isB2BActive
-                ? 'Click to disable B2B support for this courier'
-                : 'Click to enable B2B support for this courier'
-            }
-            hasArrow
-            placement="top"
-          >
-            <Badge
-              as="button"
-              cursor="pointer"
-              colorScheme={isB2BActive ? 'facebook' : 'gray'}
-              variant={isB2BActive ? 'solid' : 'outline'}
-              fontSize="xs"
-              px={2}
-              py={1}
-              borderRadius="md"
-              transition="all 0.2s"
-              _hover={{
-                opacity: 0.8,
-                transform: 'scale(1.05)',
-              }}
-              _active={{
-                transform: 'scale(0.95)',
-              }}
-              opacity={isB2BActive ? 1 : 0.5}
-              onClick={() => handleToggle('b2b')}
-              disabled={updateCourierStatus.isPending}
-            >
-              B2B
-            </Badge>
-          </Tooltip>
+          {['b2c', 'b2b'].map((type) => {
+            const isActive = types.includes(type)
+            return (
+              <Tooltip
+                key={type}
+                label={isActive ? `Disable ${type.toUpperCase()}` : `Enable ${type.toUpperCase()}`}
+                hasArrow
+                placement="top"
+              >
+                <Badge
+                  as="button"
+                  cursor="pointer"
+                  colorScheme={isActive ? (type === 'b2c' ? 'facebook' : 'purple') : 'gray'}
+                  variant={isActive ? 'solid' : 'outline'}
+                  fontSize="xs"
+                  px={2}
+                  py={1}
+                  borderRadius="md"
+                  opacity={isActive ? 1 : 0.5}
+                  onClick={() => handleToggle(type)}
+                  disabled={updateCourierStatus.isPending}
+                >
+                  {type.toUpperCase()}
+                </Badge>
+              </Tooltip>
+            )
+          })}
         </HStack>
       )
     },
-    createdAt: (value) => {
-      if (!value) return ''
-      return new Date(value).toLocaleString('en-IN', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })
-    },
+    createdAt: formatDateTime,
   }
 
   const handleSave = () => {
-    if (!formData?.courierName || !formData?.courierId) {
+    if (!formData?.courierName || !formData?.courierId || !formData?.serviceProvider) {
       toast({ title: 'Please fill all the required fields', status: 'warning' })
       return
     }
 
-    // Ensure at least one business type is selected
     const businessType =
       formData?.businessType && formData.businessType.length > 0
         ? formData.businessType
@@ -229,12 +197,12 @@ const Couriers = () => {
       {
         onSuccess: () => {
           toast({ title: 'Courier added successfully', status: 'success' })
-          setFormData({ businessType: ['b2c', 'b2b'] })
+          setFormData(defaultFormData)
           setModalOpen(false)
         },
-        onError: (error) => {
+        onError: (err) => {
           toast({
-            title: error?.response?.data?.message ?? 'Failed to add courier',
+            title: err?.response?.data?.message ?? 'Failed to add courier',
             status: 'error',
           })
         },
@@ -245,46 +213,8 @@ const Couriers = () => {
   if (isLoading) return <Spinner size="md" />
   if (error) return <Text color="red.500">Failed to load couriers</Text>
 
-  // Check if there are Delhivery couriers and show info
-  const delhiveryCouriers = couriers.filter((c) => c.serviceProvider === 'delhivery')
-  const hasDelhiveryExpress = delhiveryCouriers.some((c) => c.id === 100)
-  const hasDelhiverySurface = delhiveryCouriers.some((c) => c.id === 99)
-
   return (
     <Flex direction="column" pt={{ base: '120px', md: '75px' }} gap={4}>
-      {/* Delhivery Service Info */}
-      {delhiveryCouriers.length > 0 && (
-        <Alert status="info" borderRadius="md">
-          <AlertIcon />
-          <Box flex="1">
-            <AlertTitle fontSize="sm" mb={1}>
-              Delhivery Service Information
-            </AlertTitle>
-            <AlertDescription fontSize="xs">
-              <Text mb={1}>
-                <strong>Delhivery Express</strong> (ID: 100) - Uses{' '}
-                <Badge colorScheme="blue">Express</Badge> shipping mode (air transport)
-              </Text>
-              <Text>
-                <strong>Delhivery Surface</strong> (ID: 99) - Uses{' '}
-                <Badge colorScheme="green">Surface</Badge> shipping mode (road transport)
-              </Text>
-              {!hasDelhiveryExpress && (
-                <Text mt={2} color="orange.600" fontSize="xs">
-                  ⚠️ Delhivery Express (ID: 100) not found
-                </Text>
-              )}
-              {!hasDelhiverySurface && (
-                <Text mt={2} color="orange.600" fontSize="xs">
-                  ⚠️ Delhivery Surface (ID: 99) not found
-                </Text>
-              )}
-            </AlertDescription>
-          </Box>
-        </Alert>
-      )}
-
-      {/* Filters and Add Courier Button */}
       <Flex direction={{ base: 'column', md: 'row' }} gap={4} justifyContent="space-between">
         <HStack spacing={3} flex={1} maxW={{ md: '600px' }}>
           <InputGroup>
@@ -303,10 +233,11 @@ const Couriers = () => {
             onChange={(e) => setFilters((prev) => ({ ...prev, serviceProvider: e.target.value }))}
             maxW="200px"
           >
-            <option value="delhivery">Delhivery</option>
-            <option value="ekart">Ekart</option>
-            <option value="xpressbees">Xpressbees</option>
-            <option value="shipmozo">Shipmozo</option>
+            {providerOptions.map((provider) => (
+              <option key={provider.value} value={provider.value}>
+                {provider.label}
+              </option>
+            ))}
           </Select>
           {(filters.search || filters.serviceProvider) && (
             <Button
@@ -322,7 +253,7 @@ const Couriers = () => {
           colorScheme="brand"
           leftIcon={<AddIcon />}
           onClick={() => {
-            setFormData({ businessType: ['b2c', 'b2b'] })
+            setFormData(defaultFormData)
             setModalOpen(true)
           }}
         >
@@ -330,7 +261,6 @@ const Couriers = () => {
         </Button>
       </Flex>
 
-      {/* Couriers Table */}
       <GenericTable
         title="Couriers List"
         data={couriers}
@@ -372,7 +302,7 @@ const Couriers = () => {
               isLazy
               placement="auto"
               closeOnBlur={true}
-              isOpen={openPopoverId === row?.id} // control open state per row
+              isOpen={openPopoverId === row?.id}
               onClose={() => setOpenPopoverId(null)}
             >
               <PopoverTrigger>
@@ -405,7 +335,7 @@ const Couriers = () => {
                           {
                             onSuccess: () => {
                               toast({ title: 'Courier deleted', status: 'success' })
-                              setOpenPopoverId(null) // ✅ close popover on success
+                              setOpenPopoverId(null)
                             },
                             onError: () => {
                               toast({ title: 'Failed to delete', status: 'error' })
@@ -424,12 +354,11 @@ const Couriers = () => {
         )}
       />
 
-      {/* Custom Modal */}
       <CustomModal
         isOpen={isModalOpen}
         onClose={() => {
           setModalOpen(false)
-          setFormData({ businessType: ['b2c', 'b2b'] })
+          setFormData(defaultFormData)
         }}
         title="Add Courier"
         footer={
@@ -446,12 +375,12 @@ const Couriers = () => {
             placeholder="Courier ID"
             required
             isRequired
-            value={formData?.courierId}
+            value={formData?.courierId || ''}
             onChange={(e) => setFormData((prev) => ({ ...prev, courierId: e.target.value }))}
           />
           <Input
             placeholder="Courier Name"
-            value={formData?.courierName}
+            value={formData?.courierName || ''}
             required
             isRequired
             onChange={(e) => setFormData((prev) => ({ ...prev, courierName: e.target.value }))}
@@ -464,10 +393,11 @@ const Couriers = () => {
             required
             isRequired
           >
-            <option value="delhivery">Delhivery</option>
-            <option value="ekart">Ekart</option>
-            <option value="xpressbees">Xpressbees</option>
-            <option value="shipmozo">Shipmozo</option>
+            {providerOptions.map((provider) => (
+              <option key={provider.value} value={provider.value}>
+                {provider.label}
+              </option>
+            ))}
           </Select>
 
           <FormControl>
@@ -476,46 +406,21 @@ const Couriers = () => {
             </FormLabel>
             <VStack spacing={3} align="stretch">
               <HStack spacing={3}>
-                <Button
-                  flex={1}
-                  size="md"
-                  colorScheme={formData?.businessType?.includes('b2c') ? 'blue' : 'gray'}
-                  variant={formData?.businessType?.includes('b2c') ? 'solid' : 'outline'}
-                  onClick={() => {
-                    const currentTypes = formData?.businessType || ['b2c', 'b2b']
-                    if (currentTypes.includes('b2c')) {
-                      // Unchecking B2C - only allow if B2B is selected
-                      if (currentTypes.includes('b2b')) {
-                        setFormData((prev) => ({ ...prev, businessType: ['b2b'] }))
-                      }
-                    } else {
-                      // Checking B2C
-                      setFormData((prev) => ({ ...prev, businessType: [...currentTypes, 'b2c'] }))
-                    }
-                  }}
-                >
-                  B2C
-                </Button>
-                <Button
-                  flex={1}
-                  size="md"
-                  colorScheme={formData?.businessType?.includes('b2b') ? 'purple' : 'gray'}
-                  variant={formData?.businessType?.includes('b2b') ? 'solid' : 'outline'}
-                  onClick={() => {
-                    const currentTypes = formData?.businessType || ['b2c', 'b2b']
-                    if (currentTypes.includes('b2b')) {
-                      // Unchecking B2B - only allow if B2C is selected
-                      if (currentTypes.includes('b2c')) {
-                        setFormData((prev) => ({ ...prev, businessType: ['b2c'] }))
-                      }
-                    } else {
-                      // Checking B2B
-                      setFormData((prev) => ({ ...prev, businessType: [...currentTypes, 'b2b'] }))
-                    }
-                  }}
-                >
-                  B2B
-                </Button>
+                {['b2c', 'b2b'].map((type) => {
+                  const isActive = formData?.businessType?.includes(type)
+                  return (
+                    <Button
+                      key={type}
+                      flex={1}
+                      size="md"
+                      colorScheme={isActive ? (type === 'b2c' ? 'blue' : 'purple') : 'gray'}
+                      variant={isActive ? 'solid' : 'outline'}
+                      onClick={() => setBusinessType(type)}
+                    >
+                      {type.toUpperCase()}
+                    </Button>
+                  )
+                })}
               </HStack>
               <HStack spacing={2} justify="center">
                 {formData?.businessType?.includes('b2c') && <Badge colorScheme="blue">B2C</Badge>}

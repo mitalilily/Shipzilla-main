@@ -998,7 +998,7 @@ export const fetchAvailableCouriersWithRates = async (
 
     // Build registry of enabled couriers by service provider
     // Filter by business type: check if business_type JSONB array contains 'b2c'
-    const SUPPORTED_PROVIDERS = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
+    const SUPPORTED_PROVIDERS = ['shipmozo']
     const systemCourierRows = await db
       .select({
         id: couriers.id,
@@ -2604,24 +2604,26 @@ export const createB2CShipmentService = async (
         const matchedCourier = matchingCouriers[0]
         const serviceProvider = matchedCourier.serviceProvider?.toLowerCase().trim()
         if (serviceProvider === 'delhivery') {
-          params.integration_type = 'delhivery'
+          throw new HttpError(400, 'Delhivery booking is no longer enabled.')
           console.log(
             `✅ Derived integration_type: ${params.integration_type} from courier_id: ${params.courier_id} (courier: ${matchedCourier.name})`,
           )
         } else if (serviceProvider === 'ekart') {
-          params.integration_type = 'ekart'
+          throw new HttpError(400, 'Ekart booking is no longer enabled.')
           console.log(
             `✅ Derived integration_type: ${params.integration_type} from courier_id: ${params.courier_id} (courier: ${matchedCourier.name})`,
           )
-        } else if (serviceProvider === 'xpressbees' || serviceProvider === 'shipmozo') {
+        } else if (serviceProvider === 'shipmozo') {
           params.integration_type = serviceProvider
           console.log(
             `Derived integration_type: ${params.integration_type} from courier_id: ${params.courier_id} (courier: ${matchedCourier.name})`,
           )
+        } else if (serviceProvider === 'shiprocket') {
+          throw new HttpError(400, 'Shiprocket booking is not enabled yet.')
         } else {
           throw new HttpError(
             400,
-            `Unsupported serviceProvider: ${serviceProvider}. Supported providers: delhivery, ekart, xpressbees, shipmozo.`,
+            `Unsupported serviceProvider: ${serviceProvider}. Supported provider for booking: shipmozo.`,
           )
         }
       } else {
@@ -2654,14 +2656,14 @@ export const createB2CShipmentService = async (
     }
   }
 
-  // If still no integration_type (and no courier_id was provided to derive it), default to 'delhivery'
+  // If still no integration_type (and no courier_id was provided to derive it), default to Shipmozo.
   // Note: This fallback is only for backward compatibility when neither integration_type nor courier_id is provided
   // When courier_id is provided without integration_type, an error is thrown above if it cannot be determined
   if (!params.integration_type) {
     console.warn(
-      `⚠️ integration_type not provided and courier_id not available, defaulting to 'delhivery'`,
+      `integration_type not provided and courier_id not available, defaulting to 'shipmozo'`,
     )
-    params.integration_type = 'delhivery'
+    params.integration_type = 'shipmozo'
   }
 
   if (String(params.integration_type || '').toLowerCase() === 'delhivery') {
@@ -3101,10 +3103,10 @@ export const createB2CShipmentService = async (
   try {
     // 1️⃣ CREATE SHIPMENT
     const requestedIntegrationType = String(params.integration_type || '').toLowerCase()
-    const allowedIntegrationTypes = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
+    const allowedIntegrationTypes = ['shipmozo']
     if (!requestedIntegrationType || !allowedIntegrationTypes.includes(requestedIntegrationType)) {
       throw new Error(
-        `Invalid integration_type: ${params.integration_type}. Supported values: delhivery, ekart, xpressbees, shipmozo.`,
+        `Invalid integration_type: ${params.integration_type}. Supported value: shipmozo.`,
       )
     }
 
@@ -6772,7 +6774,7 @@ const findOrderByAwb = async (awb: string): Promise<OrderSummary | null> => {
       id: b2c.id,
       order_id: b2c.order_id,
       order_number: b2c.order_number,
-      integration_type: b2c.integration_type ?? 'delhivery',
+      integration_type: b2c.integration_type ?? 'shipmozo',
       courier_partner: b2c.courier_partner,
       courier_id: b2c.courier_id ? Number(b2c.courier_id) : null,
       awb_number: b2c.awb_number ?? awb,
@@ -6810,7 +6812,7 @@ const findOrderByAwb = async (awb: string): Promise<OrderSummary | null> => {
       id: b2b.id,
       order_id: b2b.order_id,
       order_number: b2b.order_number,
-      integration_type: 'delhivery',
+      integration_type: 'shipmozo',
       courier_partner: b2b.courier_partner,
       courier_id: b2b.courier_id ? Number(b2b.courier_id) : null,
       awb_number: b2b.awb_number ?? awb,
@@ -6836,11 +6838,10 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
     throw new HttpError(404, `No order found for AWB: ${normalizedAwb}`)
   }
 
-  let providerKey = sanitizeString(order.integration_type ?? 'delhivery').toLowerCase()
+  let providerKey = sanitizeString(order.integration_type ?? 'shipmozo').toLowerCase()
 
-  if (!['delhivery', 'shipmozo'].includes(providerKey) && order.courier_partner) {
+  if (providerKey !== 'shipmozo' && order.courier_partner) {
     const partner = order.courier_partner.toLowerCase()
-    if (partner.includes('delhivery')) providerKey = 'delhivery'
     if (partner.includes('shipmozo')) providerKey = 'shipmozo'
   }
 
@@ -6848,11 +6849,7 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
   const localTrackingData = await loadLocalTrackingData(order)
 
   try {
-    if (providerKey === 'delhivery') {
-      const delhiveryService = new DelhiveryService()
-      const raw = await delhiveryService.trackShipment(normalizedAwb)
-      providerData = mapDelhiveryTracking(raw, order)
-    } else if (providerKey === 'shipmozo') {
+    if (providerKey === 'shipmozo') {
       const shipmozoService = new ShipmozoService()
       const raw = await shipmozoService.trackOrder(normalizedAwb)
       providerData = mapShipmozoTracking(raw, order)

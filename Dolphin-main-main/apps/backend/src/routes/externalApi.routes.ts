@@ -6,7 +6,6 @@ import {
   updateApiKeyController,
 } from '../controllers/externalApi/apiKey.controller'
 import { generateManifestController } from '../controllers/externalApi/manifest.controller'
-import { ekartWebhookHandler } from '../controllers/webhooks/ekart.webhook'
 import {
   getNdrEventsController,
   getNdrTimelineController,
@@ -63,9 +62,6 @@ router.get('/webhooks/:id', requireAuth, getWebhookController)
 router.put('/webhooks/:id', requireAuth, updateWebhookController)
 router.delete('/webhooks/:id', requireAuth, deleteWebhookController)
 router.post('/webhooks/:id/regenerate-secret', requireAuth, regenerateWebhookSecretController)
-
-// Provider webhook (Ekart) for partners who want to post directly
-router.post('/webhook/ekart/track', ekartWebhookHandler)
 
 // ============================================================================
 // SHIPPING & SERVICEABILITY (Requires API Key)

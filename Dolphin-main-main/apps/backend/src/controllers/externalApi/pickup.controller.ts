@@ -1,12 +1,11 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { Response } from 'express'
 import { db } from '../../models/client'
-import { DelhiveryService } from '../../models/services/couriers/delhivery.service'
 import {
   createPickupAddressService,
   updatePickupAddressService,
 } from '../../models/services/pickupAddresses.service'
-import { addresses, b2c_orders, pickupAddresses } from '../../schema/schema'
+import { addresses, pickupAddresses } from '../../schema/schema'
 
 /**
  * Create/Register pickup address
@@ -376,154 +375,11 @@ export const updatePickupAddressController = async (req: any, res: Response) => 
  * Request pickup for orders
  * POST /api/v1/pickup-addresses/request-pickup
  */
-export const requestPickupController = async (req: any, res: Response) => {
-  try {
-    const userId = req.userId
-    const { awbs, order_numbers, pickup_date, pickup_time, pickup_address_id } = req.body
-
-    // Validate input
-    if (
-      (!awbs || !Array.isArray(awbs) || awbs.length === 0) &&
-      (!order_numbers || !Array.isArray(order_numbers) || order_numbers.length === 0)
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-        message: 'awbs or order_numbers (array) is required',
-      })
-    }
-
-    const targetAwbs = Array.isArray(awbs)
-      ? awbs.map((v: any) => String(v || '').trim()).filter(Boolean)
-      : []
-    const targetOrderNumbers = Array.isArray(order_numbers)
-      ? order_numbers.map((v: any) => String(v || '').trim()).filter(Boolean)
-      : []
-
-    const identifiers = targetAwbs.length ? targetAwbs : targetOrderNumbers
-    const identifierColumn = targetAwbs.length ? b2c_orders.awb_number : b2c_orders.order_number
-
-    const orders = await db
-      .select({
-        id: b2c_orders.id,
-        user_id: b2c_orders.user_id,
-        order_number: b2c_orders.order_number,
-        awb_number: b2c_orders.awb_number,
-        integration_type: b2c_orders.integration_type,
-        pickup_details: b2c_orders.pickup_details,
-      })
-      .from(b2c_orders)
-      .where(and(eq(b2c_orders.user_id, userId), inArray(identifierColumn, identifiers)))
-
-    if (!orders.length) {
-      return res.status(404).json({
-        success: false,
-        error: 'Orders not found',
-        message: 'No matching orders found for provided awbs/order_numbers',
-      })
-    }
-
-    const missingAwb = orders.find((o) => !o.awb_number)
-    if (missingAwb) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid order',
-        message: `Order ${missingAwb.order_number} does not have an AWB yet`,
-      })
-    }
-
-    const unsupportedOrder = orders.find(
-      (o) => String(o.integration_type || '').trim().toLowerCase() !== 'delhivery',
-    )
-    if (unsupportedOrder) {
-      return res.status(400).json({
-        success: false,
-        error: 'Unsupported provider',
-        message: `Order ${unsupportedOrder.order_number} is not configured for Delhivery`,
-      })
-    }
-
-    let pickupLocation = ''
-    if (pickup_address_id) {
-      const [pickupAddress] = await db
-        .select({
-          addressNickname: addresses.addressNickname,
-          contactName: addresses.contactName,
-        })
-        .from(pickupAddresses)
-        .innerJoin(addresses, eq(pickupAddresses.addressId, addresses.id))
-        .where(and(eq(pickupAddresses.id, String(pickup_address_id)), eq(pickupAddresses.userId, userId)))
-        .limit(1)
-
-      if (!pickupAddress) {
-        return res.status(404).json({
-          success: false,
-          error: 'Pickup address not found',
-          message: 'pickup_address_id does not exist or is not owned by this user',
-        })
-      }
-
-      pickupLocation =
-        pickupAddress.addressNickname?.trim() || pickupAddress.contactName?.trim() || ''
-    } else {
-      const details = (orders[0].pickup_details || {}) as Record<string, any>
-      pickupLocation = String(details.warehouse_name || '').trim()
-    }
-
-    if (!pickupLocation) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing pickup location',
-        message:
-          'pickup_location is missing. Provide pickup_address_id or ensure order has pickup_details.warehouse_name',
-      })
-    }
-
-    const now = new Date()
-    const defaultPickupDate = now.toISOString().split('T')[0]
-    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
-    const defaultPickupTime = oneHourLater.toTimeString().split(' ')[0]
-
-    const delhivery = new DelhiveryService()
-    const delhiveryResponse = await delhivery.createPickupRequest({
-      pickup_date: String(pickup_date || defaultPickupDate),
-      pickup_time: String(pickup_time || defaultPickupTime),
-      pickup_location: pickupLocation,
-      expected_package_count: orders.length,
-    })
-
-    const orderIds = orders.map((o) => o.id)
-    if (orderIds.length) {
-      await db
-        .update(b2c_orders)
-        .set({
-          order_status: 'pickup_initiated',
-          updated_at: new Date(),
-        })
-        .where(inArray(b2c_orders.id, orderIds))
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Pickup request submitted successfully to Delhivery',
-      data: {
-        requested_awbs: orders.map((o) => o.awb_number).filter(Boolean),
-        requested_order_numbers: orders.map((o) => o.order_number).filter(Boolean),
-        pickup_date: String(pickup_date || defaultPickupDate),
-        pickup_time: String(pickup_time || defaultPickupTime),
-        pickup_location: pickupLocation,
-        expected_package_count: orders.length,
-        status: 'pickup_initiated',
-        provider: 'delhivery',
-        provider_response: delhiveryResponse,
-      },
-    })
-  } catch (error: any) {
-    console.error('Error requesting pickup via API:', error)
-    res.status(500).json({
-      success: false,
-      error: 'Failed to request pickup',
-      message: error.message || 'Internal server error',
-    })
-  }
+export const requestPickupController = async (_req: any, res: Response) => {
+  return res.status(400).json({
+    success: false,
+    error: 'Unsupported operation',
+    message:
+      'Manual pickup requests are not available for the active couriers. Shipmozo pickup is handled during shipment booking.',
+  })
 }

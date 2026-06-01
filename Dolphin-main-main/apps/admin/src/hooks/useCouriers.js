@@ -10,10 +10,8 @@ import {
   fetchAvailableCouriers,
   fetchServiceProviders,
   fetchShippingRates,
-  updateDelhiveryCredentials,
-  updateEkartCredentials,
   updateShipmozoCredentials,
-  updateXpressbeesCredentials,
+  updateShiprocketCredentials,
   updateCourierStatus,
   updateServiceProviderStatus,
   updateShippingRate,
@@ -116,44 +114,22 @@ export const useCourierCredentials = () => {
   })
 }
 
-export const useUpdateDelhiveryCredentials = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: updateDelhiveryCredentials,
-    onSuccess: () => {
-      queryClient.invalidateQueries(['courierCredentials'])
-    },
-  })
-}
-
-export const useUpdateEkartCredentials = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: updateEkartCredentials,
-    onSuccess: () => {
-      queryClient.invalidateQueries(['courierCredentials'])
-    },
-  })
-}
-
-export const useUpdateXpressbeesCredentials = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: updateXpressbeesCredentials,
-    onSuccess: () => {
-      queryClient.invalidateQueries(['courierCredentials'])
-    },
-  })
-}
-
 export const useUpdateShipmozoCredentials = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: updateShipmozoCredentials,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courierCredentials'])
+    },
+  })
+}
+
+export const useUpdateShiprocketCredentials = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: updateShiprocketCredentials,
     onSuccess: () => {
       queryClient.invalidateQueries(['courierCredentials'])
     },
