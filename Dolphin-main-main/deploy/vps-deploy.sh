@@ -8,6 +8,7 @@ BACKEND_PORT="${BACKEND_PORT:-5002}"
 PM2_APP_NAME="${PM2_APP_NAME:-shipzilla-api}"
 LEGACY_PM2_APP_NAMES="${LEGACY_PM2_APP_NAMES:-dolphin-api}"
 ENSURE_ADMIN_USER="${ENSURE_ADMIN_USER:-true}"
+PURGE_UNSUPPORTED_COURIERS="${PURGE_UNSUPPORTED_COURIERS:-true}"
 LANDING_DOMAIN="${LANDING_DOMAIN:-shipzilla.in}"
 WWW_DOMAIN="${WWW_DOMAIN:-www.shipzilla.in}"
 APP_DOMAIN="${APP_DOMAIN:-app.shipzilla.in}"
@@ -303,6 +304,11 @@ done
   if [ "$ENSURE_ADMIN_USER" = "true" ]; then
     echo "[deploy] Ensuring admin user"
     npx ts-node src/scripts/ensureShipzillaAdmin.ts
+  fi
+
+  if [ "$PURGE_UNSUPPORTED_COURIERS" = "true" ]; then
+    echo "[deploy] Purging unsupported courier providers"
+    npm run couriers:purge-unsupported
   fi
 
   if pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1; then

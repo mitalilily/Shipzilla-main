@@ -22,6 +22,12 @@ import { fetchAvailableCouriersWithRatesAdmin } from '../../models/services/ship
 import { courier_credentials } from '../../models/schema/courierCredentials'
 import { couriers } from '../../models/schema/couriers'
 import { getAllZones } from '../../models/services/zone.service'
+import {
+  getIntegratedCourierProviders,
+  integratedCourierProvidersLabel,
+  isIntegratedCourierProvider,
+  normalizeCourierProvider,
+} from '../../utils/courierProviders'
 
 const normalizeWebhookBaseUrl = (value: string) =>
   (value || '')
@@ -127,6 +133,8 @@ export const getShippingRatesController = async (req: Request, res: Response) =>
 
 export const getAllCouriersController = async (req: Request, res: Response) => {
   try {
+    const integratedProviders = getIntegratedCourierProviders()
+
     const courierList = await db
       .select({
         id: couriers.id,
@@ -136,6 +144,7 @@ export const getAllCouriersController = async (req: Request, res: Response) => {
         createdAt: couriers.createdAt,
       })
       .from(couriers)
+      .where(inArray(couriers.serviceProvider, integratedProviders))
       .orderBy(desc(couriers.createdAt))
 
     res.json({ success: true, data: courierList })
@@ -149,7 +158,8 @@ export const getAllCouriersListController = async (req: Request, res: Response) 
   try {
     const { search, serviceProvider, businessType } = req.query
 
-    const whereClauses = []
+    const integratedProviders = getIntegratedCourierProviders()
+    const whereClauses = [inArray(couriers.serviceProvider, integratedProviders)]
 
     // Filter by search (name or id)
     if (search && typeof search === 'string' && search.trim()) {
@@ -164,7 +174,11 @@ export const getAllCouriersListController = async (req: Request, res: Response) 
 
     // Filter by service provider
     if (serviceProvider && typeof serviceProvider === 'string' && serviceProvider.trim()) {
-      whereClauses.push(eq(couriers.serviceProvider, serviceProvider.trim()))
+      const normalizedProvider = normalizeCourierProvider(serviceProvider)
+      if (!isIntegratedCourierProvider(normalizedProvider)) {
+        return res.json({ success: true, data: [] })
+      }
+      whereClauses.push(eq(couriers.serviceProvider, normalizedProvider))
     }
 
     // Filter by business type (b2c or b2b)
@@ -209,6 +223,14 @@ export const updateCourierStatusController = async (req: Request, res: Response)
       })
     }
 
+    const normalizedProvider = normalizeCourierProvider(serviceProvider)
+    if (!isIntegratedCourierProvider(normalizedProvider)) {
+      return res.status(400).json({
+        success: false,
+        message: `Only these providers are supported: ${integratedCourierProvidersLabel}`,
+      })
+    }
+
     // Build update object
     const updateData: any = {
       updatedAt: new Date(),
@@ -244,7 +266,7 @@ export const updateCourierStatusController = async (req: Request, res: Response)
     const updated = await db
       .update(couriers)
       .set(updateData)
-      .where(and(eq(couriers.id, Number(id)), eq(couriers.serviceProvider, serviceProvider)))
+      .where(and(eq(couriers.id, Number(id)), eq(couriers.serviceProvider, normalizedProvider)))
       .returning()
 
     if (!updated.length) {
@@ -261,7 +283,7 @@ export const updateCourierStatusController = async (req: Request, res: Response)
 export const getServiceProvidersController = async (req: Request, res: Response) => {
   try {
     // Only expose the main integrated service providers in the enable/disable UI
-    const allowedProviders = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
+    const allowedProviders = getIntegratedCourierProviders()
 
     const rows = await db
       .select({
@@ -307,18 +329,18 @@ export const updateServiceProviderStatusController = async (req: Request, res: R
   const { isEnabled } = req.body
 
   try {
-    const allowedProviders = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
-
     if (!serviceProvider || typeof isEnabled !== 'boolean') {
       return res.status(400).json({
         success: false,
         message: 'serviceProvider (param) and boolean isEnabled (body) are required',
       })
     }
-    if (!allowedProviders.includes(String(serviceProvider).toLowerCase())) {
+
+    const normalizedProvider = normalizeCourierProvider(serviceProvider)
+    if (!isIntegratedCourierProvider(normalizedProvider)) {
       return res.status(400).json({
         success: false,
-        message: `Only these providers are supported: ${allowedProviders.join(', ')}`,
+        message: `Only these providers are supported: ${integratedCourierProvidersLabel}`,
       })
     }
 
@@ -328,7 +350,7 @@ export const updateServiceProviderStatusController = async (req: Request, res: R
         isEnabled,
         updatedAt: new Date(),
       })
-      .where(eq(couriers.serviceProvider, serviceProvider))
+      .where(eq(couriers.serviceProvider, normalizedProvider))
       .returning()
 
     if (!updated.length) {
@@ -338,7 +360,7 @@ export const updateServiceProviderStatusController = async (req: Request, res: R
     res.json({
       success: true,
       data: {
-        serviceProvider,
+        serviceProvider: normalizedProvider,
         isEnabled,
         affectedCouriers: updated.length,
       },

@@ -16,6 +16,12 @@ import {
   validateRateCardSlabs,
   type RateCardSlabInput,
 } from './b2cRateCard.service'
+import {
+  getIntegratedCourierProviders,
+  integratedCourierProvidersLabel,
+  isIntegratedCourierProvider,
+  normalizeCourierProvider,
+} from '../../utils/courierProviders'
 
 // =========================
 // 🔷 Types
@@ -44,13 +50,13 @@ export interface CourierFilters {
 }
 
 export const buildCourierWhereClause = (filters: CourierFilters = {}) => {
-  const conditions = []
+  const conditions: any[] = [inArray(couriers.serviceProvider, getIntegratedCourierProviders())]
 
   if (filters.name) {
     conditions.push(ilike(couriers.name, `%${filters.name}%`))
   }
 
-  return conditions.length ? and(...conditions) : undefined
+  return and(...conditions)
 }
 // =========================
 // 🛠 Helper: Sort
@@ -104,7 +110,15 @@ export const getCourierCount = async (filters: CourierFilters = {}) => {
 // 🔍 Get Courier by ID
 // =========================
 export const getCourierById = async (id: number) => {
-  const [courier] = await db.select().from(couriers).where(eq(couriers.id, id))
+  const [courier] = await db
+    .select()
+    .from(couriers)
+    .where(
+      and(
+        eq(couriers.id, id),
+        inArray(couriers.serviceProvider, getIntegratedCourierProviders()),
+      ),
+    )
 
   return courier
 }
@@ -619,12 +633,10 @@ export const createCourier = async (data: {
   if (!data?.courierName || !data?.courierName?.trim()) throw new Error('Courier name is required')
   if (!data?.serviceProvider) throw new Error('Service provider is required')
   
-  // Validate service provider is one of the allowed providers
-  const allowedProviders = ['delhivery', 'ekart', 'xpressbees', 'shipmozo']
-  const normalizedProvider = (data.serviceProvider || '').toLowerCase().trim()
-  if (!allowedProviders.includes(normalizedProvider)) {
+  const normalizedProvider = normalizeCourierProvider(data.serviceProvider)
+  if (!isIntegratedCourierProvider(normalizedProvider)) {
     throw new Error(
-      `Service provider must be one of: ${allowedProviders.join(', ')}. Received: ${data.serviceProvider}`
+      `Service provider must be one of: ${integratedCourierProvidersLabel}. Received: ${data.serviceProvider}`
     )
   }
 
