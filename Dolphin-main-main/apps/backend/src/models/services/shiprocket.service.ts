@@ -659,12 +659,12 @@ const determineB2CZoneKey = (
  * Adjust the right-hand values if your zones.code uses different wording.
  */
 const ZONE_KEY_TO_DB_CODE: Record<string, string> = {
-  METRO_TO_METRO: 'METRO_TO_METRO',
+  METRO_TO_METRO: 'METRO TO METRO',
   ROI: 'ROI',
-  SPECIAL_ZONE: 'SPECIAL_ZONE',
-  WITHIN_CITY: 'WITHIN_CITY',
-  WITHIN_REGION: 'WITHIN_REGION',
-  WITHIN_STATE: 'WITHIN_STATE',
+  SPECIAL_ZONE: 'SPECIAL ZONE',
+  WITHIN_CITY: 'WITHIN CITY',
+  WITHIN_REGION: 'WITHIN REGION',
+  WITHIN_STATE: 'WITHIN STATE',
 }
 
 /**
