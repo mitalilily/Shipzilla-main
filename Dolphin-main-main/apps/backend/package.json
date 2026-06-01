@@ -18,6 +18,7 @@
     "seed:assign-basic-plans": "ts-node src/scripts/assignBasicPlans.ts",
     "seed:locations": "ts-node src/scripts/seedLocations.ts locations.xlsx",
     "seed:core": "npm run seed:basic-plan && npm run seed:assign-basic-plans && npm run seed:locations",
+    "seed:b2c-zones": "ts-node src/scripts/seedZones.ts",
     "seed:holidays": "ts-node src/scripts/seedHolidays.ts",
     "seed:holidays:year": "ts-node src/scripts/seedHolidays.ts",
     "seed:delhivery-b2c": "ts-node src/scripts/seedDelhiveryB2CRatecard.ts",
