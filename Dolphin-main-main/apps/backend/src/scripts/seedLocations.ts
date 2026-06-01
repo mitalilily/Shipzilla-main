@@ -108,7 +108,7 @@ async function insertBatch(rows: Row[]) {
 async function ensureLocationsTable() {
   await db.execute(sql`CREATE EXTENSION IF NOT EXISTS pgcrypto`)
   await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS public.shipzilla_locations (
+    CREATE TABLE IF NOT EXISTS public.meracourierwala_locations (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       pincode varchar(15) NOT NULL,
       city varchar(120) NOT NULL,
@@ -119,14 +119,14 @@ async function ensureLocationsTable() {
     )
   `)
   await db.execute(sql`
-    DELETE FROM public.shipzilla_locations a
-    USING public.shipzilla_locations b
+    DELETE FROM public.meracourierwala_locations a
+    USING public.meracourierwala_locations b
     WHERE a.ctid < b.ctid
       AND a.pincode = b.pincode
   `)
   await db.execute(sql`
     CREATE UNIQUE INDEX IF NOT EXISTS locations_pincode_unique_idx
-    ON public.shipzilla_locations (pincode)
+    ON public.meracourierwala_locations (pincode)
   `)
 }
 

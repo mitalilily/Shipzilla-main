@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { integer, jsonb, pgTableCreator, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
 import { users } from './users'
 
-const createTable = pgTableCreator((name) => `shipzilla_${name}`)
+const createTable = pgTableCreator((name) => `meracourierwala_${name}`)
 
 export const labelPreferences = createTable('label_preferences', {
   id: uuid('id').defaultRandom().primaryKey(),
