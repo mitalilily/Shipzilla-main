@@ -108,6 +108,7 @@ const serviceProviderLabel = (provider: unknown) => {
     ekart: 'Ekart',
     xpressbees: 'Xpressbees',
     shipmozo: 'Shipmozo',
+    shiprocket: 'Shiprocket',
     shipway: 'Shipway',
   }
   return labels[value] || 'Other'

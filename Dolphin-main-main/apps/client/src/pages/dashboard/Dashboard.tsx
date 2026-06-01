@@ -23,7 +23,10 @@ import OrdersTrendChart from '../../components/dashboard/OrdersTrendChart'
 import PerformanceMetricsCard from '../../components/dashboard/PerformanceMetricsCard'
 import QuickActionsCard from '../../components/dashboard/QuickActionsCard'
 import QuickStatsCards from '../../components/dashboard/QuickStatsCards'
+import RecommendationsCard from '../../components/dashboard/RecommendationsCard'
 import RecentActivityCard from '../../components/dashboard/RecentActivityCard'
+import RevenueByTypeChart from '../../components/dashboard/RevenueByTypeChart'
+import RevenueChart from '../../components/dashboard/RevenueChart'
 import TodaysOperationsCard from '../../components/dashboard/TodaysOperationsCard'
 import TopDestinationsCard from '../../components/dashboard/TopDestinationsCard'
 import { useMerchantDashboardStats } from '../../hooks/useDashboard'
@@ -37,16 +40,24 @@ const widgetComponents: Record<string, React.ComponentType<any>> = {
   quickActions: QuickActionsCard,
   insights: InsightsCard,
   actionItems: ActionItemsCard,
+  recommendations: RecommendationsCard,
   performanceMetrics: PerformanceMetricsCard,
   ordersTrend: OrdersTrendChart,
   financialHealth: FinancialHealthCard,
   recentActivity: RecentActivityCard,
+  revenueChart: RevenueChart,
   todaysOperations: TodaysOperationsCard,
   orderStatusChart: OrderStatusChart,
+  revenueByTypeChart: RevenueByTypeChart,
   courierComparison: CourierComparisonChart,
   metricsOverview: MetricsOverviewCard,
   courierPerformance: CourierPerformanceCard,
   topDestinations: TopDestinationsCard,
+}
+
+const toNum = (value: unknown) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 export default function Dashboard() {
@@ -138,6 +149,54 @@ export default function Dashboard() {
   const charts = stats.charts || {}
   const hasActionItems =
     (actions.ndrCount || 0) > 0 || (actions.rtoCount || 0) > 0 || (actions.pendingInvoices || 0) > 0
+  const hasLowCourierPerformance = Object.values(couriers.performance || {}).some(
+    (courier) =>
+      toNum(courier?.count) > 0 &&
+      toNum(courier?.deliveryRate) > 0 &&
+      toNum(courier?.deliveryRate) < 85,
+  )
+  const recommendations = [
+    toNum(financial.walletBalance) < 500
+      ? {
+          message: `Wallet balance is ${formatCurrency(toNum(financial.walletBalance))}. Recharge before creating more shipments.`,
+          action: 'Recharge wallet',
+          path: '/billing/wallet_transactions',
+          priority: 'high' as const,
+        }
+      : null,
+    toNum(actions.ndrCount) > 0
+      ? {
+          message: `${toNum(actions.ndrCount)} NDR orders need customer or address action.`,
+          action: 'Review NDR',
+          path: '/ops/ndr',
+          priority: 'high' as const,
+        }
+      : null,
+    toNum(actions.rtoCount) > 0 || toNum(operational.rtoRate) > 5
+      ? {
+          message: `${toNum(actions.rtoCount)} RTO cases are active. Audit return-heavy lanes and courier choices.`,
+          action: 'Check RTO',
+          path: '/ops/rto',
+          priority: 'medium' as const,
+        }
+      : null,
+    toNum(actions.weightDiscrepancyCount) > 0
+      ? {
+          message: `${toNum(actions.weightDiscrepancyCount)} weight discrepancies are waiting for review.`,
+          action: 'Open disputes',
+          path: '/reconciliation/weight',
+          priority: 'medium' as const,
+        }
+      : null,
+    hasLowCourierPerformance
+      ? {
+          message: 'One or more high-volume couriers are below 85% delivery success.',
+          action: 'Tune priority',
+          path: '/settings/courier_priority',
+          priority: 'medium' as const,
+        }
+      : null,
+  ].filter((item) => item !== null)
 
   // Get widget order from preferences or use default
   const widgetOrder =
@@ -147,23 +206,26 @@ export default function Dashboard() {
       'quickActions',
       'insights',
       'actionItems',
+      'recommendations',
       'performanceMetrics',
       'ordersTrend',
       'financialHealth',
       'recentActivity',
+      'revenueChart',
       'todaysOperations',
       'orderStatusChart',
+      'revenueByTypeChart',
       'courierComparison',
       'metricsOverview',
       'courierPerformance',
       'topDestinations',
-    ].filter((widget) => widget !== 'revenueChart' && widget !== 'revenueByTypeChart')
+    ]
 
   const widgetVisibility = preferences?.widgetVisibility || {}
 
   // Filter out hidden widgets from widgetOrder so they don't take up space
   const visibleWidgetOrder = widgetOrder.filter((widgetId) => {
-    if (widgetId === 'recommendations') return false
+    if (widgetId === 'recommendations' && recommendations.length === 0) return false
     if (widgetId === 'actionItems' && !hasActionItems) return false
     // Default to visible if not set in preferences
     return widgetVisibility[widgetId] !== false
@@ -192,6 +254,7 @@ export default function Dashboard() {
       actions,
     },
     actionItems: { actions, formatCurrency },
+    recommendations: { recommendations },
     performanceMetrics: { operational, formatPercentage },
     ordersTrend: {
       chartData: charts.ordersByDate || [],
@@ -210,10 +273,20 @@ export default function Dashboard() {
       recentActivity: stats.recentActivity || { transactions: [], recentOrders: [] },
       formatCurrency,
     },
+    revenueChart: {
+      chartData: charts.revenueByDate || [],
+      ChartComponent,
+      formatCurrency,
+    },
     todaysOperations: { todayOps },
     orderStatusChart: {
       chartData: charts.ordersByStatus || [],
       ChartComponent,
+    },
+    revenueByTypeChart: {
+      chartData: charts.revenueByOrderType || [],
+      ChartComponent,
+      formatCurrency,
     },
     courierComparison: {
       ordersData: charts.ordersByCourier || [],
@@ -246,12 +319,15 @@ export default function Dashboard() {
       quickActions: { xs: 12, md: 6 },
       insights: { xs: 12, md: 6 },
       actionItems: { xs: 12, md: 8 },
+      recommendations: { xs: 12, md: 4 },
       performanceMetrics: { xs: 12, md: 4 },
       ordersTrend: { xs: 12, md: 8 },
       financialHealth: { xs: 12, md: 6 },
       recentActivity: { xs: 12, md: 6 },
+      revenueChart: { xs: 12, md: 6 },
       todaysOperations: { xs: 12, md: 6 },
       orderStatusChart: { xs: 12, md: 6 },
+      revenueByTypeChart: { xs: 12, md: 6 },
       courierComparison: { xs: 12, md: 8 },
       metricsOverview: { xs: 12, md: 4 },
       courierPerformance: { xs: 12, md: 6 },
@@ -375,32 +451,28 @@ export default function Dashboard() {
             />
           )}
           <Grid container spacing={spacing} sx={{ position: 'relative', zIndex: 1 }}>
-            {visibleWidgetOrder
-              .filter(
-                (widgetId) => widgetId !== 'revenueChart' && widgetId !== 'revenueByTypeChart',
+            {visibleWidgetOrder.map((widgetId, index) => {
+              const WidgetComponent = widgetComponents[widgetId]
+              const gridSize = getGridSize(widgetId, index, visibleWidgetOrder)
+
+              if (!WidgetComponent) {
+                return null
+              }
+
+              return (
+                <Grid size={gridSize} key={widgetId} sx={{ display: 'flex' }}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-50px' }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    style={{ width: '100%', height: '100%' }}
+                  >
+                    <WidgetComponent {...(widgetProps[widgetId] || {})} />
+                  </motion.div>
+                </Grid>
               )
-              .map((widgetId, index) => {
-                const WidgetComponent = widgetComponents[widgetId]
-                const gridSize = getGridSize(widgetId, index, visibleWidgetOrder)
-
-                if (!WidgetComponent) {
-                  return null
-                }
-
-                return (
-                  <Grid size={gridSize} key={widgetId} sx={{ display: 'flex' }}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: '-50px' }}
-                      transition={{ duration: 0.5, ease: 'easeOut' }}
-                      style={{ width: '100%', height: '100%' }}
-                    >
-                      <WidgetComponent {...(widgetProps[widgetId] || {})} />
-                    </motion.div>
-                  </Grid>
-                )
-              })}
+            })}
           </Grid>
         </Box>
       </Container>

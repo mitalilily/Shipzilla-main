@@ -5,8 +5,7 @@ const UI_AUTH_STORAGE_KEY = 'shipzilla-ui-auth-session'
 
 const rawUiOnlyAuth = import.meta.env.VITE_UI_ONLY_AUTH
 
-export const UI_ONLY_AUTH =
-  rawUiOnlyAuth === undefined ? import.meta.env.DEV : rawUiOnlyAuth === 'true'
+export const UI_ONLY_AUTH = rawUiOnlyAuth === 'true'
 
 type StoredUiSession = {
   email: string

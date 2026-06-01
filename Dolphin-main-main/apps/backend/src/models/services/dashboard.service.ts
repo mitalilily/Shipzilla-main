@@ -19,6 +19,7 @@ export const getIncomingPickups = async (userId: string) => {
       awb_number: b2c_orders.awb_number,
       courier_partner: b2c_orders.courier_partner,
       order_number: b2c_orders.order_number,
+      status: b2c_orders.pickup_status,
       pickup_details: b2c_orders.pickup_details,
       created_at: b2c_orders.created_at,
     })
@@ -34,6 +35,7 @@ export const getIncomingPickups = async (userId: string) => {
       awb_number: b2b_orders.awb_number,
       courier_partner: b2b_orders.courier_partner,
       order_number: b2b_orders.order_number,
+      status: b2b_orders.order_status,
       pickup_details: b2b_orders.pickup_details,
       created_at: b2b_orders.created_at,
     })
@@ -254,6 +256,8 @@ export const getMerchantDashboardStats = async (userId: string) => {
   // remain accurate for imported/synced orders.
   const getOrderTimestamp = (order: any) =>
     getFirstValidDate(order.order_date, order.created_at, order.updated_at)
+  const getDeliveryTimestamp = (order: any) =>
+    getFirstValidDate(order.delivered_at, order.updated_at, order.created_at)
   const isSameLocalDay = (date: Date, target: Date) =>
     date.getFullYear() === target.getFullYear() &&
     date.getMonth() === target.getMonth() &&
@@ -278,9 +282,10 @@ export const getMerchantDashboardStats = async (userId: string) => {
     return ['shipment_created', 'in_transit', 'out_for_delivery'].includes(status)
   })
 
-  const deliveredToday = todayOrders.filter((o) => {
+  const deliveredToday = allOrders.filter((o) => {
     const status = (o.order_status || '').toLowerCase()
-    return status === 'delivered'
+    const deliveredDate = getDeliveryTimestamp(o)
+    return status === 'delivered' && !isNaN(deliveredDate.getTime()) && isSameLocalDay(deliveredDate, today)
   })
 
   // Financial overview (CUSTOMER-FACING - only platform rates)
@@ -353,7 +358,7 @@ export const getMerchantDashboardStats = async (userId: string) => {
   // Average delivery time
   const deliveredOrdersWithDates = deliveredOrders.filter((o) => {
     const created = getOrderTimestamp(o)
-    const delivered = getFirstValidDate((o as any).delivered_at, (o as any).updated_at, (o as any).created_at)
+    const delivered = getDeliveryTimestamp(o)
     return !isNaN(created.getTime()) && !isNaN(delivered.getTime())
   })
   const avgDeliveryTime =
@@ -361,7 +366,7 @@ export const getMerchantDashboardStats = async (userId: string) => {
       ? Math.round(
           deliveredOrdersWithDates.reduce((sum, o) => {
             const created = getOrderTimestamp(o)
-            const delivered = getFirstValidDate((o as any).delivered_at, (o as any).updated_at, (o as any).created_at)
+            const delivered = getDeliveryTimestamp(o)
             return sum + Math.floor((delivered.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
           }, 0) / deliveredOrdersWithDates.length
         )

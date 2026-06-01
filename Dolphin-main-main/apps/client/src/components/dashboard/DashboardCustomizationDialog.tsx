@@ -36,8 +36,10 @@ const widgetLabels: Record<string, string> = {
   ordersTrend: 'Orders Trend Chart',
   financialHealth: 'Financial Health',
   recentActivity: 'Recent Activity',
+  revenueChart: 'Revenue Trend Chart',
   todaysOperations: "Today's Operations",
   orderStatusChart: 'Order Status Chart',
+  revenueByTypeChart: 'Revenue by Order Type',
   courierComparison: 'Courier Comparison',
   metricsOverview: 'Metrics Overview',
   courierPerformance: 'Courier Performance',
@@ -55,8 +57,10 @@ const defaultPreferences: DashboardPreferences = {
     ordersTrend: true,
     financialHealth: true,
     recentActivity: true,
+    revenueChart: true,
     todaysOperations: true,
     orderStatusChart: true,
+    revenueByTypeChart: true,
     courierComparison: true,
     metricsOverview: true,
     courierPerformance: true,
@@ -72,8 +76,10 @@ const defaultPreferences: DashboardPreferences = {
     'ordersTrend',
     'financialHealth',
     'recentActivity',
+    'revenueChart',
     'todaysOperations',
     'orderStatusChart',
+    'revenueByTypeChart',
     'courierComparison',
     'metricsOverview',
     'courierPerformance',
@@ -218,9 +224,7 @@ export default function DashboardCustomizationDialog({ open, onClose }: Dashboar
               Toggle widgets on/off to customize your dashboard
             </Typography>
             <Stack spacing={1.5}>
-              {localPreferences.widgetOrder
-                .filter((widgetId) => widgetId !== 'revenueChart' && widgetId !== 'revenueByTypeChart')
-                .map((widgetId) => (
+              {localPreferences.widgetOrder.map((widgetId) => (
                 <Box
                   key={widgetId}
                   sx={{
@@ -267,9 +271,7 @@ export default function DashboardCustomizationDialog({ open, onClose }: Dashboar
               Reorder widgets to prioritize what matters most
             </Typography>
             <Stack spacing={1.5}>
-              {localPreferences.widgetOrder
-                .filter((widgetId) => widgetId !== 'revenueChart' && widgetId !== 'revenueByTypeChart')
-                .map((widgetId, index) => (
+              {localPreferences.widgetOrder.map((widgetId, index) => (
                 <Box
                   key={widgetId}
                   sx={{
