@@ -1,0 +1,762 @@
+{
+  "info": {
+    "name": "Shiprocket API - Shipzilla Integration",
+    "description": "Complete Shiprocket API endpoints integrated into Shipzilla. Base URL: {{base_url}}/api/shiprocket\n\nEnvironment Variables needed:\n- base_url: http://localhost:3000 (or your server URL)\n- token: JWT auth token from login\n- shiprocket_order_id: Order ID from Shiprocket\n- shiprocket_awb: AWB number\n- shiprocket_ndr_id: NDR ID\n- pickup_id: Pickup location ID",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication & Serviceability",
+      "item": [
+        {
+          "name": "Check Courier Serviceability",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/courier/serviceability?delivery_postcode=110001&pickup_postcode=400001&cod=false&weight=500",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "courier", "serviceability"],
+              "query": [
+                { "key": "delivery_postcode", "value": "110001" },
+                { "key": "pickup_postcode", "value": "400001" },
+                { "key": "cod", "value": "false" },
+                { "key": "weight", "value": "500" }
+              ]
+            },
+            "description": "Check if a pincode is serviceable by Shiprocket couriers"
+          }
+        },
+        {
+          "name": "Get Self Serviceability",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/courier/serviceability/self?delivery_postcode=110001&pickup_postcode=400001",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "courier", "serviceability", "self"],
+              "query": [
+                { "key": "delivery_postcode", "value": "110001" },
+                { "key": "pickup_postcode", "value": "400001" }
+              ]
+            },
+            "description": "Get self-serviceable pincodes"
+          }
+        },
+        {
+          "name": "Get Recommended Couriers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/courier/recommended?delivery_postcode=110001&pickup_postcode=400001&cod=false&weight=500",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "courier", "recommended"],
+              "query": [
+                { "key": "delivery_postcode", "value": "110001" },
+                { "key": "pickup_postcode", "value": "400001" },
+                { "key": "cod", "value": "false" },
+                { "key": "weight", "value": "500" }
+              ]
+            },
+            "description": "Get recommended couriers for a shipment"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Orders",
+      "item": [
+        {
+          "name": "List All Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/orders?page=1&per_page=10&sort=created_at&status=NEW",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "orders"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "10" },
+                { "key": "sort", "value": "created_at" },
+                { "key": "status", "value": "NEW" }
+              ]
+            },
+            "description": "List all orders from Shiprocket with filters"
+          }
+        },
+        {
+          "name": "Get Order Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/orders/{{shiprocket_order_id}}",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "orders", "{{shiprocket_order_id}}"]
+            },
+            "description": "Get order details by Shiprocket order ID"
+          }
+        },
+        {
+          "name": "Cancel Orders",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [12345],\n  \"awbs\": [\"AWB123456789\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/orders/cancel",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "orders", "cancel"]
+            },
+            "description": "Cancel orders by shipment IDs or AWB numbers"
+          }
+        },
+        {
+          "name": "Duplicate Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/orders/{{shiprocket_order_id}}/duplicate",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "orders", "{{shiprocket_order_id}}", "duplicate"]
+            },
+            "description": "Duplicate a shipment"
+          }
+        },
+        {
+          "name": "Print Order Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/orders/{{shiprocket_order_id}}/print",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "orders", "{{shiprocket_order_id}}", "print"]
+            },
+            "description": "Print order invoice"
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/orders/{{shiprocket_order_id}}",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "orders", "{{shiprocket_order_id}}"]
+            },
+            "description": "Delete order by ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Shipments / AWB / Label",
+      "item": [
+        {
+          "name": "List Shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/shipments?page=1&per_page=10",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "shipments"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "10" }
+              ]
+            },
+            "description": "List all shipments"
+          }
+        },
+        {
+          "name": "Generate AWB",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipment_id\": 12345,\n  \"courier_id\": 10,\n  \"is_return\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/shipments/awb/generate",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "shipments", "awb", "generate"]
+            },
+            "description": "Generate AWB for an order"
+          }
+        },
+        {
+          "name": "Generate Label",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipment_id\": 12345,\n  \"awb_number\": \"AWB123456789\",\n  \"is_return\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/shipments/label/generate",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "shipments", "label", "generate"]
+            },
+            "description": "Generate shipping label for an AWB"
+          }
+        },
+        {
+          "name": "Generate Manifest",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipment_id\": [12345, 12346]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/shipments/manifest/generate",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "shipments", "manifest", "generate"]
+            },
+            "description": "Generate manifest (pickup) for shipments"
+          }
+        },
+        {
+          "name": "Export Shipments",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from_date\": \"2025-01-01\",\n  \"to_date\": \"2025-12-31\",\n  \"status\": \"DELIVERED\",\n  \"payment_mode\": \"prepaid\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/shipments/export",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "shipments", "export"]
+            },
+            "description": "Export shipments data"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔍 Tracking",
+      "item": [
+        {
+          "name": "Track by AWB",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/track?awb={{shiprocket_awb}}",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "track"],
+              "query": [
+                { "key": "awb", "value": "{{shiprocket_awb}}" }
+              ]
+            },
+            "description": "Track shipment by AWB number"
+          }
+        },
+        {
+          "name": "Track by Order ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/track/orders/{{shiprocket_order_id}}",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "track", "orders", "{{shiprocket_order_id}}"]
+            },
+            "description": "Track shipment by Shiprocket order ID"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📍 Pickup Locations",
+      "item": [
+        {
+          "name": "Get All Pickup Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/pickup-locations",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "pickup-locations"]
+            },
+            "description": "Get all pickup locations from Shiprocket"
+          }
+        },
+        {
+          "name": "Add Pickup Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_location\": \"Main Warehouse\",\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"9876543210\",\n  \"address\": \"123 Main Street\",\n  \"address_2\": \"Near City Center\",\n  \"city\": \"Mumbai\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"pin_code\": \"400001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/pickup-locations",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "pickup-locations"]
+            },
+            "description": "Add a new pickup location"
+          }
+        },
+        {
+          "name": "Edit Pickup Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_location\": \"Main Warehouse\",\n  \"name\": \"John Doe Updated\",\n  \"phone\": \"9876543211\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/pickup-locations",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "pickup-locations"]
+            },
+            "description": "Edit an existing pickup location"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏠 Addresses",
+      "item": [
+        {
+          "name": "Get All Addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/addresses",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "addresses"]
+            },
+            "description": "Get all addresses from Shiprocket"
+          }
+        },
+        {
+          "name": "Add Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"address\": \"456 Oak Avenue\",\n  \"address_2\": \"Apartment 7B\",\n  \"city\": \"Delhi\",\n  \"state\": \"Delhi\",\n  \"country\": \"India\",\n  \"pin_code\": \"110001\",\n  \"phone\": \"9876543210\",\n  \"email\": \"jane@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/addresses",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "addresses"]
+            },
+            "description": "Add a new address"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 NDR (Non-Delivery Report)",
+      "item": [
+        {
+          "name": "List NDRs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/ndr/list?page=1&per_page=10",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "ndr", "list"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "10" }
+              ]
+            },
+            "description": "List all NDRs"
+          }
+        },
+        {
+          "name": "Update NDR Action",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ndr_id\": {{shiprocket_ndr_id}},\n  \"action\": \"reschedule\",\n  \"reason\": \"Customer requested reschedule\",\n  \"pickup_date\": \"2025-06-15\",\n  \"pickup_time\": \"10:00-14:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/ndr/update",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "ndr", "update"]
+            },
+            "description": "Update NDR action"
+          }
+        },
+        {
+          "name": "List Rescheduled NDRs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/ndr/rescheduled",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "ndr", "rescheduled"]
+            },
+            "description": "List rescheduled NDRs"
+          }
+        },
+        {
+          "name": "Reschedule NDR",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ndr_id\": {{shiprocket_ndr_id}},\n  \"pickup_date\": \"2025-06-16\",\n  \"pickup_time_slot\": \"14:00-18:00\",\n  \"remark\": \"Customer requested afternoon delivery\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/ndr/reschedule",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "ndr", "reschedule"]
+            },
+            "description": "Reschedule NDR delivery"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌐 Webhooks",
+      "item": [
+        {
+          "name": "Register Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://your-server.com/api/webhook/shiprocket\",\n  \"events\": [\"ORDER_CREATED\", \"ORDER_DELIVERED\", \"ORDER_RTO\", \"ORDER_NDR\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/webhook/register",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "webhook", "register"]
+            },
+            "description": "Register/update webhook URL"
+          }
+        },
+        {
+          "name": "Get Webhooks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/webhooks",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "webhooks"]
+            },
+            "description": "Get registered webhooks"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏪 Channels / Stores",
+      "item": [
+        {
+          "name": "List Channels",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/channels",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "channels"]
+            },
+            "description": "List all channels/stores"
+          }
+        },
+        {
+          "name": "Add Channel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Shopify Store\",\n  \"channel\": \"shopify\",\n  \"url\": \"https://mystore.myshopify.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/channels",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "channels"]
+            },
+            "description": "Add a new channel/store"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📄 Invoice",
+      "item": [
+        {
+          "name": "Generate Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/orders/{{shiprocket_order_id}}/invoice/generate",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "orders", "{{shiprocket_order_id}}", "invoice", "generate"]
+            },
+            "description": "Generate invoice for an order"
+          }
+        },
+        {
+          "name": "Print Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/orders/{{shiprocket_order_id}}/invoice/print",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "orders", "{{shiprocket_order_id}}", "invoice", "print"]
+            },
+            "description": "Print invoice for order"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/customers?page=1&per_page=10",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "customers"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "10" }
+              ]
+            },
+            "description": "List all customers"
+          }
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Customer\",\n  \"email\": \"john.customer@example.com\",\n  \"phone\": \"9876543210\",\n  \"address\": \"789 Pine Road\",\n  \"city\": \"Bangalore\",\n  \"state\": \"Karnataka\",\n  \"country\": \"India\",\n  \"pin_code\": \"560001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/customers",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "customers"]
+            },
+            "description": "Create a new customer"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔄 Returns & Pickup",
+      "item": [
+        {
+          "name": "Create Return Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"{{shiprocket_order_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/returns/create",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "returns", "create"]
+            },
+            "description": "Create a return order"
+          }
+        },
+        {
+          "name": "Schedule Pickup",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipment_id\": [12345],\n  \"pickup_date\": \"2025-06-15\",\n  \"pickup_time\": \"10:00-14:00\",\n  \"pickup_location\": \"Main Warehouse\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/pickup/schedule",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "pickup", "schedule"]
+            },
+            "description": "Schedule a pickup for shipment"
+          }
+        },
+        {
+          "name": "Update Pickup Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipment_id\": 12345\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/shiprocket/pickup/address/{{pickup_id}}",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": ["api", "shiprocket", "pickup", "address", "{{pickup_id}}"]
+            },
+            "description": "Update pickup address for shipment"
+          }
+        }
+      ]
+    }
+  ]
+}

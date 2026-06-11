@@ -55,6 +55,7 @@ import profileRoutes from './routes/userProfileRoutes'
 import userRoutes from './routes/userRoutes'
 import walletRoutes from './routes/walletRoutes'
 import weightReconciliationRoutes from './routes/weightReconciliation.routes'
+import shiprocketRoutes from './routes/shiprocket.routes'
 
 // Routes imports
 // import other routes here...
@@ -207,6 +208,7 @@ app.use('/api/admin/payment-options', adminPaymentOptionsRoutes)
 app.use('/api/admin/billing-preferences', adminBillingPreferencesRoutes)
 app.use('/api/payment-options', paymentOptionsRoutes)
 app.use('/api/weight-reconciliation', weightReconciliationRoutes)
+app.use('/api/shiprocket', shiprocketRoutes)
 app.use('/api', ndrRoutes)
 app.use('/api', rtoRoutes)
 app.use('/api/v1', externalApiRoutes)
