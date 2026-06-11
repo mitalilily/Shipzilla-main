@@ -1,6 +1,5 @@
 export const INTEGRATED_COURIER_PROVIDERS = [
   'shipmozo',
-  'shiprocket',
 ] as const
 
 export type IntegratedCourierProvider = (typeof INTEGRATED_COURIER_PROVIDERS)[number]

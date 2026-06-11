@@ -133,7 +133,7 @@ export const getCourierSummary = async () => {
 }
 
 export const getShippingRates = async (filters: ShippingRateFilters = {}) => {
-  const conditions: any[] = []
+  const conditions: any[] = [inArray(shippingRates.service_provider, getIntegratedCourierProviders())]
   const normalizedModeFilter = normalizeB2CShippingMode(filters.mode)
 
   if (filters.courier_name?.length) {
@@ -334,6 +334,11 @@ export const updateShippingRate = async (
   // Save exactly what the frontend sends - no override logic
   const finalServiceProvider = service_provider?.trim() || null
   const normalizedServiceProvider = normalizeB2CServiceProvider(finalServiceProvider) || null
+  if (normalizedServiceProvider && !isIntegratedCourierProvider(normalizedServiceProvider)) {
+    throw new Error(
+      `Shipping rates can only be saved for active providers: ${integratedCourierProvidersLabel}. Received: ${service_provider}`,
+    )
+  }
   const previousServiceProvider =
     normalizeB2CServiceProvider(previous_service_provider) || normalizedServiceProvider
   const normalizedMode = normalizeB2CShippingMode(mode)
@@ -474,6 +479,11 @@ export const upsertShippingRate = async (input: RateInput) => {
 
   // Check if service_provider is provided in input (for CSV imports that might have it)
   const providedServiceProvider = normalizeB2CServiceProvider((input as any).service_provider) || null
+  if (providedServiceProvider && !isIntegratedCourierProvider(providedServiceProvider)) {
+    throw new Error(
+      `Shipping rates can only be imported for active providers: ${integratedCourierProvidersLabel}. Received: ${input.service_provider}`,
+    )
+  }
 
   if (input.courier_id && input.courier_name) {
     console.log(
@@ -489,6 +499,7 @@ export const upsertShippingRate = async (input: RateInput) => {
         .where(
           and(
             eq(couriers.id, Number(input.courier_id)),
+            inArray(couriers.serviceProvider, getIntegratedCourierProviders()),
             providedServiceProvider
               ? eq(sql`LOWER(${couriers.serviceProvider})`, providedServiceProvider)
               : sql`1=1`,
