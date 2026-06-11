@@ -3,6 +3,7 @@ import path from 'path'
 import { server } from './app'
 import './crons'
 import { testDatabaseConnection } from './models/client'
+import { purgeUnsupportedCourierData } from './models/services/courierCleanup.service'
 
 // Determine environment
 const env = process.env.NODE_ENV || 'development'
@@ -22,6 +23,15 @@ async function startServer() {
   if (!dbConnected) {
     console.error('❌ Failed to connect to database. Server will not start.')
     process.exit(1)
+  }
+
+  if (env === 'production') {
+    console.log('Cleaning unsupported courier data...')
+    const cleanup = await purgeUnsupportedCourierData()
+    console.log(
+      `Courier cleanup complete. active=${cleanup.integratedProviders.join(', ')} ` +
+        `deletedRates=${cleanup.deletedRates.length} deletedCouriers=${cleanup.deletedCouriers.length}`,
+    )
   }
 
   // Set server timeout to 3.5 minutes (210000ms) to allow for slow external API calls
