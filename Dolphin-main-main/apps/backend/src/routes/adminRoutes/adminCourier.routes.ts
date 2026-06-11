@@ -7,8 +7,8 @@ import {
   getAllCouriersController,
   getShippingRatesController,
   importShippingRatesController,
+  updateIcarryCredentialsController,
   updateShipmozoCredentialsController,
-  updateShiprocketCredentialsController,
   updateShippingRateController,
 } from '../../controllers/admin/courier.controller'
 import { isAdminMiddleware } from '../../middlewares/isAdmin'
@@ -42,10 +42,10 @@ router.put(
   updateShipmozoCredentialsController,
 )
 router.put(
-  '/credentials/shiprocket',
+  '/credentials/icarry',
   requireAuth,
   isAdminMiddleware,
-  updateShiprocketCredentialsController,
+  updateIcarryCredentialsController,
 )
 router.delete(
   '/shipping-rates/:planId/:id',

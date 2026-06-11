@@ -10,8 +10,8 @@ import {
   fetchAvailableCouriers,
   fetchServiceProviders,
   fetchShippingRates,
+  updateIcarryCredentials,
   updateShipmozoCredentials,
-  updateShiprocketCredentials,
   updateCourierStatus,
   updateServiceProviderStatus,
   updateShippingRate,
@@ -125,11 +125,11 @@ export const useUpdateShipmozoCredentials = () => {
   })
 }
 
-export const useUpdateShiprocketCredentials = () => {
+export const useUpdateIcarryCredentials = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: updateShiprocketCredentials,
+    mutationFn: updateIcarryCredentials,
     onSuccess: () => {
       queryClient.invalidateQueries(['courierCredentials'])
     },

@@ -41,7 +41,6 @@ import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 
 const providerOptions = [
   { value: 'shipmozo', label: 'Shipmozo' },
-  { value: 'shiprocket', label: 'Shiprocket' },
 ]
 
 const defaultFormData = { businessType: ['b2c', 'b2b'] }

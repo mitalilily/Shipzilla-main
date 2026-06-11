@@ -48,7 +48,7 @@ const ServiceProviders = () => {
         Service Providers
       </Text>
       <Text fontSize="sm" color="gray.500">
-        Manage enabled courier providers for Delhivery, Ekart, Xpressbees, and Shipmozo.
+        Manage enabled courier providers available in the system.
       </Text>
       <Table variant="simple">
         <Thead>

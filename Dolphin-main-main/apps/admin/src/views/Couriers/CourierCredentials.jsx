@@ -15,15 +15,15 @@ import {
 import { useEffect, useState } from 'react'
 import {
   useCourierCredentials,
+  useUpdateIcarryCredentials,
   useUpdateShipmozoCredentials,
-  useUpdateShiprocketCredentials,
 } from 'hooks/useCouriers'
 
 const CourierCredentials = () => {
   const toast = useToast()
   const { data, isLoading, error } = useCourierCredentials()
   const updateShipmozo = useUpdateShipmozoCredentials()
-  const updateShiprocket = useUpdateShiprocketCredentials()
+  const updateIcarry = useUpdateIcarryCredentials()
 
   const [shipmozoForm, setShipmozoForm] = useState({
     apiBase: '',
@@ -33,9 +33,9 @@ const CourierCredentials = () => {
     privateKey: '',
     webhookSecret: '',
   })
-  const [shiprocketForm, setShiprocketForm] = useState({
+  const [icarryForm, setIcarryForm] = useState({
     apiBase: '',
-    email: '',
+    username: '',
     password: '',
     apiKey: '',
     webhookSecret: '',
@@ -52,10 +52,10 @@ const CourierCredentials = () => {
         webhookSecret: '',
       })
     }
-    if (data?.shiprocket) {
-      setShiprocketForm({
-        apiBase: data.shiprocket.apiBase || '',
-        email: data.shiprocket.email || '',
+    if (data?.icarry) {
+      setIcarryForm({
+        apiBase: data.icarry.apiBase || '',
+        username: data.icarry.username || '',
         password: '',
         apiKey: '',
         webhookSecret: '',
@@ -94,19 +94,19 @@ const CourierCredentials = () => {
     )
   }
 
-  const handleSaveShiprocket = () => {
-    updateShiprocket.mutate(
+  const handleSaveIcarry = () => {
+    updateIcarry.mutate(
       {
-        apiBase: shiprocketForm.apiBase,
-        email: shiprocketForm.email,
-        ...(shiprocketForm.password ? { password: shiprocketForm.password } : {}),
-        ...(shiprocketForm.apiKey ? { apiKey: shiprocketForm.apiKey } : {}),
-        ...(shiprocketForm.webhookSecret ? { webhookSecret: shiprocketForm.webhookSecret } : {}),
+        apiBase: icarryForm.apiBase,
+        username: icarryForm.username,
+        ...(icarryForm.password ? { password: icarryForm.password } : {}),
+        ...(icarryForm.apiKey ? { apiKey: icarryForm.apiKey } : {}),
+        ...(icarryForm.webhookSecret ? { webhookSecret: icarryForm.webhookSecret } : {}),
       },
       {
         onSuccess: () => {
-          toast({ title: 'Shiprocket credentials updated', status: 'success' })
-          setShiprocketForm((prev) => ({
+          toast({ title: 'iCarry credentials updated', status: 'success' })
+          setIcarryForm((prev) => ({
             ...prev,
             password: '',
             apiKey: '',
@@ -115,7 +115,7 @@ const CourierCredentials = () => {
         },
         onError: (err) => {
           toast({
-            title: 'Failed to update Shiprocket credentials',
+            title: 'Failed to update iCarry credentials',
             description: err?.message,
             status: 'error',
           })
@@ -140,9 +140,7 @@ const CourierCredentials = () => {
               <Text fontWeight="semibold">Shipmozo Courier</Text>
               <Badge
                 colorScheme={
-                  data?.shipmozo?.hasPrivateKey || data?.shipmozo?.hasPassword
-                    ? 'green'
-                    : 'orange'
+                  data?.shipmozo?.hasPrivateKey || data?.shipmozo?.hasPassword ? 'green' : 'orange'
                 }
               >
                 {data?.shipmozo?.hasPrivateKey || data?.shipmozo?.hasPassword
@@ -217,8 +215,7 @@ const CourierCredentials = () => {
               <FormLabel>Webhook URL</FormLabel>
               <Input
                 value={
-                  data?.shipmozo?.webhookUrl ||
-                  'https://api.shipzilla.in/api/webhook/shipmozo'
+                  data?.shipmozo?.webhookUrl || 'https://api.shipzilla.in/api/webhook/shipmozo'
                 }
                 isReadOnly
               />
@@ -250,15 +247,13 @@ const CourierCredentials = () => {
         <Box borderWidth="1px" borderRadius="lg" p={5}>
           <VStack spacing={4} align="stretch">
             <Flex justify="space-between" align="center" gap={3}>
-              <Text fontWeight="semibold">Shiprocket</Text>
+              <Text fontWeight="semibold">iCarry</Text>
               <Badge
                 colorScheme={
-                  data?.shiprocket?.hasApiKey || data?.shiprocket?.hasPassword
-                    ? 'green'
-                    : 'orange'
+                  data?.icarry?.hasApiKey || data?.icarry?.hasPassword ? 'green' : 'orange'
                 }
               >
-                {data?.shiprocket?.hasApiKey || data?.shiprocket?.hasPassword
+                {data?.icarry?.hasApiKey || data?.icarry?.hasPassword
                   ? 'Configured'
                   : 'Ready to add'}
               </Badge>
@@ -267,22 +262,20 @@ const CourierCredentials = () => {
             <FormControl>
               <FormLabel>API Base URL</FormLabel>
               <Input
-                value={shiprocketForm.apiBase}
-                onChange={(e) =>
-                  setShiprocketForm((prev) => ({ ...prev, apiBase: e.target.value }))
-                }
-                placeholder="https://apiv2.shiprocket.in/v1/external"
+                value={icarryForm.apiBase}
+                onChange={(e) => setIcarryForm((prev) => ({ ...prev, apiBase: e.target.value }))}
+                placeholder="Enter iCarry API base URL"
               />
             </FormControl>
 
             <FormControl>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Username</FormLabel>
               <Input
-                value={shiprocketForm.email}
+                value={icarryForm.username}
                 onChange={(e) =>
-                  setShiprocketForm((prev) => ({ ...prev, email: e.target.value }))
+                  setIcarryForm((prev) => ({ ...prev, username: e.target.value }))
                 }
-                placeholder="Shiprocket email"
+                placeholder="iCarry username or email"
               />
             </FormControl>
 
@@ -290,10 +283,8 @@ const CourierCredentials = () => {
               <FormLabel>Password</FormLabel>
               <Input
                 type="password"
-                value={shiprocketForm.password}
-                onChange={(e) =>
-                  setShiprocketForm((prev) => ({ ...prev, password: e.target.value }))
-                }
+                value={icarryForm.password}
+                onChange={(e) => setIcarryForm((prev) => ({ ...prev, password: e.target.value }))}
                 placeholder="Leave blank to keep saved password"
               />
             </FormControl>
@@ -302,15 +293,13 @@ const CourierCredentials = () => {
               <FormLabel>API Token</FormLabel>
               <Input
                 type="password"
-                value={shiprocketForm.apiKey}
-                onChange={(e) =>
-                  setShiprocketForm((prev) => ({ ...prev, apiKey: e.target.value }))
-                }
-                placeholder={data?.shiprocket?.apiKeyMasked || 'Shiprocket API token'}
+                value={icarryForm.apiKey}
+                onChange={(e) => setIcarryForm((prev) => ({ ...prev, apiKey: e.target.value }))}
+                placeholder={data?.icarry?.apiKeyMasked || 'iCarry API token'}
               />
-              {!!data?.shiprocket?.apiKeyMasked && (
+              {!!data?.icarry?.apiKeyMasked && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Current token: {data.shiprocket.apiKeyMasked}
+                  Current token: {data.icarry.apiKeyMasked}
                 </Text>
               )}
             </FormControl>
@@ -319,9 +308,9 @@ const CourierCredentials = () => {
               <FormLabel>Webhook Secret</FormLabel>
               <Input
                 type="password"
-                value={shiprocketForm.webhookSecret}
+                value={icarryForm.webhookSecret}
                 onChange={(e) =>
-                  setShiprocketForm((prev) => ({ ...prev, webhookSecret: e.target.value }))
+                  setIcarryForm((prev) => ({ ...prev, webhookSecret: e.target.value }))
                 }
                 placeholder="Leave blank to keep saved webhook secret"
               />
@@ -329,11 +318,11 @@ const CourierCredentials = () => {
 
             <Button
               colorScheme="blue"
-              onClick={handleSaveShiprocket}
-              isLoading={updateShiprocket.isPending}
+              onClick={handleSaveIcarry}
+              isLoading={updateIcarry.isPending}
               alignSelf="flex-start"
             >
-              Save Shiprocket Credentials
+              Save iCarry Credentials
             </Button>
           </VStack>
         </Box>

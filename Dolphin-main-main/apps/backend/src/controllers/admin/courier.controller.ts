@@ -13,7 +13,6 @@ import {
 import {
   DEFAULT_EKART_BASE_URL,
   DEFAULT_SHIPMOZO_BASE_URL,
-  DEFAULT_SHIPROCKET_BASE_URL,
   normalizeEkartBaseUrl,
 } from '../../models/services/courierCredentials.service'
 import { EkartService } from '../../models/services/couriers/ekart.service'
@@ -35,6 +34,8 @@ const normalizeWebhookBaseUrl = (value: string) =>
     .trim()
     .replace(/\/+$/, '')
     .replace(/\/api$/i, '')
+
+const DEFAULT_ICARRY_BASE_URL = ''
 
 const getPublicWebhookBaseUrl = (req: Request) =>
   normalizeWebhookBaseUrl(
@@ -393,7 +394,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         webhookSecret: courier_credentials.webhookSecret,
       })
       .from(courier_credentials)
-      .where(inArray(courier_credentials.provider, ['shipmozo', 'shiprocket']))
+      .where(inArray(courier_credentials.provider, ['shipmozo', 'icarry']))
 
     const defaults = {
       shipmozo: {
@@ -407,10 +408,10 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         hasWebhookSecret: false,
         webhookUrl: shipmozoWebhookUrl,
       },
-      shiprocket: {
-        provider: 'shiprocket',
-        apiBase: DEFAULT_SHIPROCKET_BASE_URL,
-        email: '',
+      icarry: {
+        provider: 'icarry',
+        apiBase: DEFAULT_ICARRY_BASE_URL,
+        username: '',
         hasPassword: false,
         hasApiKey: false,
         apiKeyMasked: '',
@@ -436,12 +437,12 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           hasWebhookSecret,
           webhookUrl: shipmozoWebhookUrl,
         }
-      } else if (provider === 'shiprocket') {
+      } else if (provider === 'icarry') {
         const apiKey = row.apiKey || ''
-        acc.shiprocket = {
-          provider: 'shiprocket',
-          apiBase: row.apiBase || DEFAULT_SHIPROCKET_BASE_URL,
-          email: row.username || '',
+        acc.icarry = {
+          provider: 'icarry',
+          apiBase: row.apiBase || DEFAULT_ICARRY_BASE_URL,
+          username: row.username || '',
           hasPassword: Boolean((row.password || '').trim()),
           hasApiKey: Boolean(apiKey.trim()),
           apiKeyMasked: maskSecret(apiKey),
@@ -804,12 +805,12 @@ export const updateShipmozoCredentialsController = async (req: Request, res: Res
   }
 }
 
-export const updateShiprocketCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, email, password, apiKey, webhookSecret } = req.body || {}
+export const updateIcarryCredentialsController = async (req: Request, res: Response) => {
+  const { apiBase, username, password, apiKey, webhookSecret } = req.body || {}
 
   try {
     const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
-    const nextEmail = typeof email === 'string' ? email.trim() : undefined
+    const nextUsername = typeof username === 'string' ? username.trim() : undefined
     const nextPassword = typeof password === 'string' ? password.trim() : undefined
     const nextApiKey = typeof apiKey === 'string' ? apiKey.trim() : undefined
     const nextWebhookSecret =
@@ -822,7 +823,7 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
     const [existing] = await db
       .select({ id: courier_credentials.id })
       .from(courier_credentials)
-      .where(eq(courier_credentials.provider, 'shiprocket'))
+      .where(eq(courier_credentials.provider, 'icarry'))
       .limit(1)
 
     if (existing) {
@@ -830,10 +831,10 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
         updatedAt: new Date(),
       }
       if (nextApiBase !== undefined) {
-        updatePayload.apiBase = nextApiBase || DEFAULT_SHIPROCKET_BASE_URL
+        updatePayload.apiBase = nextApiBase || DEFAULT_ICARRY_BASE_URL
       }
-      if (nextEmail !== undefined) {
-        updatePayload.username = nextEmail
+      if (nextUsername !== undefined) {
+        updatePayload.username = nextUsername
       }
       if (hasPassword) {
         updatePayload.password = nextPassword
@@ -848,15 +849,15 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
       await db
         .update(courier_credentials)
         .set(updatePayload)
-        .where(eq(courier_credentials.provider, 'shiprocket'))
+        .where(eq(courier_credentials.provider, 'icarry'))
     } else {
       await db.insert(courier_credentials).values({
-        provider: 'shiprocket',
-        apiBase: nextApiBase || DEFAULT_SHIPROCKET_BASE_URL,
+        provider: 'icarry',
+        apiBase: nextApiBase || DEFAULT_ICARRY_BASE_URL,
         clientName: '',
         apiKey: hasApiKey ? nextApiKey : '',
         clientId: '',
-        username: nextEmail || '',
+        username: nextUsername || '',
         password: hasPassword ? nextPassword : '',
         webhookSecret: hasWebhookSecret ? nextWebhookSecret : '',
       })
@@ -871,16 +872,16 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
         webhookSecret: courier_credentials.webhookSecret,
       })
       .from(courier_credentials)
-      .where(eq(courier_credentials.provider, 'shiprocket'))
+      .where(eq(courier_credentials.provider, 'icarry'))
       .limit(1)
 
     res.json({
       success: true,
-      message: 'Shiprocket credentials updated successfully',
+      message: 'iCarry credentials updated successfully',
       data: {
-        provider: 'shiprocket',
-        apiBase: saved?.apiBase || DEFAULT_SHIPROCKET_BASE_URL,
-        email: saved?.username || '',
+        provider: 'icarry',
+        apiBase: saved?.apiBase || DEFAULT_ICARRY_BASE_URL,
+        username: saved?.username || '',
         hasPassword: Boolean((saved?.password || '').trim()),
         hasApiKey: Boolean((saved?.apiKey || '').trim()),
         apiKeyMasked: maskSecret(saved?.apiKey),
@@ -889,7 +890,7 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
     })
   } catch (err) {
     console.error(err)
-    res.status(500).json({ success: false, message: 'Failed to update Shiprocket credentials' })
+    res.status(500).json({ success: false, message: 'Failed to update iCarry credentials' })
   }
 }
 
