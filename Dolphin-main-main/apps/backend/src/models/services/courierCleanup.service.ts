@@ -1,5 +1,6 @@
 import { count, isNull, notInArray, or, sql } from 'drizzle-orm'
 import { db } from '../client'
+import { courierCredentials } from '../schema/courierCredentials'
 import { couriers } from '../schema/couriers'
 import { shippingRates } from '../schema/shippingRates'
 import { getIntegratedCourierProviders } from '../../utils/courierProviders'
@@ -26,6 +27,16 @@ const getShippingRateProviderSummary = () =>
     .from(shippingRates)
     .groupBy(shippingRateProvider)
     .orderBy(shippingRateProvider)
+
+const getCourierCredentialProviderSummary = () =>
+  db
+    .select({
+      provider: sql<string>`COALESCE(LOWER(${courierCredentials.provider}), '<missing>')`,
+      total: count(),
+    })
+    .from(courierCredentials)
+    .groupBy(sql<string>`COALESCE(LOWER(${courierCredentials.provider}), '<missing>')`)
+    .orderBy(sql<string>`COALESCE(LOWER(${courierCredentials.provider}), '<missing>')`)
 
 export const purgeUnsupportedCourierData = async () => {
   const integratedProviders = getIntegratedCourierProviders()
@@ -67,5 +78,28 @@ export const purgeUnsupportedCourierData = async () => {
     deletedCouriers,
     courierAfter,
     shippingRateAfter,
+  }
+}
+
+export const purgeUnsupportedCourierCredentials = async () => {
+  const allowedProviders = ['shiprocket', 'icarry', 'shipmozo']
+
+  const courierCredentialBefore = await getCourierCredentialProviderSummary()
+
+  const deletedCredentials = await db
+    .delete(courierCredentials)
+    .where(notInArray(sql`LOWER(${courierCredentials.provider})`, allowedProviders))
+    .returning({
+      id: courierCredentials.id,
+      provider: courierCredentials.provider,
+    })
+
+  const courierCredentialAfter = await getCourierCredentialProviderSummary()
+
+  return {
+    allowedProviders,
+    courierCredentialBefore,
+    deletedCredentials,
+    courierCredentialAfter,
   }
 }

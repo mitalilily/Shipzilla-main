@@ -16,21 +16,20 @@ import { useEffect, useState } from 'react'
 import {
   useCourierCredentials,
   useUpdateIcarryCredentials,
-  useUpdateShipmozoCredentials,
+  useUpdateShiprocketCredentials,
 } from 'hooks/useCouriers'
 
 const CourierCredentials = () => {
   const toast = useToast()
   const { data, isLoading, error } = useCourierCredentials()
-  const updateShipmozo = useUpdateShipmozoCredentials()
+  const updateShiprocket = useUpdateShiprocketCredentials()
   const updateIcarry = useUpdateIcarryCredentials()
 
-  const [shipmozoForm, setShipmozoForm] = useState({
+  const [shiprocketForm, setShiprocketForm] = useState({
     apiBase: '',
     username: '',
     password: '',
-    publicKey: '',
-    privateKey: '',
+    apiKey: '',
     webhookSecret: '',
   })
   const [icarryForm, setIcarryForm] = useState({
@@ -42,13 +41,12 @@ const CourierCredentials = () => {
   })
 
   useEffect(() => {
-    if (data?.shipmozo) {
-      setShipmozoForm({
-        apiBase: data.shipmozo.apiBase || '',
-        username: data.shipmozo.username || '',
+    if (data?.shiprocket) {
+      setShiprocketForm({
+        apiBase: data.shiprocket.apiBase || '',
+        username: data.shiprocket.username || '',
         password: '',
-        publicKey: data.shipmozo.publicKey || '',
-        privateKey: '',
+        apiKey: '',
         webhookSecret: '',
       })
     }
@@ -63,29 +61,28 @@ const CourierCredentials = () => {
     }
   }, [data])
 
-  const handleSaveShipmozo = () => {
-    updateShipmozo.mutate(
+  const handleSaveShiprocket = () => {
+    updateShiprocket.mutate(
       {
-        apiBase: shipmozoForm.apiBase,
-        username: shipmozoForm.username,
-        publicKey: shipmozoForm.publicKey,
-        ...(shipmozoForm.password ? { password: shipmozoForm.password } : {}),
-        ...(shipmozoForm.privateKey ? { privateKey: shipmozoForm.privateKey } : {}),
-        ...(shipmozoForm.webhookSecret ? { webhookSecret: shipmozoForm.webhookSecret } : {}),
+        apiBase: shiprocketForm.apiBase,
+        username: shiprocketForm.username,
+        ...(shiprocketForm.password ? { password: shiprocketForm.password } : {}),
+        ...(shiprocketForm.apiKey ? { apiKey: shiprocketForm.apiKey } : {}),
+        ...(shiprocketForm.webhookSecret ? { webhookSecret: shiprocketForm.webhookSecret } : {}),
       },
       {
         onSuccess: () => {
-          toast({ title: 'Shipmozo credentials updated', status: 'success' })
-          setShipmozoForm((prev) => ({
+          toast({ title: 'Shiprocket credentials updated', status: 'success' })
+          setShiprocketForm((prev) => ({
             ...prev,
             password: '',
-            privateKey: '',
+            apiKey: '',
             webhookSecret: '',
           }))
         },
         onError: (err) => {
           toast({
-            title: 'Failed to update Shipmozo credentials',
+            title: 'Failed to update Shiprocket credentials',
             description: err?.message,
             status: 'error',
           })
@@ -137,13 +134,13 @@ const CourierCredentials = () => {
         <Box borderWidth="1px" borderRadius="lg" p={5}>
           <VStack spacing={4} align="stretch">
             <Flex justify="space-between" align="center" gap={3}>
-              <Text fontWeight="semibold">Shipmozo Courier</Text>
+              <Text fontWeight="semibold">Shiprocket Cargo</Text>
               <Badge
                 colorScheme={
-                  data?.shipmozo?.hasPrivateKey || data?.shipmozo?.hasPassword ? 'green' : 'orange'
+                  data?.shiprocket?.hasApiKey || data?.shiprocket?.hasPassword ? 'green' : 'orange'
                 }
               >
-                {data?.shipmozo?.hasPrivateKey || data?.shipmozo?.hasPassword
+                {data?.shiprocket?.hasApiKey || data?.shiprocket?.hasPassword
                   ? 'Configured'
                   : 'Missing credentials'}
               </Badge>
@@ -161,13 +158,13 @@ const CourierCredentials = () => {
             </FormControl>
 
             <FormControl>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Email</FormLabel>
               <Input
-                value={shipmozoForm.username}
+                value={shiprocketForm.username}
                 onChange={(e) =>
-                  setShipmozoForm((prev) => ({ ...prev, username: e.target.value }))
+                  setShiprocketForm((prev) => ({ ...prev, username: e.target.value }))
                 }
-                placeholder="Shipmozo username"
+                placeholder="Shiprocket email"
               />
             </FormControl>
 
@@ -175,38 +172,27 @@ const CourierCredentials = () => {
               <FormLabel>Password</FormLabel>
               <Input
                 type="password"
-                value={shipmozoForm.password}
+                value={shiprocketForm.password}
                 onChange={(e) =>
-                  setShipmozoForm((prev) => ({ ...prev, password: e.target.value }))
+                  setShiprocketForm((prev) => ({ ...prev, password: e.target.value }))
                 }
                 placeholder="Leave blank to keep saved password"
               />
             </FormControl>
 
             <FormControl>
-              <FormLabel>Public Key</FormLabel>
-              <Input
-                value={shipmozoForm.publicKey}
-                onChange={(e) =>
-                  setShipmozoForm((prev) => ({ ...prev, publicKey: e.target.value }))
-                }
-                placeholder="Shipmozo public_key"
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Private Key</FormLabel>
+              <FormLabel>API Token</FormLabel>
               <Input
                 type="password"
-                value={shipmozoForm.privateKey}
+                value={shiprocketForm.apiKey}
                 onChange={(e) =>
-                  setShipmozoForm((prev) => ({ ...prev, privateKey: e.target.value }))
+                  setShiprocketForm((prev) => ({ ...prev, apiKey: e.target.value }))
                 }
-                placeholder={data?.shipmozo?.privateKeyMasked || 'Shipmozo private_key'}
+                placeholder={data?.shiprocket?.apiKeyMasked || 'Shiprocket API token'}
               />
-              {!!data?.shipmozo?.privateKeyMasked && (
+              {!!data?.shiprocket?.apiKeyMasked && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Current key: {data.shipmozo.privateKeyMasked}
+                  Current token: {data.shiprocket.apiKeyMasked}
                 </Text>
               )}
             </FormControl>
@@ -214,9 +200,7 @@ const CourierCredentials = () => {
             <FormControl>
               <FormLabel>Webhook URL</FormLabel>
               <Input
-                value={
-                  data?.shipmozo?.webhookUrl || 'https://api.shipzilla.in/api/webhook/shipmozo'
-                }
+                value="https://api.shipzilla.in/api/webhook/shiprocket"
                 isReadOnly
               />
             </FormControl>
@@ -225,9 +209,9 @@ const CourierCredentials = () => {
               <FormLabel>Webhook Secret</FormLabel>
               <Input
                 type="password"
-                value={shipmozoForm.webhookSecret}
+                value={shiprocketForm.webhookSecret}
                 onChange={(e) =>
-                  setShipmozoForm((prev) => ({ ...prev, webhookSecret: e.target.value }))
+                  setShiprocketForm((prev) => ({ ...prev, webhookSecret: e.target.value }))
                 }
                 placeholder="Leave blank to keep saved webhook secret"
               />
@@ -235,11 +219,11 @@ const CourierCredentials = () => {
 
             <Button
               colorScheme="blue"
-              onClick={handleSaveShipmozo}
-              isLoading={updateShipmozo.isPending}
+              onClick={handleSaveShiprocket}
+              isLoading={updateShiprocket.isPending}
               alignSelf="flex-start"
             >
-              Save Shipmozo Credentials
+              Save Shiprocket Cargo Credentials
             </Button>
           </VStack>
         </Box>

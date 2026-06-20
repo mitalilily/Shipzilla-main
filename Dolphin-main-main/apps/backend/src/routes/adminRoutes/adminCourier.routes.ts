@@ -8,6 +8,7 @@ import {
   getShippingRatesController,
   importShippingRatesController,
   updateIcarryCredentialsController,
+  updateShiprocketCredentialsController,
   updateShipmozoCredentialsController,
   updateShippingRateController,
 } from '../../controllers/admin/courier.controller'
@@ -35,6 +36,12 @@ router.post(
 )
 router.post('/available', requireAuth, fetchAvailableCouriersForAdmin)
 router.get('/credentials', requireAuth, isAdminMiddleware, getCourierCredentialsController)
+router.put(
+  '/credentials/shiprocket',
+  requireAuth,
+  isAdminMiddleware,
+  updateShiprocketCredentialsController,
+)
 router.put(
   '/credentials/shipmozo',
   requireAuth,

@@ -22,7 +22,8 @@
     "rate-card:create-b2c": "ts-node src/scripts/createB2CRateCards.ts",
     "seed:holidays": "ts-node src/scripts/seedHolidays.ts",
     "seed:holidays:year": "ts-node src/scripts/seedHolidays.ts",
-    "couriers:purge-unsupported": "ts-node src/scripts/purgeUnsupportedCouriers.ts"
+    "couriers:purge-unsupported": "ts-node src/scripts/purgeUnsupportedCouriers.ts",
+    "couriers:purge-unsupported-credentials": "ts-node src/scripts/purgeUnsupportedCourierCredentials.ts"
   },
   "keywords": [],
   "author": "",

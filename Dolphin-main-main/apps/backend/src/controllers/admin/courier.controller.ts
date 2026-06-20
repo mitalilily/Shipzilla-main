@@ -13,6 +13,7 @@ import {
 import {
   DEFAULT_EKART_BASE_URL,
   DEFAULT_SHIPMOZO_BASE_URL,
+  DEFAULT_SHIPROCKET_BASE_URL,
   normalizeEkartBaseUrl,
 } from '../../models/services/courierCredentials.service'
 import { EkartService } from '../../models/services/couriers/ekart.service'
@@ -29,22 +30,7 @@ import {
   normalizeCourierProvider,
 } from '../../utils/courierProviders'
 
-const normalizeWebhookBaseUrl = (value: string) =>
-  (value || '')
-    .trim()
-    .replace(/\/+$/, '')
-    .replace(/\/api$/i, '')
-
 const DEFAULT_ICARRY_BASE_URL = ''
-
-const getPublicWebhookBaseUrl = (req: Request) =>
-  normalizeWebhookBaseUrl(
-    process.env.SHIPMOZO_WEBHOOK_BASE_URL ||
-      process.env.WEBHOOK_PUBLIC_URL ||
-      process.env.API_PUBLIC_URL ||
-      process.env.API_URL ||
-      `${req.protocol}://${req.get('host')}`,
-  )
 
 const maskSecret = (value?: string | null) => {
   const secret = String(value || '').trim()
@@ -381,7 +367,6 @@ export const updateServiceProviderStatusController = async (req: Request, res: R
 
 export const getCourierCredentialsController = async (req: Request, res: Response) => {
   try {
-    const shipmozoWebhookUrl = `${getPublicWebhookBaseUrl(req)}/api/webhook/shipmozo`
     const rows = await db
       .select({
         provider: courier_credentials.provider,
@@ -394,19 +379,17 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         webhookSecret: courier_credentials.webhookSecret,
       })
       .from(courier_credentials)
-      .where(inArray(courier_credentials.provider, ['shipmozo', 'icarry']))
+      .where(inArray(courier_credentials.provider, ['shiprocket', 'icarry']))
 
     const defaults = {
-      shipmozo: {
-        provider: 'shipmozo',
-        apiBase: DEFAULT_SHIPMOZO_BASE_URL,
+      shiprocket: {
+        provider: 'shiprocket',
+        apiBase: DEFAULT_SHIPROCKET_BASE_URL,
         username: '',
-        publicKey: '',
-        hasPrivateKey: false,
-        privateKeyMasked: '',
         hasPassword: false,
+        hasApiKey: false,
+        apiKeyMasked: '',
         hasWebhookSecret: false,
-        webhookUrl: shipmozoWebhookUrl,
       },
       icarry: {
         provider: 'icarry',
@@ -422,20 +405,16 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
     const data = rows.reduce<Record<string, any>>((acc, row) => {
       const provider = (row.provider || '').toLowerCase()
       if (!provider) return acc
-      if (provider === 'shipmozo') {
-        const privateKey = row.apiKey || ''
-        const hasPassword = Boolean((row.password || '').trim())
-        const hasWebhookSecret = Boolean((row.webhookSecret || '').trim())
-        acc.shipmozo = {
-          provider: 'shipmozo',
-          apiBase: row.apiBase || DEFAULT_SHIPMOZO_BASE_URL,
+      if (provider === 'shiprocket') {
+        const apiKey = row.apiKey || ''
+        acc.shiprocket = {
+          provider: 'shiprocket',
+          apiBase: row.apiBase || DEFAULT_SHIPROCKET_BASE_URL,
           username: row.username || '',
-          publicKey: row.clientId || '',
-          hasPrivateKey: Boolean(privateKey.trim()),
-          privateKeyMasked: maskSecret(privateKey),
-          hasPassword,
-          hasWebhookSecret,
-          webhookUrl: shipmozoWebhookUrl,
+          hasPassword: Boolean((row.password || '').trim()),
+          hasApiKey: Boolean(apiKey.trim()),
+          apiKeyMasked: maskSecret(apiKey),
+          hasWebhookSecret: Boolean((row.webhookSecret || '').trim()),
         }
       } else if (provider === 'icarry') {
         const apiKey = row.apiKey || ''
@@ -802,6 +781,95 @@ export const updateShipmozoCredentialsController = async (req: Request, res: Res
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update Shipmozo credentials' })
+  }
+}
+
+export const updateShiprocketCredentialsController = async (req: Request, res: Response) => {
+  const { apiBase, username, password, apiKey, webhookSecret } = req.body || {}
+
+  try {
+    const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextUsername = typeof username === 'string' ? username.trim() : undefined
+    const nextPassword = typeof password === 'string' ? password.trim() : undefined
+    const nextApiKey = typeof apiKey === 'string' ? apiKey.trim() : undefined
+    const nextWebhookSecret =
+      typeof webhookSecret === 'string' ? webhookSecret.trim() : undefined
+    const hasPassword = typeof nextPassword === 'string' && nextPassword.length > 0
+    const hasApiKey = typeof nextApiKey === 'string' && nextApiKey.length > 0
+    const hasWebhookSecret =
+      typeof nextWebhookSecret === 'string' && nextWebhookSecret.length > 0
+
+    const [existing] = await db
+      .select({ id: courier_credentials.id })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'shiprocket'))
+      .limit(1)
+
+    if (existing) {
+      const updatePayload: Record<string, any> = {
+        updatedAt: new Date(),
+      }
+      if (nextApiBase !== undefined) {
+        updatePayload.apiBase = nextApiBase || DEFAULT_SHIPROCKET_BASE_URL
+      }
+      if (nextUsername !== undefined) {
+        updatePayload.username = nextUsername
+      }
+      if (hasPassword) {
+        updatePayload.password = nextPassword
+      }
+      if (hasApiKey) {
+        updatePayload.apiKey = nextApiKey
+      }
+      if (hasWebhookSecret) {
+        updatePayload.webhookSecret = nextWebhookSecret
+      }
+
+      await db
+        .update(courier_credentials)
+        .set(updatePayload)
+        .where(eq(courier_credentials.provider, 'shiprocket'))
+    } else {
+      await db.insert(courier_credentials).values({
+        provider: 'shiprocket',
+        apiBase: nextApiBase || DEFAULT_SHIPROCKET_BASE_URL,
+        clientName: '',
+        apiKey: hasApiKey ? nextApiKey : '',
+        clientId: '',
+        username: nextUsername || '',
+        password: hasPassword ? nextPassword : '',
+        webhookSecret: hasWebhookSecret ? nextWebhookSecret : '',
+      })
+    }
+
+    const [saved] = await db
+      .select({
+        apiBase: courier_credentials.apiBase,
+        username: courier_credentials.username,
+        password: courier_credentials.password,
+        apiKey: courier_credentials.apiKey,
+        webhookSecret: courier_credentials.webhookSecret,
+      })
+      .from(courier_credentials)
+      .where(eq(courier_credentials.provider, 'shiprocket'))
+      .limit(1)
+
+    res.json({
+      success: true,
+      message: 'Shiprocket credentials updated successfully',
+      data: {
+        provider: 'shiprocket',
+        apiBase: saved?.apiBase || DEFAULT_SHIPROCKET_BASE_URL,
+        username: saved?.username || '',
+        hasPassword: Boolean((saved?.password || '').trim()),
+        hasApiKey: Boolean((saved?.apiKey || '').trim()),
+        apiKeyMasked: maskSecret(saved?.apiKey),
+        hasWebhookSecret: Boolean((saved?.webhookSecret || '').trim()),
+      },
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ success: false, message: 'Failed to update Shiprocket credentials' })
   }
 }
 

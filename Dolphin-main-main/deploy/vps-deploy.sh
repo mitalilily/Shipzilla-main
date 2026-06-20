@@ -9,6 +9,7 @@ PM2_APP_NAME="${PM2_APP_NAME:-shipzilla-api}"
 LEGACY_PM2_APP_NAMES="${LEGACY_PM2_APP_NAMES:-dolphin-api}"
 ENSURE_ADMIN_USER="${ENSURE_ADMIN_USER:-true}"
 PURGE_UNSUPPORTED_COURIERS="${PURGE_UNSUPPORTED_COURIERS:-true}"
+PURGE_UNSUPPORTED_COURIER_CREDENTIALS="${PURGE_UNSUPPORTED_COURIER_CREDENTIALS:-true}"
 LANDING_DOMAIN="${LANDING_DOMAIN:-shipzilla.in}"
 WWW_DOMAIN="${WWW_DOMAIN:-www.shipzilla.in}"
 APP_DOMAIN="${APP_DOMAIN:-app.shipzilla.in}"
@@ -309,6 +310,11 @@ done
   if [ "$PURGE_UNSUPPORTED_COURIERS" = "true" ]; then
     echo "[deploy] Purging unsupported courier providers"
     npm run couriers:purge-unsupported
+  fi
+
+  if [ "$PURGE_UNSUPPORTED_COURIER_CREDENTIALS" = "true" ]; then
+    echo "[deploy] Purging unsupported courier credentials"
+    npm run couriers:purge-unsupported-credentials
   fi
 
   if pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1; then
