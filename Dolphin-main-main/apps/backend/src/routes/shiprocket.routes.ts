@@ -47,6 +47,7 @@ import {
   updateCustomOrder,
   listReturnOrders,
   fulfillOrderedProducts,
+  mapUnmappedProducts,
 } from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
 
@@ -194,6 +195,52 @@ router.patch('/orders/fulfill', requireAuth, async (req: Request, res: Response)
     }
 
     const data = await fulfillOrderedProducts({ data: normalizedData })
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.patch('/orders/mapping', requireAuth, async (req: Request, res: Response) => {
+  try {
+    type MappingItem = {
+      order_id?: number | string
+      order_product_id?: number | string
+      master_sku?: string
+    }
+    type MappingOrderItem = {
+      order_id: number | string
+      order_product_id: number | string
+      master_sku: string
+    }
+
+    const payload = Array.isArray(req.body?.data) ? req.body.data : undefined
+    if (!payload || payload.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'data array with order_id, order_product_id and master_sku is required',
+      })
+    }
+
+    const normalizedData: MappingOrderItem[] = payload.map((item: MappingItem) => ({
+      order_id: item?.order_id,
+      order_product_id: item?.order_product_id,
+      master_sku: item?.master_sku || '',
+    })) as MappingOrderItem[]
+
+    const hasInvalidItem = normalizedData.some((item: MappingOrderItem) =>
+      item.order_id === undefined ||
+      item.order_product_id === undefined ||
+      !item.master_sku,
+    )
+
+    if (hasInvalidItem) {
+      return res.status(400).json({
+        success: false,
+        error: 'Each data item must include order_id, order_product_id and master_sku',
+      })
+    }
+
+    const data = await mapUnmappedProducts({ data: normalizedData })
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })

@@ -964,3 +964,17 @@ export const fulfillOrderedProducts = async (params: {
 }) => {
   return shiprocketRequest('PATCH', '/orders/fulfill', params)
 }
+
+/**
+ * PATCH /orders/mapping
+ * Map unmapped inventory products
+ */
+export const mapUnmappedProducts = async (params: {
+  data: Array<{
+    order_id: number | string
+    order_product_id: number | string
+    master_sku: string
+  }>
+}) => {
+  return shiprocketRequest('PATCH', '/orders/mapping', params)
+}
