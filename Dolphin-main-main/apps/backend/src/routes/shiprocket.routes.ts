@@ -44,6 +44,7 @@ import {
   logoutShiprocket,
   updateOrderPickupLocation,
   updateCustomerDeliveryAddress,
+  updateCustomOrder,
 } from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
 
@@ -77,6 +78,62 @@ router.post('/orders/create/adhoc', requireAuth, async (req: Request, res: Respo
 router.post('/orders/create/channel-specific', requireAuth, async (req: Request, res: Response) => {
   try {
     const data = await createChannelSpecificOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.post('/orders/update/adhoc', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const {
+      order_id,
+      order_date,
+      billing_customer_name,
+      billing_address,
+      billing_city,
+      billing_pincode,
+      billing_state,
+      billing_country,
+      billing_email,
+      billing_phone,
+      shipping_is_billing,
+      order_items,
+      payment_method,
+      sub_total,
+      length,
+      breadth,
+      height,
+      weight,
+    } = req.body || {}
+
+    if (
+      !order_id ||
+      !order_date ||
+      !billing_customer_name ||
+      !billing_address ||
+      !billing_city ||
+      !billing_pincode ||
+      !billing_state ||
+      !billing_country ||
+      !billing_email ||
+      !billing_phone ||
+      shipping_is_billing === undefined ||
+      !Array.isArray(order_items) ||
+      !payment_method ||
+      sub_total === undefined ||
+      length === undefined ||
+      breadth === undefined ||
+      height === undefined ||
+      weight === undefined
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'order_id, order_date, billing_customer_name, billing_address, billing_city, billing_pincode, billing_state, billing_country, billing_email, billing_phone, shipping_is_billing, order_items, payment_method, sub_total, length, breadth, height and weight are required',
+      })
+    }
+
+    const data = await updateCustomOrder(req.body)
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
