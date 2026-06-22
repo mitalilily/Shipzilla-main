@@ -34,6 +34,7 @@ import {
   createCustomerController,
   listCustomersController,
   createReturnOrderController,
+  createExchangeOrderController,
   getRecommendedCouriersController,
   schedulePickupController,
   updatePickupAddressController,
@@ -540,6 +541,7 @@ router.post('/customers', requireAuth, createCustomerController)
 // Returns
 router.post('/orders/create/return', requireAuth, createReturnOrderController)
 router.post('/returns/create', requireAuth, createReturnOrderController)
+router.post('/orders/create/exchange', requireAuth, createExchangeOrderController)
 
 // Pickup Schedules
 router.post('/pickup/schedule', requireAuth, schedulePickupController)

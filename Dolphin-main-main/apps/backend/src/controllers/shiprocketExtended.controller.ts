@@ -34,6 +34,7 @@ import {
   createCustomer,
   listCustomers,
   createReturnOrder,
+  createExchangeOrder,
   getRecommendedCouriers,
   schedulePickup,
   updatePickupAddress,
@@ -519,6 +520,89 @@ export const createReturnOrderController = async (req: Request, res: Response) =
 }
 
 // ──────────────────── RECOMMENDED COURIERS ────────────────────
+
+export const createExchangeOrderController = async (req: Request, res: Response) => {
+  try {
+    const {
+      exchange_order_id,
+      seller_pickup_location_id,
+      seller_shipping_location_id,
+      return_order_id,
+      order_date,
+      payment_method,
+      buyer_shipping_first_name,
+      buyer_shipping_address,
+      buyer_shipping_city,
+      buyer_shipping_state,
+      buyer_shipping_country,
+      buyer_shipping_pincode,
+      buyer_shipping_phone,
+      buyer_pickup_first_name,
+      buyer_pickup_address,
+      buyer_pickup_city,
+      buyer_pickup_state,
+      buyer_pickup_country,
+      buyer_pickup_pincode,
+      buyer_pickup_phone,
+      order_items,
+      sub_total,
+      return_length,
+      return_breadth,
+      return_height,
+      return_weight,
+      exchange_length,
+      exchange_breadth,
+      exchange_height,
+      exchange_weight,
+      return_reason,
+    } = req.body || {}
+
+    if (
+      !exchange_order_id ||
+      !seller_pickup_location_id ||
+      !seller_shipping_location_id ||
+      !return_order_id ||
+      !order_date ||
+      !payment_method ||
+      !buyer_shipping_first_name ||
+      !buyer_shipping_address ||
+      !buyer_shipping_city ||
+      !buyer_shipping_state ||
+      !buyer_shipping_country ||
+      !buyer_shipping_pincode ||
+      !buyer_shipping_phone ||
+      !buyer_pickup_first_name ||
+      !buyer_pickup_address ||
+      !buyer_pickup_city ||
+      !buyer_pickup_state ||
+      !buyer_pickup_country ||
+      !buyer_pickup_pincode ||
+      !buyer_pickup_phone ||
+      !Array.isArray(order_items) ||
+      sub_total === undefined ||
+      return_length === undefined ||
+      return_breadth === undefined ||
+      return_height === undefined ||
+      return_weight === undefined ||
+      exchange_length === undefined ||
+      exchange_breadth === undefined ||
+      exchange_height === undefined ||
+      exchange_weight === undefined ||
+      !return_reason
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'exchange_order_id, seller_pickup_location_id, seller_shipping_location_id, return_order_id, order_date, payment_method, buyer_shipping_first_name, buyer_shipping_address, buyer_shipping_city, buyer_shipping_state, buyer_shipping_country, buyer_shipping_pincode, buyer_shipping_phone, buyer_pickup_first_name, buyer_pickup_address, buyer_pickup_city, buyer_pickup_state, buyer_pickup_country, buyer_pickup_pincode, buyer_pickup_phone, order_items, sub_total, return_length, return_breadth, return_height, return_weight, exchange_length, exchange_breadth, exchange_height, exchange_weight and return_reason are required',
+      })
+    }
+
+    const data = await createExchangeOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
 
 export const getRecommendedCouriersController = async (req: Request, res: Response) => {
   try {

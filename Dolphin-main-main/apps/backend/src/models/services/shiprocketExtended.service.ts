@@ -803,9 +803,82 @@ export const createReturnOrder = async (params: {
 // ───────────────────────────── 13. RECOMMENDED COURIERS ─────────────────────────────
 
 /**
- * GET /courier/recommended
- * Get recommended couriers for a shipment
+ * POST /orders/create/exchange
+ * Create an exchange order
  */
+export const createExchangeOrder = async (params: {
+  exchange_order_id: string
+  seller_pickup_location_id: string
+  seller_shipping_location_id: string
+  return_order_id: string
+  order_date: string
+  payment_method: string
+  buyer_shipping_first_name: string
+  buyer_shipping_last_name?: string
+  buyer_shipping_email?: string
+  buyer_shipping_address: string
+  buyer_shipping_address_2?: string
+  buyer_shipping_city: string
+  buyer_shipping_state: string
+  buyer_shipping_country: string
+  buyer_shipping_pincode: number | string
+  buyer_shipping_phone: number | string
+  buyer_pickup_first_name: string
+  buyer_pickup_last_name?: string
+  buyer_pickup_email?: string
+  buyer_pickup_address: string
+  buyer_pickup_address_2?: string
+  buyer_pickup_city: string
+  buyer_pickup_state: string
+  buyer_pickup_country: string
+  buyer_pickup_pincode: number | string
+  buyer_pickup_phone: number | string
+  order_items: Array<{
+    name: string
+    selling_price: number | string
+    units: number | string
+    hsn: number | string
+    sku: string
+    tax?: number | string
+    discount?: number | string
+    exchange_item_id?: number | string
+    exchange_item_name?: string
+    exchange_item_sku?: string
+    qc_enable?: boolean | string
+    qc_color?: string
+    qc_brand?: string
+    qc_serial_no?: string
+    qc_ean_barcode?: string
+    qc_size?: string
+    qc_product_name?: string
+    qc_product_image?: string
+    qc_product_imei?: string
+    qc_brand_tag?: number | boolean | string
+    qc_used_check?: number | boolean | string
+    qc_sealtag_check?: number | boolean | string
+    qc_check_damaged_product?: string
+  }>
+  sub_total: number | string
+  shipping_charges?: number | string
+  giftwrap_charges?: number | string
+  total_discount?: number | string
+  transaction_charges?: number | string
+  return_length: number | string
+  return_breadth: number | string
+  return_height: number | string
+  return_weight: number | string
+  exchange_length: number | string
+  exchange_breadth: number | string
+  exchange_height: number | string
+  exchange_weight: number | string
+  return_reason: string
+  channel_id?: number | string
+  existing_order_id?: number | string
+  qc_check?: boolean | string
+}) => {
+  return shiprocketRequest('POST', '/orders/create/exchange', params)
+}
+
 /**
  * POST /orders/create/adhoc
  * Create a quick custom order without product catalogue linkage
