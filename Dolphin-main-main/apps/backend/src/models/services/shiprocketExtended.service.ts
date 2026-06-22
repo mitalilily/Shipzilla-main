@@ -1020,3 +1020,13 @@ export const importOrdersBulk = async (file: {
 
   return response.data
 }
+
+/**
+ * GET /courier/courierListWithCounts
+ * List couriers with counts and filter by type
+ */
+export const listCouriersWithCounts = async (params?: {
+  type?: 'active' | 'inactive' | 'all'
+}) => {
+  return shiprocketRequest('GET', '/courier/courierListWithCounts', undefined, params)
+}
