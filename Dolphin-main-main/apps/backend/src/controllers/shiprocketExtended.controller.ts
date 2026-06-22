@@ -133,7 +133,27 @@ export const getOrderDetailsController = async (req: Request, res: Response) => 
 
 export const listAllOrdersController = async (req: Request, res: Response) => {
   try {
-    const data = await listAllOrders(req.query as any)
+    const query = { ...(req.query as any) }
+    if (typeof query.filterBy === 'string' && !query.filter_by) {
+      query.filter_by = query.filterBy
+    }
+    if (typeof query.filterValue === 'string' && !query.filter) {
+      query.filter = query.filterValue
+    }
+
+    const allowedFilterBy = new Set(['status', 'payment_method', 'delivery_country', 'channel_order_id'])
+    if (query.filter_by && !allowedFilterBy.has(String(query.filter_by))) {
+      return res.status(400).json({
+        success: false,
+        error: 'filter_by must be one of status, payment_method, delivery_country, or channel_order_id',
+      })
+    }
+
+    if (query.filter && typeof query.filter !== 'string') {
+      query.filter = String(query.filter)
+    }
+
+    const data = await listAllOrders(query)
     res.json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })

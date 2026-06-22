@@ -365,6 +365,8 @@ export const listAllOrders = async (params?: {
   from_date?: string
   to_date?: string
   search?: string
+  filter_by?: 'status' | 'payment_method' | 'delivery_country' | 'channel_order_id' | string
+  filter?: string
 }) => {
   return shiprocketRequest('GET', '/orders', undefined, params)
 }
