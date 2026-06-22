@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Request, Response, Router } from 'express'
 import {
   loginShiprocketController,
   checkCourierServiceabilityController,
@@ -38,11 +38,28 @@ import {
   schedulePickupController,
   updatePickupAddressController,
 } from '../controllers/shiprocketExtended.controller'
+import { logoutShiprocket } from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
 
 const router = Router()
 
 router.post('/auth/login', loginShiprocketController)
+router.post('/auth/logout', async (req: Request, res: Response) => {
+  try {
+    const bearerHeader = req.headers.authorization || (req.headers as any).Authorization
+    const headerToken =
+      typeof bearerHeader === 'string' && bearerHeader.toLowerCase().startsWith('bearer ')
+        ? bearerHeader.slice(7).trim()
+        : undefined
+    const bodyToken = typeof req.body?.token === 'string' ? req.body.token.trim() : undefined
+    const data = await logoutShiprocket(headerToken || bodyToken)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    const message = err?.message || 'Failed to logout from Shiprocket'
+    const statusCode = /no shiprocket token/i.test(message) ? 400 : 502
+    res.status(statusCode).json({ success: false, error: message })
+  }
+})
 
 // Courier / Serviceability
 router.get('/courier/serviceability', checkCourierServiceabilityController)

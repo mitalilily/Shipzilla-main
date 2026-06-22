@@ -90,6 +90,11 @@ const cacheShiprocketToken = (auth: ShiprocketAuthResponse) => {
   tokenExpiry = auth.expiresAt ?? Date.now() + 23 * 60 * 60 * 1000
 }
 
+const clearShiprocketTokenCache = () => {
+  cachedToken = null
+  tokenExpiry = null
+}
+
 const resolveShiprocketCredentials = async (overrides?: ShiprocketAuthCredentials) => {
   let email = overrides?.email?.trim() || process.env.SHIPROCKET_EMAIL
   let password = overrides?.password || process.env.SHIPROCKET_PASSWORD
@@ -168,6 +173,41 @@ export const loginShiprocket = async (credentials?: ShiprocketAuthCredentials) =
     console.error('Shiprocket auth error:', error.response?.data || error.message)
     throw new Error(
       error.response?.data?.message || error.response?.data?.error || 'Failed to authenticate with Shiprocket',
+    )
+  }
+}
+
+export const logoutShiprocket = async (authToken?: string) => {
+  const { apiBase } = await resolveShiprocketCredentials()
+  const token = authToken?.trim() || cachedToken || (await getShiprocketToken())
+
+  if (!token) {
+    throw new Error('No Shiprocket token available to logout')
+  }
+
+  try {
+    const response = await axios.post(
+      `${apiBase}/auth/logout`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    clearShiprocketTokenCache()
+
+    return {
+      raw: response.data,
+      status: response.status,
+      token,
+    }
+  } catch (error: any) {
+    console.error('Shiprocket logout error:', error.response?.data || error.message)
+    throw new Error(
+      error.response?.data?.message || error.response?.data?.error || 'Failed to logout from Shiprocket',
     )
   }
 }
