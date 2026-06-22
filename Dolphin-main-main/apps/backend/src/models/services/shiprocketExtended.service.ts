@@ -1,4 +1,5 @@
 import axios from 'axios'
+import FormData from 'form-data'
 import { getEffectiveCourierConfig, ShiprocketConfig } from './courierCredentials.service'
 
 /**
@@ -977,4 +978,33 @@ export const mapUnmappedProducts = async (params: {
   }>
 }) => {
   return shiprocketRequest('PATCH', '/orders/mapping', params)
+}
+
+/**
+ * POST /orders/import
+ * Import orders in bulk from a CSV file
+ */
+export const importOrdersBulk = async (file: {
+  buffer: Buffer
+  originalname?: string
+  mimetype?: string
+}) => {
+  const token = await getShiprocketToken()
+  const apiBase = await getApiBase()
+  const form = new FormData()
+  form.append('file', file.buffer, {
+    filename: file.originalname || 'orders.csv',
+    contentType: file.mimetype || 'text/csv',
+  })
+
+  const response = await axios.post(`${apiBase}/orders/import`, form, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...form.getHeaders(),
+    },
+    maxBodyLength: Infinity,
+    maxContentLength: Infinity,
+  })
+
+  return response.data
 }

@@ -41,6 +41,7 @@ import {
 import {
   createChannelSpecificOrder,
   createCustomOrder,
+  importOrdersBulk,
   logoutShiprocket,
   updateOrderPickupLocation,
   updateCustomerDeliveryAddress,
@@ -50,6 +51,7 @@ import {
   mapUnmappedProducts,
 } from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
+import { upload } from '../middlewares/upload'
 
 const router = Router()
 
@@ -241,6 +243,23 @@ router.patch('/orders/mapping', requireAuth, async (req: Request, res: Response)
     }
 
     const data = await mapUnmappedProducts({ data: normalizedData })
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.post('/orders/import', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file?.buffer) {
+      return res.status(400).json({ success: false, error: 'CSV file is required' })
+    }
+
+    const data = await importOrdersBulk({
+      buffer: req.file.buffer,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+    })
+
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
