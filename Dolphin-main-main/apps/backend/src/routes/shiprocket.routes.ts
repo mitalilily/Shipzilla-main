@@ -42,6 +42,7 @@ import {
   createChannelSpecificOrder,
   createCustomOrder,
   logoutShiprocket,
+  updateOrderPickupLocation,
 } from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
 
@@ -75,6 +76,26 @@ router.post('/orders/create/adhoc', requireAuth, async (req: Request, res: Respo
 router.post('/orders/create/channel-specific', requireAuth, async (req: Request, res: Response) => {
   try {
     const data = await createChannelSpecificOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.patch('/orders/address/pickup', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { order_id, pickup_location } = req.body || {}
+    if (!order_id || !pickup_location) {
+      return res.status(400).json({
+        success: false,
+        error: 'order_id and pickup_location are required',
+      })
+    }
+
+    const data = await updateOrderPickupLocation({
+      order_id,
+      pickup_location: String(pickup_location),
+    })
+
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })

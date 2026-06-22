@@ -801,6 +801,17 @@ export const createChannelSpecificOrder = async (params: {
   return shiprocketRequest('POST', '/orders/create', params)
 }
 
+/**
+ * PATCH /orders/address/pickup
+ * Update pickup location for an already created order
+ */
+export const updateOrderPickupLocation = async (params: {
+  order_id: number | string | Array<number | string>
+  pickup_location: string
+}) => {
+  return shiprocketRequest('PATCH', '/orders/address/pickup', params)
+}
+
 export const getRecommendedCouriers = async (params: {
   pickup_postcode?: string
   delivery_postcode: string
