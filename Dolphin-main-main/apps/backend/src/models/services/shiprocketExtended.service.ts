@@ -223,6 +223,13 @@ const getApiBase = async (): Promise<string> => {
   return (process.env.SHIPROCKET_API_BASE || 'https://apiv2.shiprocket.in/v1/external').replace(/\/+$/, '')
 }
 
+const getShiprocketServiceabilityBase = async (): Promise<string> => {
+  return (
+    process.env.SHIPROCKET_SERVICEABILITY_API_BASE ||
+    'https://serviceability.shiprocket.in/v1/external'
+  ).replace(/\/+$/, '')
+}
+
 const shiprocketRequest = async (
   method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   endpoint: string,
@@ -256,6 +263,42 @@ const shiprocketRequest = async (
     const errorData = error.response?.data || error.message
     console.error(`[Shiprocket API Error] ${method} ${endpoint}:`, errorData)
     throw new Error(errorData?.message || errorData?.error || JSON.stringify(errorData) || 'Shiprocket API error')
+  }
+}
+
+const shiprocketServiceabilityRequest = async (
+  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
+  endpoint: string,
+  data?: any,
+  params?: any,
+) => {
+  const token = await getShiprocketToken()
+  const apiBase = await getShiprocketServiceabilityBase()
+  const url = `${apiBase}${endpoint}`
+
+  const config: any = {
+    method,
+    url,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  }
+
+  if (data && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
+    config.data = data
+  }
+  if (params) {
+    config.params = params
+  }
+
+  try {
+    const response = await axios(config)
+    return response.data
+  } catch (error: any) {
+    const errorData = error.response?.data || error.message
+    console.error(`[Shiprocket Serviceability API Error] ${method} ${endpoint}:`, errorData)
+    throw new Error(errorData?.message || errorData?.error || JSON.stringify(errorData) || 'Shiprocket serviceability API error')
   }
 }
 
@@ -396,6 +439,18 @@ export const generatePickupManifest = async (params: {
   shipment_id: number[] | string[]
 }) => {
   return shiprocketRequest('POST', '/courier/generate/manifest', params)
+}
+
+/**
+ * POST /courier/generate/pickup
+ * Request shipment pickup
+ */
+export const requestShipmentPickup = async (params: {
+  shipment_id: number | string | Array<number | string>
+  status?: 'retry' | string
+  pickup_date?: Array<string>
+}) => {
+  return shiprocketRequest('POST', '/courier/generate/pickup', params)
 }
 
 /**
@@ -1029,4 +1084,17 @@ export const listCouriersWithCounts = async (params?: {
   type?: 'active' | 'inactive' | 'all'
 }) => {
   return shiprocketRequest('GET', '/courier/courierListWithCounts', undefined, params)
+}
+
+/**
+ * POST /blocked-pincodes/upload
+ * Block or unblock delivery pincodes
+ */
+export const updateBlockedPincodes = async (params: {
+  postcode: {
+    delivery_blocked: string[]
+  }
+  action: 'block' | 'unblock' | string
+}) => {
+  return shiprocketServiceabilityRequest('POST', '/blocked-pincodes/upload', params)
 }

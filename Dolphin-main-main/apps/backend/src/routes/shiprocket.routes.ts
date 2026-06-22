@@ -45,6 +45,8 @@ import {
   importOrdersBulk,
   logoutShiprocket,
   listCouriersWithCounts,
+  requestShipmentPickup,
+  updateBlockedPincodes,
   updateOrderPickupLocation,
   updateCustomerDeliveryAddress,
   updateCustomOrder,
@@ -127,6 +129,48 @@ router.get('/courier/courierListWithCounts', requireAuth, async (req: Request, r
     res.status(500).json({ success: false, error: err.message })
   }
 })
+router.post('/blocked-pincodes/upload', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const action = typeof req.body?.action === 'string' ? req.body.action.trim().toLowerCase() : ''
+    const deliveryBlocked = req.body?.postcode?.delivery_blocked
+
+    if (!['block', 'unblock'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: "action must be 'block' or 'unblock'",
+      })
+    }
+
+    if (!Array.isArray(deliveryBlocked) || deliveryBlocked.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'postcode.delivery_blocked must be a non-empty array',
+      })
+    }
+
+    const pincodes = deliveryBlocked
+      .map((value: unknown) => String(value ?? '').trim())
+      .filter(Boolean)
+
+    if (pincodes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'postcode.delivery_blocked must contain at least one valid pincode',
+      })
+    }
+
+    const data = await updateBlockedPincodes({
+      postcode: {
+        delivery_blocked: pincodes,
+      },
+      action,
+    })
+
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
 router.post('/orders/update/adhoc', requireAuth, async (req: Request, res: Response) => {
   try {
     const {
@@ -178,6 +222,35 @@ router.post('/orders/update/adhoc', requireAuth, async (req: Request, res: Respo
     }
 
     const data = await updateCustomOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.post('/courier/generate/pickup', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const shipmentIds = req.body?.shipment_id
+    const isArray = Array.isArray(shipmentIds)
+    const normalizedIds = isArray ? shipmentIds.filter(Boolean) : shipmentIds ? [shipmentIds] : []
+
+    if (normalizedIds.length !== 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'Exactly one shipment_id is required',
+      })
+    }
+
+    const status = typeof req.body?.status === 'string' ? req.body.status.trim() : undefined
+    const pickupDate = Array.isArray(req.body?.pickup_date)
+      ? req.body.pickup_date.filter((value: unknown) => typeof value === 'string' && value.trim())
+      : undefined
+
+    const data = await requestShipmentPickup({
+      shipment_id: normalizedIds,
+      ...(status ? { status } : {}),
+      ...(pickupDate ? { pickup_date: pickupDate } : {}),
+    })
+
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
