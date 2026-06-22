@@ -45,6 +45,7 @@ import {
   updateOrderPickupLocation,
   updateCustomerDeliveryAddress,
   updateCustomOrder,
+  listReturnOrders,
 } from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
 
@@ -134,6 +135,14 @@ router.post('/orders/update/adhoc', requireAuth, async (req: Request, res: Respo
     }
 
     const data = await updateCustomOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.get('/orders/processing/return', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const data = await listReturnOrders(req.query as any)
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })

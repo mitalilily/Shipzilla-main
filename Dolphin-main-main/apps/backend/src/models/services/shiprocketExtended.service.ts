@@ -936,3 +936,16 @@ export const updatePickupAddress = async (pickupId: string, params: {
 }) => {
   return shiprocketRequest('POST', `/courier/pickup/address/${pickupId}`, params)
 }
+
+/**
+ * GET /orders/processing/return
+ * List all return orders
+ */
+export const listReturnOrders = async (params?: {
+  page?: number
+  per_page?: number
+  from?: string
+  to?: string
+}) => {
+  return shiprocketRequest('GET', '/orders/processing/return', undefined, params)
+}
