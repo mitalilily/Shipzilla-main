@@ -60,6 +60,31 @@ export const loginShiprocketController = async (req: Request, res: Response) => 
 
 export const checkCourierServiceabilityController = async (req: Request, res: Response) => {
   try {
+    const { pickup_postcode, delivery_postcode, order_id, cod, weight } = req.query as any
+
+    if (!pickup_postcode || !delivery_postcode) {
+      return res.status(400).json({
+        success: false,
+        error: 'pickup_postcode and delivery_postcode are required',
+      })
+    }
+
+    const hasOrderId = order_id !== undefined && order_id !== null && String(order_id).trim() !== ''
+    const hasCodAndWeight =
+      cod !== undefined &&
+      cod !== null &&
+      String(cod).trim() !== '' &&
+      weight !== undefined &&
+      weight !== null &&
+      String(weight).trim() !== ''
+
+    if (!hasOrderId && !hasCodAndWeight) {
+      return res.status(400).json({
+        success: false,
+        error: 'Either order_id or both cod and weight are required',
+      })
+    }
+
     const data = await checkCourierServiceability(req.query as any)
     res.json({ success: true, data })
   } catch (err: any) {
