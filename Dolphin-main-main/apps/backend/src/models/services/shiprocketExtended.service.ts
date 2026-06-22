@@ -812,6 +812,26 @@ export const updateOrderPickupLocation = async (params: {
   return shiprocketRequest('PATCH', '/orders/address/pickup', params)
 }
 
+/**
+ * POST /orders/address/update
+ * Update customer delivery address for an already created order
+ */
+export const updateCustomerDeliveryAddress = async (params: {
+  order_id: number | string
+  shipping_customer_name: string
+  shipping_phone: number | string
+  shipping_address: string
+  shipping_address_2?: string
+  shipping_city: string
+  shipping_state: string
+  shipping_country: string
+  shipping_pincode: number | string
+  shipping_email?: string
+  billing_alternate_phone?: number | string
+}) => {
+  return shiprocketRequest('POST', '/orders/address/update', params)
+}
+
 export const getRecommendedCouriers = async (params: {
   pickup_postcode?: string
   delivery_postcode: string

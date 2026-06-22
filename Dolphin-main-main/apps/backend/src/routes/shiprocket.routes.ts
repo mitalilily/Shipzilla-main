@@ -43,6 +43,7 @@ import {
   createCustomOrder,
   logoutShiprocket,
   updateOrderPickupLocation,
+  updateCustomerDeliveryAddress,
 } from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
 
@@ -97,6 +98,57 @@ router.patch('/orders/address/pickup', requireAuth, async (req: Request, res: Re
     })
 
     res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.post('/orders/address/update', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const {
+      order_id,
+      shipping_customer_name,
+      shipping_phone,
+      shipping_address,
+      shipping_city,
+      shipping_state,
+      shipping_country,
+      shipping_pincode,
+    } = req.body || {}
+
+    if (
+      !order_id ||
+      !shipping_customer_name ||
+      !shipping_phone ||
+      !shipping_address ||
+      !shipping_city ||
+      !shipping_state ||
+      !shipping_country ||
+      !shipping_pincode
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'order_id, shipping_customer_name, shipping_phone, shipping_address, shipping_city, shipping_state, shipping_country and shipping_pincode are required',
+      })
+    }
+
+    const data = await updateCustomerDeliveryAddress({
+      order_id,
+      shipping_customer_name: String(shipping_customer_name),
+      shipping_phone,
+      shipping_address: String(shipping_address),
+      shipping_address_2:
+        typeof req.body?.shipping_address_2 === 'string' ? req.body.shipping_address_2 : undefined,
+      shipping_city: String(shipping_city),
+      shipping_state: String(shipping_state),
+      shipping_country: String(shipping_country),
+      shipping_pincode,
+      shipping_email:
+        typeof req.body?.shipping_email === 'string' ? req.body.shipping_email : undefined,
+      billing_alternate_phone:
+        req.body?.billing_alternate_phone !== undefined ? req.body.billing_alternate_phone : undefined,
+    })
+
+    res.status(202).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
   }
