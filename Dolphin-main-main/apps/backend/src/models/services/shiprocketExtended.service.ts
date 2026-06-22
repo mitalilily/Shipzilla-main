@@ -365,6 +365,18 @@ export const generateAwb = async (params: {
 }
 
 /**
+ * POST /courier/assign/awb
+ * Assign AWB for a shipment
+ */
+export const assignAwbToShipment = async (params: {
+  shipment_id: number | string
+  courier_id?: number | string
+  status?: 'reassign' | string
+}) => {
+  return shiprocketRequest('POST', '/courier/assign/awb', params)
+}
+
+/**
  * POST /courier/generate/label
  * Generate shipping label for an AWB
  */

@@ -39,6 +39,7 @@ import {
   updatePickupAddressController,
 } from '../controllers/shiprocketExtended.controller'
 import {
+  assignAwbToShipment,
   createChannelSpecificOrder,
   createCustomOrder,
   importOrdersBulk,
@@ -83,6 +84,27 @@ router.post('/orders/create/adhoc', requireAuth, async (req: Request, res: Respo
 router.post('/orders/create/channel-specific', requireAuth, async (req: Request, res: Response) => {
   try {
     const data = await createChannelSpecificOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.post('/courier/assign/awb', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { shipment_id, courier_id, status } = req.body || {}
+    if (!shipment_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'shipment_id is required',
+      })
+    }
+
+    const data = await assignAwbToShipment({
+      shipment_id,
+      ...(courier_id !== undefined ? { courier_id } : {}),
+      ...(typeof status === 'string' && status.trim() ? { status: status.trim() } : {}),
+    })
+
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
