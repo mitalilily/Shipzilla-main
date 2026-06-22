@@ -1098,3 +1098,16 @@ export const updateBlockedPincodes = async (params: {
 }) => {
   return shiprocketServiceabilityRequest('POST', '/blocked-pincodes/upload', params)
 }
+
+/**
+ * GET /block-pincodes/get
+ * Read blocked pincodes with download/search/paginated modes
+ */
+export const getBlockedPincodes = async (params?: {
+  is_download?: number | string
+  search?: string
+  per_page?: number | string
+  current_page?: number | string
+}) => {
+  return shiprocketServiceabilityRequest('GET', '/block-pincodes/get', undefined, params)
+}

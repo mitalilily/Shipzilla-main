@@ -45,6 +45,7 @@ import {
   importOrdersBulk,
   logoutShiprocket,
   listCouriersWithCounts,
+  getBlockedPincodes,
   requestShipmentPickup,
   updateBlockedPincodes,
   updateOrderPickupLocation,
@@ -166,6 +167,29 @@ router.post('/blocked-pincodes/upload', requireAuth, async (req: Request, res: R
       action,
     })
 
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.get('/blocked-pincodes/get', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const isDownload = String(req.query?.is_download ?? '').trim() === '1'
+    const search = typeof req.query?.search === 'string' ? req.query.search.trim() : ''
+    const perPage = typeof req.query?.per_page === 'string' ? req.query.per_page.trim() : ''
+    const currentPage =
+      typeof req.query?.current_page === 'string' ? req.query.current_page.trim() : ''
+
+    const params = isDownload
+      ? { is_download: 1 }
+      : search
+        ? { search }
+        : {
+            ...(perPage ? { per_page: perPage } : {}),
+            ...(currentPage ? { current_page: currentPage } : {}),
+          }
+
+    const data = await getBlockedPincodes(params)
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
