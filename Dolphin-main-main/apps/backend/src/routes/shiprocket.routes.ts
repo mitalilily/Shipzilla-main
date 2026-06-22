@@ -38,7 +38,11 @@ import {
   schedulePickupController,
   updatePickupAddressController,
 } from '../controllers/shiprocketExtended.controller'
-import { createCustomOrder, logoutShiprocket } from '../models/services/shiprocketExtended.service'
+import {
+  createChannelSpecificOrder,
+  createCustomOrder,
+  logoutShiprocket,
+} from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
 
 const router = Router()
@@ -63,6 +67,14 @@ router.post('/auth/logout', async (req: Request, res: Response) => {
 router.post('/orders/create/adhoc', requireAuth, async (req: Request, res: Response) => {
   try {
     const data = await createCustomOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.post('/orders/create/channel-specific', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const data = await createChannelSpecificOrder(req.body)
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })

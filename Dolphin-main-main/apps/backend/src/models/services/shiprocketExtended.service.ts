@@ -744,6 +744,63 @@ export const createCustomOrder = async (params: {
   return shiprocketRequest('POST', '/orders/create/adhoc', params)
 }
 
+/**
+ * POST /orders/create
+ * Create a channel-specific order with a required channel_id
+ */
+export const createChannelSpecificOrder = async (params: {
+  order_id: string
+  order_date: string
+  pickup_location?: string
+  channel_id: number
+  comment?: string
+  billing_customer_name: string
+  billing_last_name?: string
+  billing_address: string
+  billing_address_2?: string
+  billing_city: string
+  billing_pincode: number | string
+  billing_state: string
+  billing_country: string
+  billing_email: string
+  billing_phone: number | string
+  shipping_is_billing: boolean | number | string
+  shipping_customer_name?: string
+  shipping_last_name?: string
+  shipping_address?: string
+  shipping_address_2?: string
+  shipping_city?: string
+  shipping_pincode?: number | string
+  shipping_country?: string
+  shipping_state?: string
+  shipping_email?: string
+  shipping_phone?: number | string
+  order_items: Array<{
+    name: string
+    sku: string
+    units: number | string
+    selling_price: number | string
+    discount?: number | string
+    tax?: number | string
+    hsn?: number | string
+  }>
+  payment_method: 'COD' | 'Prepaid' | string
+  shipping_charges?: number | string
+  giftwrap_charges?: number | string
+  transaction_charges?: number | string
+  total_discount?: number | string
+  sub_total: number | string
+  length: number | string
+  breadth: number | string
+  height: number | string
+  weight: number | string
+  invoice_number?: string
+  order_type?: string
+  customer_gstin?: string
+}) => {
+  return shiprocketRequest('POST', '/orders/create', params)
+}
+
 export const getRecommendedCouriers = async (params: {
   pickup_postcode?: string
   delivery_postcode: string
