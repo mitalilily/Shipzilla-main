@@ -81,11 +81,15 @@ export const getSelfServiceabilityController = async (req: Request, res: Respons
 export const cancelOrdersController = async (req: Request, res: Response) => {
   try {
     const { ids, awbs } = req.body
-    if (!ids && !awbs) {
-      return res.status(400).json({ success: false, error: 'Provide ids or awbs to cancel' })
+    if ((!ids || !Array.isArray(ids) || ids.length === 0) && (!awbs || !Array.isArray(awbs) || awbs.length === 0)) {
+      return res.status(400).json({ success: false, error: 'Provide ids to cancel' })
     }
     const data = await cancelOrders({ ids, awbs })
-    res.json({ success: true, data })
+    if (data !== undefined) {
+      // Shiprocket returns 204 No Content on success; mirror that contract.
+      return res.status(204).end()
+    }
+    return res.status(204).end()
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
   }
