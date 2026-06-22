@@ -372,6 +372,14 @@ export const listAllOrders = async (params?: {
 }
 
 /**
+ * POST /orders/export
+ * Export orders as a CSV download job
+ */
+export const exportOrders = async () => {
+  return shiprocketRequest('POST', '/orders/export', {})
+}
+
+/**
  * POST /orders/duplicate/{order_id}
  * Duplicate a shipment
  */

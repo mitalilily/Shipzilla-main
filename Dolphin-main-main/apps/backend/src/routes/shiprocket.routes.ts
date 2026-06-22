@@ -45,6 +45,7 @@ import {
   importOrdersBulk,
   logoutShiprocket,
   listCouriersWithCounts,
+  exportOrders,
   getBlockedPincodes,
   requestShipmentPickup,
   updateBlockedPincodes,
@@ -246,6 +247,14 @@ router.post('/orders/update/adhoc', requireAuth, async (req: Request, res: Respo
     }
 
     const data = await updateCustomOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.post('/orders/export', requireAuth, async (_req: Request, res: Response) => {
+  try {
+    const data = await exportOrders()
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
