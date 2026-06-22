@@ -36,6 +36,7 @@ import {
   createReturnOrderController,
   updateReturnOrderController,
   createExchangeOrderController,
+  createForwardShipmentController,
   getRecommendedCouriersController,
   schedulePickupController,
   updatePickupAddressController,
@@ -498,6 +499,7 @@ router.post('/orders/:orderId/print', requireAuth, printOrderInvoiceController)
 router.delete('/orders/:orderId', requireAuth, deleteOrderController)
 
 // Shipments / AWB / Label
+router.post('/shipments/create/forward-shipment', requireAuth, createForwardShipmentController)
 router.post('/shipments/awb/generate', requireAuth, generateAwbController)
 router.post('/shipments/label/generate', requireAuth, generateLabelController)
 router.post('/shipments/manifest/generate', requireAuth, generatePickupManifestController)

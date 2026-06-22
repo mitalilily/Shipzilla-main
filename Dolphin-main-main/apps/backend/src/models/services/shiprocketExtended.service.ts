@@ -965,6 +965,88 @@ export const createCustomOrder = async (params: {
 }
 
 /**
+ * POST /shipments/create/forward-shipment
+ * Create a forward shipment and optionally request pickup, label, and manifest
+ */
+export const createForwardShipment = async (params: {
+  mode?: 'Surface' | 'Air' | string
+  request_pickup?: boolean | string
+  print_label?: boolean | string
+  generate_manifest?: boolean | string
+  courier_id?: number | string
+  reseller_name?: string
+  order_id: string
+  isd_code?: string
+  billing_isd_code?: string
+  order_date: string
+  channel_id?: string | number
+  company_name?: string
+  billing_customer_name: string
+  billing_last_name?: string
+  billing_address: string
+  billing_address_2?: string
+  billing_city: string
+  billing_state: string
+  billing_country: string
+  billing_pincode: number | string
+  billing_email: string
+  billing_phone: number | string
+  billing_alternate_phone?: number | string
+  shipping_is_billing: boolean | number | string
+  shipping_customer_name?: string
+  shipping_last_name?: string
+  shipping_address?: string
+  shipping_address_2?: string
+  shipping_city?: string
+  shipping_state?: string
+  shipping_country?: string
+  shipping_pincode?: number | string
+  shipping_email?: string
+  shipping_phone?: number | string
+  order_items: Array<{
+    name: string
+    sku: string
+    units: number | string
+    hsn?: number | string
+    selling_price: number | string
+    tax?: number | string
+    discount?: number | string
+  }>
+  payment_method: string
+  shipping_charges?: number | string
+  giftwrap_charges?: number | string
+  transaction_charges?: number | string
+  total_discount?: number | string
+  sub_total: number | string
+  weight: number | string
+  length: number | string
+  breadth: number | string
+  height: number | string
+  pickup_location: string
+  customer_gstin?: string
+  vendor_details?: {
+    email?: string
+    phone?: number | string
+    name?: string
+    address?: string
+    address_2?: string
+    city?: string
+    state?: string
+    country?: string
+    pin_code?: number | string
+    pickup_location?: string
+  }
+  order_type?: string
+  longitude?: number | string
+  latitude?: number | string
+  what3words_address?: string
+  is_document?: number | boolean
+  ewaybill_no?: string
+}) => {
+  return shiprocketRequest('POST', '/shipments/create/forward-shipment', params)
+}
+
+/**
  * POST /orders/update/adhoc
  * Update a quick custom order before AWB assignment
  */

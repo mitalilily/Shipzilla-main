@@ -36,6 +36,7 @@ import {
   createReturnOrder,
   updateReturnOrder,
   createExchangeOrder,
+  createForwardShipment,
   getRecommendedCouriers,
   schedulePickup,
   updatePickupAddress,
@@ -658,6 +659,92 @@ export const createExchangeOrderController = async (req: Request, res: Response)
     }
 
     const data = await createExchangeOrder(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+
+export const createForwardShipmentController = async (req: Request, res: Response) => {
+  try {
+    const {
+      order_id,
+      order_date,
+      billing_customer_name,
+      billing_address,
+      billing_city,
+      billing_state,
+      billing_country,
+      billing_pincode,
+      billing_email,
+      billing_phone,
+      shipping_is_billing,
+      order_items,
+      payment_method,
+      sub_total,
+      weight,
+      length,
+      breadth,
+      height,
+      pickup_location,
+    } = req.body || {}
+
+    const shippingDetailsRequired = ![
+      true,
+      1,
+      '1',
+      'true',
+      'True',
+      'TRUE',
+    ].includes(shipping_is_billing)
+
+    if (
+      !order_id ||
+      !order_date ||
+      !billing_customer_name ||
+      !billing_address ||
+      !billing_city ||
+      !billing_state ||
+      !billing_country ||
+      !billing_pincode ||
+      !billing_email ||
+      !billing_phone ||
+      shipping_is_billing === undefined ||
+      !Array.isArray(order_items) ||
+      !payment_method ||
+      sub_total === undefined ||
+      weight === undefined ||
+      length === undefined ||
+      breadth === undefined ||
+      height === undefined ||
+      !pickup_location
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'order_id, order_date, billing_customer_name, billing_address, billing_city, billing_state, billing_country, billing_pincode, billing_email, billing_phone, shipping_is_billing, order_items, payment_method, sub_total, weight, length, breadth, height and pickup_location are required',
+      })
+    }
+
+    if (
+      shippingDetailsRequired &&
+      (!req.body?.shipping_customer_name ||
+        !req.body?.shipping_address ||
+        !req.body?.shipping_city ||
+        !req.body?.shipping_state ||
+        !req.body?.shipping_country ||
+        !req.body?.shipping_pincode ||
+        !req.body?.shipping_email ||
+        !req.body?.shipping_phone)
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'shipping_customer_name, shipping_address, shipping_city, shipping_state, shipping_country, shipping_pincode, shipping_email and shipping_phone are required when shipping_is_billing is false',
+      })
+    }
+
+    const data = await createForwardShipment(req.body)
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })
