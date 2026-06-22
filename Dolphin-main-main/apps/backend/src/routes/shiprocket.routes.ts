@@ -46,6 +46,7 @@ import {
   updateCustomerDeliveryAddress,
   updateCustomOrder,
   listReturnOrders,
+  fulfillOrderedProducts,
 } from '../models/services/shiprocketExtended.service'
 import { requireAuth } from '../middlewares/requireAuth'
 
@@ -143,6 +144,56 @@ router.post('/orders/update/adhoc', requireAuth, async (req: Request, res: Respo
 router.get('/orders/processing/return', requireAuth, async (req: Request, res: Response) => {
   try {
     const data = await listReturnOrders(req.query as any)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+router.patch('/orders/fulfill', requireAuth, async (req: Request, res: Response) => {
+  try {
+    type FulfillItem = {
+      order_id?: number | string
+      order_product_id?: number | string
+      quantity?: number | string
+      action?: string
+    }
+    type FulfillOrderItem = {
+      order_id: number | string
+      order_product_id: number | string
+      quantity: number | string
+      action: string
+    }
+
+    const payload = Array.isArray(req.body?.data) ? req.body.data : undefined
+    if (!payload || payload.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'data array with order_id, order_product_id, quantity and action is required',
+      })
+    }
+
+    const normalizedData: FulfillOrderItem[] = payload.map((item: FulfillItem) => ({
+      order_id: item?.order_id,
+      order_product_id: item?.order_product_id,
+      quantity: item?.quantity,
+      action: item?.action,
+    })) as FulfillOrderItem[]
+
+    const hasInvalidItem = normalizedData.some((item: FulfillOrderItem) =>
+        item.order_id === undefined ||
+        item.order_product_id === undefined ||
+        item.quantity === undefined ||
+        !item.action,
+    )
+
+    if (hasInvalidItem) {
+      return res.status(400).json({
+        success: false,
+        error: 'Each data item must include order_id, order_product_id, quantity and action',
+      })
+    }
+
+    const data = await fulfillOrderedProducts({ data: normalizedData })
     res.status(200).json({ success: true, data })
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message })

@@ -949,3 +949,18 @@ export const listReturnOrders = async (params?: {
 }) => {
   return shiprocketRequest('GET', '/orders/processing/return', undefined, params)
 }
+
+/**
+ * PATCH /orders/fulfill
+ * Add inventory for ordered products
+ */
+export const fulfillOrderedProducts = async (params: {
+  data: Array<{
+    order_id: number | string
+    order_product_id: number | string
+    quantity: number | string
+    action: 'add' | string
+  }>
+}) => {
+  return shiprocketRequest('PATCH', '/orders/fulfill', params)
+}
