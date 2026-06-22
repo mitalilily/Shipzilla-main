@@ -34,6 +34,7 @@ import {
   createCustomer,
   listCustomers,
   createReturnOrder,
+  updateReturnOrder,
   createExchangeOrder,
   getRecommendedCouriers,
   schedulePickup,
@@ -520,6 +521,65 @@ export const createReturnOrderController = async (req: Request, res: Response) =
 }
 
 // ──────────────────── RECOMMENDED COURIERS ────────────────────
+
+export const updateReturnOrderController = async (req: Request, res: Response) => {
+  try {
+    const { order_id, action, length, breadth, height, weight, return_warehouse_id } =
+      req.body || {}
+
+    const actions = Array.isArray(action)
+      ? action.map((value: unknown) => String(value ?? '').trim()).filter(Boolean)
+      : []
+
+    if (!order_id || actions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'order_id and action are required',
+      })
+    }
+
+    const allowedActions = ['product_details', 'warehouse_address']
+    const invalidAction = actions.find((value) => !allowedActions.includes(value))
+    if (invalidAction) {
+      return res.status(400).json({
+        success: false,
+        error: "action must contain only 'product_details' or 'warehouse_address'",
+      })
+    }
+
+    const requiresProductDetails = actions.includes('product_details')
+    const requiresWarehouseAddress = actions.includes('warehouse_address')
+
+    if (
+      (requiresProductDetails &&
+        (length === undefined ||
+          breadth === undefined ||
+          height === undefined ||
+          weight === undefined)) ||
+      (requiresWarehouseAddress && return_warehouse_id === undefined)
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'length, breadth, height and weight are required for product_details; return_warehouse_id is required for warehouse_address',
+      })
+    }
+
+    const data = await updateReturnOrder({
+      order_id,
+      action: actions,
+      ...(length !== undefined ? { length } : {}),
+      ...(breadth !== undefined ? { breadth } : {}),
+      ...(height !== undefined ? { height } : {}),
+      ...(weight !== undefined ? { weight } : {}),
+      ...(return_warehouse_id !== undefined ? { return_warehouse_id } : {}),
+    })
+
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
 
 export const createExchangeOrderController = async (req: Request, res: Response) => {
   try {

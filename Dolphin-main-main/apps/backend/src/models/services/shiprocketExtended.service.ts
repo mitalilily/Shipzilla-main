@@ -806,6 +806,22 @@ export const createReturnOrder = async (params: {
  * POST /orders/create/exchange
  * Create an exchange order
  */
+/**
+ * POST /orders/edit
+ * Update a return order
+ */
+export const updateReturnOrder = async (params: {
+  order_id: string
+  action: Array<'product_details' | 'warehouse_address' | string>
+  length?: number | string
+  breadth?: number | string
+  height?: number | string
+  weight?: number | string
+  return_warehouse_id?: number | string
+}) => {
+  return shiprocketRequest('POST', '/orders/edit', params)
+}
+
 export const createExchangeOrder = async (params: {
   exchange_order_id: string
   seller_pickup_location_id: string
