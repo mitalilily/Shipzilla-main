@@ -10,43 +10,165 @@ import { getEffectiveCourierConfig, ShiprocketConfig } from './courierCredential
 let cachedToken: string | null = null
 let tokenExpiry: number | null = null
 
-export const getShiprocketToken = async (): Promise<string> => {
+type ShiprocketAuthCredentials = {
+  email?: string
+  password?: string
+}
+
+type ShiprocketAuthResponse = {
+  token: string
+  refreshToken?: string
+  expiresAt?: number | null
+  raw: any
+}
+
+const parseJwtExpiry = (token: string): number | null => {
+  const payload = token.split('.')[1]
+  if (!payload) return null
+
   try {
-    if (cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
-      return cachedToken
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'))
+    const exp = decoded?.exp
+    if (typeof exp === 'number' && Number.isFinite(exp)) {
+      return exp < 1e12 ? exp * 1000 : exp
     }
+  } catch {
+    // ignore malformed tokens
+  }
 
-    // Try DB credentials first, fallback to env
-    let email = process.env.SHIPROCKET_EMAIL
-    let password = process.env.SHIPROCKET_PASSWORD
-    let apiBase = process.env.SHIPROCKET_API_BASE || 'https://apiv2.shiprocket.in/v1/external'
+  return null
+}
 
-    try {
-      const config = await getEffectiveCourierConfig<ShiprocketConfig>('shiprocket', 'b2c')
-      if (config) {
-        email = config.email || email
-        password = config.password || password
-        apiBase = config.apiBase || apiBase
-      }
-    } catch {
-      // ignore db errors, use env fallback
+const extractShiprocketAuthResponse = (data: any): ShiprocketAuthResponse => {
+  const token = String(
+    data?.token ||
+      data?.jwt_token ||
+      data?.access_token ||
+      data?.data?.token ||
+      data?.data?.jwt_token ||
+      data?.data?.access_token ||
+      '',
+  ).trim()
+
+  const refreshToken = String(
+    data?.refresh_token ||
+      data?.refreshToken ||
+      data?.reference_token ||
+      data?.referenceToken ||
+      data?.data?.refresh_token ||
+      data?.data?.refreshToken ||
+      data?.data?.reference_token ||
+      data?.data?.referenceToken ||
+      '',
+  ).trim()
+
+  const apiExpiry =
+    data?.expires_at ??
+    data?.expiresAt ??
+    data?.data?.expires_at ??
+    data?.data?.expiresAt ??
+    null
+
+  let expiresAt: number | null = null
+  if (typeof apiExpiry === 'number' && Number.isFinite(apiExpiry)) {
+    expiresAt = apiExpiry < 1e12 ? apiExpiry * 1000 : apiExpiry
+  } else if (token) {
+    expiresAt = parseJwtExpiry(token)
+  }
+
+  return {
+    token,
+    refreshToken: refreshToken || undefined,
+    expiresAt,
+    raw: data,
+  }
+}
+
+const cacheShiprocketToken = (auth: ShiprocketAuthResponse) => {
+  if (!auth.token) return
+  cachedToken = auth.token
+  tokenExpiry = auth.expiresAt ?? Date.now() + 23 * 60 * 60 * 1000
+}
+
+const resolveShiprocketCredentials = async (overrides?: ShiprocketAuthCredentials) => {
+  let email = overrides?.email?.trim() || process.env.SHIPROCKET_EMAIL
+  let password = overrides?.password || process.env.SHIPROCKET_PASSWORD
+  let apiBase = process.env.SHIPROCKET_API_BASE || 'https://apiv2.shiprocket.in/v1/external'
+
+  try {
+    const config = await getEffectiveCourierConfig<ShiprocketConfig>('shiprocket', 'b2c')
+    if (config) {
+      email = overrides?.email?.trim() || config.email || email
+      password = overrides?.password || config.password || password
+      apiBase = config.apiBase || apiBase
     }
+  } catch {
+    // ignore db errors, use env fallback
+  }
 
-    if (!email || !password) {
-      throw new Error('Shiprocket credentials not configured. Set SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD in env.')
+  return {
+    email,
+    password,
+    apiBase: apiBase.replace(/\/+$/, ''),
+  }
+}
+
+const authenticateShiprocket = async (
+  overrides?: ShiprocketAuthCredentials,
+): Promise<ShiprocketAuthResponse> => {
+  const shouldUseCache = !overrides?.email && !overrides?.password
+  if (shouldUseCache && cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
+    return {
+      token: cachedToken,
+      expiresAt: tokenExpiry,
+      raw: { token: cachedToken },
     }
+  }
 
-    const res = await axios.post(`${apiBase}/auth/login`, {
+  const { email, password, apiBase } = await resolveShiprocketCredentials(overrides)
+
+  if (!email || !password) {
+    throw new Error(
+      'Shiprocket credentials not configured. Set SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD in env.',
+    )
+  }
+
+  const res = await axios.post(
+    `${apiBase}/auth/login`,
+    {
       email,
       password,
-    })
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+  )
 
-    cachedToken = res.data?.token || res.data?.jwt_token || ''
-    tokenExpiry = Date.now() + 23 * 60 * 60 * 1000 // ~23 hours
-    return cachedToken ?? ''
+  const auth = extractShiprocketAuthResponse(res.data)
+  cacheShiprocketToken(auth)
+  return auth
+}
+
+export const getShiprocketToken = async (): Promise<string> => {
+  try {
+    const auth = await authenticateShiprocket()
+    return auth.token
   } catch (error: any) {
     console.error('Shiprocket auth error:', error.response?.data || error.message)
     throw new Error('Failed to authenticate with Shiprocket')
+  }
+}
+
+export const loginShiprocket = async (credentials?: ShiprocketAuthCredentials) => {
+  try {
+    return await authenticateShiprocket(credentials)
+  } catch (error: any) {
+    console.error('Shiprocket auth error:', error.response?.data || error.message)
+    throw new Error(
+      error.response?.data?.message || error.response?.data?.error || 'Failed to authenticate with Shiprocket',
+    )
   }
 }
 

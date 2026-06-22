@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import {
+  loginShiprocket,
   checkCourierServiceability,
   getSelfServiceability,
   cancelOrders,
@@ -37,6 +38,23 @@ import {
   schedulePickup,
   updatePickupAddress,
 } from '../models/services/shiprocketExtended.service'
+
+export const loginShiprocketController = async (req: Request, res: Response) => {
+  try {
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim() : undefined
+    const password = typeof req.body?.password === 'string' ? req.body.password : undefined
+    const data = await loginShiprocket({ email, password })
+
+    res.status(200).json({
+      success: true,
+      data,
+    })
+  } catch (err: any) {
+    const message = err?.message || 'Failed to authenticate with Shiprocket'
+    const statusCode = /not configured/i.test(message) ? 400 : 502
+    res.status(statusCode).json({ success: false, error: message })
+  }
+}
 
 // ──────────────────── COURIER / SERVICEABILITY ────────────────────
 

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  loginShiprocketController,
   checkCourierServiceabilityController,
   getSelfServiceabilityController,
   cancelOrdersController,
@@ -41,12 +42,14 @@ import { requireAuth } from '../middlewares/requireAuth'
 
 const router = Router()
 
-// ──── Courier / Serviceability ────
+router.post('/auth/login', loginShiprocketController)
+
+// Courier / Serviceability
 router.get('/courier/serviceability', checkCourierServiceabilityController)
 router.get('/courier/serviceability/self', getSelfServiceabilityController)
 router.get('/courier/recommended', getRecommendedCouriersController)
 
-// ──── Orders ────
+// Orders
 router.post('/orders/cancel', requireAuth, cancelOrdersController)
 router.get('/orders', requireAuth, listAllOrdersController)
 router.get('/orders/:orderId', requireAuth, getOrderDetailsController)
@@ -54,52 +57,52 @@ router.post('/orders/:orderId/duplicate', requireAuth, duplicateOrderController)
 router.post('/orders/:orderId/print', requireAuth, printOrderInvoiceController)
 router.delete('/orders/:orderId', requireAuth, deleteOrderController)
 
-// ──── Shipments / AWB / Label ────
+// Shipments / AWB / Label
 router.post('/shipments/awb/generate', requireAuth, generateAwbController)
 router.post('/shipments/label/generate', requireAuth, generateLabelController)
 router.post('/shipments/manifest/generate', requireAuth, generatePickupManifestController)
 router.post('/shipments/export', requireAuth, exportShipmentsController)
 router.get('/shipments', requireAuth, listShipmentsController)
 
-// ──── Tracking ────
+// Tracking
 router.get('/track', trackShipmentController)
 router.get('/track/orders/:orderId', trackShipmentByOrderIdController)
 
-// ──── Pickup Locations ────
+// Pickup Locations
 router.get('/pickup-locations', requireAuth, getPickupLocationsController)
 router.post('/pickup-locations', requireAuth, addPickupLocationController)
 router.put('/pickup-locations', requireAuth, editPickupLocationController)
 
-// ──── Addresses ────
+// Addresses
 router.get('/addresses', requireAuth, getAddressesController)
 router.post('/addresses', requireAuth, addAddressController)
 
-// ──── NDR ────
+// NDR
 router.get('/ndr/list', requireAuth, listNdrController)
 router.post('/ndr/update', requireAuth, updateNdrActionController)
 router.get('/ndr/rescheduled', requireAuth, listRescheduledNdrController)
 router.post('/ndr/reschedule', requireAuth, rescheduleNdrController)
 
-// ──── Webhooks ────
+// Webhooks
 router.post('/webhook/register', requireAuth, registerWebhookController)
 router.get('/webhooks', requireAuth, getWebhooksController)
 
-// ──── Channels ────
+// Channels
 router.get('/channels', requireAuth, listChannelsController)
 router.post('/channels', requireAuth, addChannelController)
 
-// ──── Invoice ────
+// Invoice
 router.post('/orders/:orderId/invoice/generate', requireAuth, generateInvoiceController)
 router.post('/orders/:orderId/invoice/print', requireAuth, printInvoiceController)
 
-// ──── Customers ────
+// Customers
 router.get('/customers', requireAuth, listCustomersController)
 router.post('/customers', requireAuth, createCustomerController)
 
-// ──── Returns ────
+// Returns
 router.post('/returns/create', requireAuth, createReturnOrderController)
 
-// ──── Pickup Schedules ────
+// Pickup Schedules
 router.post('/pickup/schedule', requireAuth, schedulePickupController)
 router.post('/pickup/address/:pickupId', requireAuth, updatePickupAddressController)
 
