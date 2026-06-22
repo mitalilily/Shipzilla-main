@@ -34,6 +34,7 @@ import {
   createCustomer,
   listCustomers,
   createReturnOrder,
+  createReturnShipment,
   updateReturnOrder,
   createExchangeOrder,
   createForwardShipment,
@@ -522,6 +523,77 @@ export const createReturnOrderController = async (req: Request, res: Response) =
 }
 
 // ──────────────────── RECOMMENDED COURIERS ────────────────────
+
+export const createReturnShipmentController = async (req: Request, res: Response) => {
+  try {
+    const {
+      order_id,
+      order_date,
+      pickup_customer_name,
+      pickup_address,
+      pickup_city,
+      pickup_state,
+      pickup_country,
+      pickup_pincode,
+      pickup_email,
+      pickup_phone,
+      shipping_customer_name,
+      shipping_address,
+      shipping_city,
+      shipping_country,
+      shipping_pincode,
+      shipping_state,
+      shipping_email,
+      shipping_phone,
+      order_items,
+      payment_method,
+      sub_total,
+      length,
+      breadth,
+      height,
+      weight,
+    } = req.body || {}
+
+    if (
+      !order_id ||
+      !order_date ||
+      !pickup_customer_name ||
+      !pickup_address ||
+      !pickup_city ||
+      !pickup_state ||
+      !pickup_country ||
+      !pickup_pincode ||
+      !pickup_email ||
+      !pickup_phone ||
+      !shipping_customer_name ||
+      !shipping_address ||
+      !shipping_city ||
+      !shipping_country ||
+      !shipping_pincode ||
+      !shipping_state ||
+      !shipping_email ||
+      !shipping_phone ||
+      !Array.isArray(order_items) ||
+      !payment_method ||
+      sub_total === undefined ||
+      length === undefined ||
+      breadth === undefined ||
+      height === undefined ||
+      weight === undefined
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'order_id, order_date, pickup_customer_name, pickup_address, pickup_city, pickup_state, pickup_country, pickup_pincode, pickup_email, pickup_phone, shipping_customer_name, shipping_address, shipping_city, shipping_country, shipping_pincode, shipping_state, shipping_email, shipping_phone, order_items, payment_method, sub_total, length, breadth, height and weight are required',
+      })
+    }
+
+    const data = await createReturnShipment(req.body)
+    res.status(200).json({ success: true, data })
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
 
 export const updateReturnOrderController = async (req: Request, res: Response) => {
   try {

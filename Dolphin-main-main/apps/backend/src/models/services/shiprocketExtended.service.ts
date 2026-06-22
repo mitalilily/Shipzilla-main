@@ -810,6 +810,70 @@ export const createReturnOrder = async (params: {
  * POST /orders/edit
  * Update a return order
  */
+/**
+ * POST /shipments/create/return-shipment
+ * Create a return shipment and optionally request pickup
+ */
+export const createReturnShipment = async (params: {
+  order_id: string
+  order_date: string
+  channel_id?: number | string
+  pickup_customer_name: string
+  pickup_last_name?: string
+  company_name?: string
+  pickup_address: string
+  pickup_address_2?: string
+  pickup_city: string
+  pickup_state: string
+  pickup_country: string
+  pickup_pincode: number | string
+  pickup_email: string
+  pickup_phone: number | string
+  pickup_isd_code?: string
+  shipping_customer_name: string
+  shipping_last_name?: string
+  shipping_address: string
+  shipping_address_2?: string
+  shipping_city: string
+  shipping_country: string
+  shipping_pincode: number | string
+  shipping_state: string
+  shipping_email: string
+  shipping_isd_code?: string
+  shipping_phone: number | string
+  order_items: Array<{
+    name: string
+    sku: string
+    units: number | string
+    selling_price: number | string
+    discount?: number | string
+    hsn?: number | string
+    qc_enable?: boolean | string
+    qc_color?: string
+    qc_brand?: string
+    qc_serial_no?: string
+    qc_ean_barcode?: string
+    qc_size?: string
+    qc_product_name?: string
+    qc_product_image?: string
+    qc_product_imei?: string
+    qc_brand_tag?: number | boolean | string
+    qc_used_check?: number | boolean | string
+    qc_sealtag_check?: number | boolean | string
+    qc_check_damaged_product?: string
+  }>
+  payment_method: string
+  total_discount?: number | string
+  sub_total: number | string
+  length: number | string
+  breadth: number | string
+  height: number | string
+  weight: number | string
+  request_pickup?: boolean | string
+}) => {
+  return shiprocketRequest('POST', '/shipments/create/return-shipment', params)
+}
+
 export const updateReturnOrder = async (params: {
   order_id: string
   action: Array<'product_details' | 'warehouse_address' | string>
