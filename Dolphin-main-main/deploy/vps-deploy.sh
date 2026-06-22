@@ -292,6 +292,26 @@ set -a
 . "$BACKEND_ENV"
 set +a
 
+# The VPS deployment is production-only. Force the auth runtime out of demo mode
+# so OTPs are always delivered through the real email flow on the server.
+export NODE_ENV=production
+export EXPOSE_AUTH_CODES=false
+export ALLOW_INLINE_OTP=false
+
+if [ -z "${EMAIL_FROM:-}" ] && [ -z "${GOOGLE_SMTP_USER:-}" ]; then
+  echo "Backend OTP email is missing EMAIL_FROM / GOOGLE_SMTP_USER in $BACKEND_ENV" >&2
+  exit 1
+fi
+
+if [ -z "${GOOGLE_SMTP_PASSWORD:-}" ]; then
+  echo "Backend OTP email is missing GOOGLE_SMTP_PASSWORD in $BACKEND_ENV" >&2
+  exit 1
+fi
+
+export SMTP_HOST="${SMTP_HOST:-smtp.gmail.com}"
+export SMTP_PORT="${SMTP_PORT:-587}"
+export SMTP_SECURE="${SMTP_SECURE:-false}"
+
 for legacy_app in $LEGACY_PM2_APP_NAMES; do
   if [ "$legacy_app" != "$PM2_APP_NAME" ] && pm2 describe "$legacy_app" >/dev/null 2>&1; then
     echo "[deploy] Stopping legacy PM2 app: $legacy_app"

@@ -19,7 +19,6 @@ if (!process.env.DATABASE_URL) {
 const databaseUrl = process.env.DATABASE_URL as string
 const shouldUseSsl =
   process.env.PGSSLMODE === 'require' ||
-  env === 'production' ||
   /render\.com|railway\.app|supabase\.co/i.test(databaseUrl)
 
 export const pool = new Pool({

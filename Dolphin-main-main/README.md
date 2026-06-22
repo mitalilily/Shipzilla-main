@@ -30,6 +30,16 @@ Optional repository secrets or variables:
 - `VPS_USER` - SSH user, defaults to `root`.
 - `VPS_PORT` - SSH port, defaults to `22`.
 
+The VPS backend env at `/etc/shipzilla/backend.env` must also include production OTP mail settings:
+
+- `EMAIL_FROM` or `GOOGLE_SMTP_USER`
+- `GOOGLE_SMTP_PASSWORD`
+- `SMTP_HOST=smtp.gmail.com`
+- `SMTP_PORT=587`
+- `SMTP_SECURE=false`
+- `EXPOSE_AUTH_CODES=false`
+- `ALLOW_INLINE_OTP=false`
+
 ## Reconnect Deployments To This Repo
 
 Keep the same environment variables and secrets. Only update the connected repository and app directory after you have verified the first deployment.
