@@ -538,6 +538,7 @@ router.get('/customers', requireAuth, listCustomersController)
 router.post('/customers', requireAuth, createCustomerController)
 
 // Returns
+router.post('/orders/create/return', requireAuth, createReturnOrderController)
 router.post('/returns/create', requireAuth, createReturnOrderController)
 
 // Pickup Schedules
