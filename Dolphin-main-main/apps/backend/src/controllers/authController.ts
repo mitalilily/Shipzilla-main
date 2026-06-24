@@ -44,6 +44,13 @@ const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
 export const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
 
+const normalizeOtp = (value: string) => value.replace(/\D/g, '').trim()
+
+const getReusableOtp = (user: { otp?: string | null; otpExpiresAt?: Date | null } | null) => {
+  if (!user?.otp || !user.otpExpiresAt) return null
+  return Date.now() <= new Date(user.otpExpiresAt).getTime() ? user.otp : null
+}
+
 const sendSmsViaTwilio = async (phone: string, message: string) => {
   const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
   await client.messages.create({
@@ -162,8 +169,6 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
   }
 
   const normalizedEmail = email.trim().toLowerCase()
-  const otp = generateOtp()
-  const expiry = new Date(Date.now() + OTP_EXPIRY)
 
   try {
     console.log('[Auth OTP] Request received', {
@@ -189,11 +194,21 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
       }
     }
 
+    const reusableOtp = getReusableOtp(user ?? null)
+    const otp = reusableOtp ?? generateOtp()
+    const expiry = reusableOtp
+      ? new Date(user!.otpExpiresAt as Date)
+      : new Date(Date.now() + OTP_EXPIRY)
+
     if (user) {
-      await updateUserOtpByEmail(normalizedEmail, otp, expiry)
-      console.log('[Auth OTP] Updated existing user OTP', {
+      if (!reusableOtp) {
+        await updateUserOtpByEmail(normalizedEmail, otp, expiry)
+      }
+
+      console.log('[Auth OTP] Prepared existing user OTP', {
         email: maskEmailForLog(normalizedEmail),
         userId: user.id,
+        reusedExistingOtp: Boolean(reusableOtp),
       })
     } else {
       await createUserWithWallet({
@@ -242,6 +257,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
 
   try {
     const normalizedEmail = email.trim().toLowerCase()
+    const normalizedOtp = normalizeOtp(String(otp))
     const user = await findUserByEmail(normalizedEmail)
 
     if (user && user.role === 'employee') {
@@ -269,7 +285,11 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
       })
     }
 
-    if (user.otp !== otp) {
+    if (!normalizedOtp || user.otp !== normalizedOtp) {
+      console.warn('[Auth OTP] Incorrect OTP attempt', {
+        email: maskEmailForLog(normalizedEmail),
+        submittedOtpLength: normalizedOtp.length,
+      })
       return res.status(400).json({ error: 'Incorrect OTP' })
     }
 
