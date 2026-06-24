@@ -79,6 +79,46 @@ export type ShiprocketCargoOrderCreationResponse = {
   [key: string]: unknown
 }
 
+export type ShiprocketCargoShipmentCreationPayload = {
+  client_id: number
+  order_id: number
+  remarks: string
+  recipient_GST?: string | null
+  to_pay_amount?: string | number | null
+  mode_id: number
+  delivery_partner_id: number
+  pickup_date_time: string
+  eway_bill_no?: string | null
+  invoice_value?: number
+  invoice_number: string
+  invoice_date: string
+  supporting_docs: string[]
+  source?: string
+}
+
+export type ShiprocketCargoShipmentCreationResponse = {
+  id?: number
+  client_id?: number
+  from_warehouse_id?: number
+  to_warehouse_id?: number
+  pickup_date_time?: string
+  approx_weight?: string
+  packaging_unit_details?: unknown[]
+  mode?: unknown
+  invoice_value?: string
+  recipient_contact_person_name?: string
+  recipient_contact_person_email?: string
+  recipient_contact_person_contact_no?: string
+  no_of_units?: number
+  eway_bill_no?: string | null
+  remarks?: string
+  is_insured?: boolean
+  recipient_GST?: string | null
+  invoice_number?: string
+  shipment_p?: unknown
+  [key: string]: unknown
+}
+
 const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
 
 let cachedCargoAccessToken: string | null = null
@@ -252,6 +292,17 @@ export const createShiprocketCargoOrder = async (
   shiprocketCargoRequest<ShiprocketCargoOrderCreationResponse>(
     'POST',
     '/api/external/order_creation/',
+    payload,
+    options,
+  )
+
+export const createShiprocketCargoShipment = async (
+  payload: ShiprocketCargoShipmentCreationPayload,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoShipmentCreationResponse>(
+    'POST',
+    '/api/order_shipment_association/',
     payload,
     options,
   )
