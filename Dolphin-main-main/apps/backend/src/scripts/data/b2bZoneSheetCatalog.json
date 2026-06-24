@@ -1,0 +1,155 @@
+[
+  {
+    "code": "NE2",
+    "name": "North East Standard",
+    "description": "Default North East B2B zone from the boss sheet.",
+    "region": "North East",
+    "coverageType": "default_state",
+    "states": [
+      "Nagaland",
+      "Sikkim",
+      "Assam",
+      "Arunachal Pradesh",
+      "Meghalaya",
+      "Manipur",
+      "Mizoram",
+      "Tripura"
+    ],
+    "sheetCities": []
+  },
+  {
+    "code": "NE1",
+    "name": "North East Metro",
+    "description": "North East exception zone for listed metro and priority cities.",
+    "region": "North East",
+    "coverageType": "exception_city",
+    "states": [],
+    "sheetCities": ["Guwahati"]
+  },
+  {
+    "code": "E2",
+    "name": "East Standard",
+    "description": "Default East B2B zone from the boss sheet.",
+    "region": "East",
+    "coverageType": "default_state",
+    "states": ["Odisha", "West Bengal", "Bihar", "Jharkhand"],
+    "sheetCities": []
+  },
+  {
+    "code": "E1",
+    "name": "East Metro",
+    "description": "East exception zone for listed metro and priority cities.",
+    "region": "East",
+    "coverageType": "exception_city",
+    "states": [],
+    "sheetCities": ["Kolkata", "Siliguri", "Bhubaneshwar", "Bhubaneswar", "Patna", "Ranchi"]
+  },
+  {
+    "code": "S4",
+    "name": "South Kerala",
+    "description": "Default South zone for Kerala from the boss sheet.",
+    "region": "South",
+    "coverageType": "default_state",
+    "states": ["Kerala"],
+    "sheetCities": []
+  },
+  {
+    "code": "S3",
+    "name": "South Tamil Nadu",
+    "description": "Default South zone for Tamil Nadu and Puducherry from the boss sheet.",
+    "region": "South",
+    "coverageType": "default_state",
+    "states": ["Tamil Nadu", "Puducherry"],
+    "sheetCities": []
+  },
+  {
+    "code": "S2",
+    "name": "South Standard",
+    "description": "Default South B2B zone for Telangana, Andhra Pradesh, and Karnataka.",
+    "region": "South",
+    "coverageType": "default_state",
+    "states": ["Telangana", "Andhra Pradesh", "Karnataka"],
+    "sheetCities": []
+  },
+  {
+    "code": "S1",
+    "name": "South Metro",
+    "description": "South exception zone for listed metro and priority cities.",
+    "region": "South",
+    "coverageType": "exception_city",
+    "states": [],
+    "sheetCities": ["Hyderabad", "Bangalore", "Bengaluru", "Banglor", "Chennai"]
+  },
+  {
+    "code": "W2",
+    "name": "West Standard",
+    "description": "Default West B2B zone from the boss sheet.",
+    "region": "West",
+    "coverageType": "default_state",
+    "states": ["Dadra and Nagar Haveli and Daman and Diu", "Maharashtra", "Goa"],
+    "sheetCities": []
+  },
+  {
+    "code": "W1",
+    "name": "West Gujarat",
+    "description": "Default West zone for Gujarat from the boss sheet.",
+    "region": "West",
+    "coverageType": "default_state",
+    "states": ["Gujarat"],
+    "sheetCities": []
+  },
+  {
+    "code": "C2",
+    "name": "Central Standard",
+    "description": "Default Central B2B zone from the boss sheet.",
+    "region": "Central",
+    "coverageType": "default_state",
+    "states": ["Madhya Pradesh", "Chhattisgarh"],
+    "sheetCities": []
+  },
+  {
+    "code": "C1",
+    "name": "Central Metro",
+    "description": "Central exception zone for listed metro and priority cities.",
+    "region": "Central",
+    "coverageType": "exception_city",
+    "states": [],
+    "sheetCities": ["Indore", "Bhopal", "Raipur"]
+  },
+  {
+    "code": "N4",
+    "name": "North Hills",
+    "description": "Default North zone for Jammu and Kashmir, Himachal Pradesh, and Ladakh.",
+    "region": "North",
+    "coverageType": "default_state",
+    "states": ["Jammu and Kashmir", "Himachal Pradesh", "Ladakh"],
+    "sheetCities": []
+  },
+  {
+    "code": "N3",
+    "name": "North Standard",
+    "description": "Default North B2B zone from the boss sheet.",
+    "region": "North",
+    "coverageType": "default_state",
+    "states": ["Haryana", "Uttar Pradesh", "Punjab", "Uttarakhand", "Rajasthan"],
+    "sheetCities": ["Baddi", "Jammu"]
+  },
+  {
+    "code": "N2",
+    "name": "North Priority",
+    "description": "North exception zone for listed priority cities.",
+    "region": "North",
+    "coverageType": "exception_city",
+    "states": [],
+    "sheetCities": ["Chandigarh", "Ludhiana", "Dehradun"]
+  },
+  {
+    "code": "N1",
+    "name": "North NCR Metro",
+    "description": "North NCR exception zone for listed metro and priority cities.",
+    "region": "North",
+    "coverageType": "exception_city",
+    "states": [],
+    "sheetCities": ["Delhi", "Gurgaon", "Faridabad", "Ghaziabad", "Noida", "Sahibabad", "Jaipur"]
+  }
+]

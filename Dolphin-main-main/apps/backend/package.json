@@ -34,6 +34,7 @@
     "seed:locations": "ts-node src/scripts/seedLocations.ts locations.xlsx",
     "seed:core": "npm run seed:basic-plan && npm run seed:assign-basic-plans && npm run seed:locations",
     "seed:b2c-zones": "ts-node src/scripts/seedZones.ts",
+    "seed:b2b-zones-sheet": "ts-node src/scripts/seedB2BZonesFromSheet.ts",
     "rate-card:create-b2c": "ts-node src/scripts/createB2CRateCards.ts",
     "seed:holidays": "ts-node src/scripts/seedHolidays.ts",
     "seed:holidays:year": "ts-node src/scripts/seedHolidays.ts",
