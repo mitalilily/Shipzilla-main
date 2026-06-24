@@ -119,6 +119,47 @@ export type ShiprocketCargoShipmentCreationResponse = {
   [key: string]: unknown
 }
 
+export type ShiprocketCargoShipmentDetailsResponse = {
+  id?: number
+  waybill_no?: string | null
+  child_waybill_nos?: string[]
+  status?: string | null
+  status_dp?: string | null
+  pickup_date_time?: string | null
+  original_edd?: string | null
+  edd?: string | null
+  label_url?: string | null
+  pod_url?: string | null
+  api_error?: string | null
+  order_id?: number
+  source?: string | null
+  lrn?: string | null
+  supporting_docs?: string[]
+  invoice_date?: string | null
+  shipment_type?: string | null
+  tracking_status?: boolean | null
+  client_order_id?: string | null
+  [key: string]: unknown
+}
+
+export type ShiprocketCargoOrderDetailsResponse = {
+  id?: number
+  pickup_date_time?: string | null
+  no_of_units?: number
+  source?: string | null
+  approx_weight?: string | null
+  invoice_value?: string | null
+  volumetric_weight?: string | null
+  invoice_number?: string | null
+  from_warehouse?: unknown
+  to_warehouse?: unknown
+  packaging_unit_details?: unknown[]
+  mode?: unknown
+  delivery_partner?: unknown
+  client?: unknown
+  [key: string]: unknown
+}
+
 const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
 
 let cachedCargoAccessToken: string | null = null
@@ -304,5 +345,27 @@ export const createShiprocketCargoShipment = async (
     'POST',
     '/api/order_shipment_association/',
     payload,
+    options,
+  )
+
+export const getShiprocketCargoShipmentDetails = async (
+  shipmentId: string | number,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoShipmentDetailsResponse>(
+    'GET',
+    `/api/external/get_shipment/${encodeURIComponent(String(shipmentId))}/`,
+    undefined,
+    options,
+  )
+
+export const getShiprocketCargoOrderDetails = async (
+  orderId: string | number,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoOrderDetailsResponse>(
+    'GET',
+    `/api/external/get_order/${encodeURIComponent(String(orderId))}/`,
+    undefined,
     options,
   )

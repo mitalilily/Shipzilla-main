@@ -12,6 +12,8 @@
     "check:rate-apis": "node -r ts-node/register src/scripts/checkRateCalculatorApis.ts",
     "check:external-api-smoke": "ts-node src/scripts/checkExternalApiSmoke.ts",
     "check:shiprocket-cargo-auth": "ts-node src/scripts/checkShiprocketCargoAuth.ts",
+    "check:shiprocket-cargo-get-order": "ts-node src/scripts/checkShiprocketCargoGetOrder.ts",
+    "check:shiprocket-cargo-get-shipment": "ts-node src/scripts/checkShiprocketCargoGetShipment.ts",
     "check:shiprocket-cargo-order": "ts-node src/scripts/checkShiprocketCargoOrderCreation.ts",
     "check:shiprocket-cargo-shipment": "ts-node src/scripts/checkShiprocketCargoShipmentCreation.ts",
     "check:shipmozo-apis": "ts-node src/scripts/checkShipmozoApis.ts",
