@@ -204,6 +204,27 @@ export type ShiprocketCargoChargeCalculatorResponse = Record<
   ShiprocketCargoChargeCalculatorRate
 >
 
+export type ShiprocketCargoTrackingHistoryEntry = {
+  reason?: string | null
+  status?: string | null
+  status_dp?: string | null
+  location?: string | null
+  created_at?: string | null
+  [key: string]: unknown
+}
+
+export type ShiprocketCargoTrackShipmentResponse = {
+  id?: number
+  waybill_no?: string | null
+  status?: string | null
+  status_dp?: string | null
+  edd_date?: string | null
+  add_date?: string | null
+  created_at_date?: string | null
+  status_history?: ShiprocketCargoTrackingHistoryEntry[]
+  [key: string]: unknown
+}
+
 const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
 
 let cachedCargoAccessToken: string | null = null
@@ -422,5 +443,16 @@ export const getShiprocketCargoShipmentCharges = async (
     'POST',
     '/api/shipment/charges/',
     payload,
+    options,
+  )
+
+export const trackShiprocketCargoShipment = async (
+  waybillNumber: string | number,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoTrackShipmentResponse>(
+    'GET',
+    `/api/shipment/track/${encodeURIComponent(String(waybillNumber))}/`,
+    undefined,
     options,
   )
