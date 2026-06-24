@@ -62,6 +62,7 @@ import { b2bPincodes, b2bZoneToZoneRates, zones } from '../schema/zones'
 import { calculateB2BRate } from './b2bAdmin.service'
 import { DelhiveryService } from './couriers/delhivery.service'
 import { EkartService } from './couriers/ekart.service'
+import { IcarryService } from './couriers/icarry.service'
 import { ShipmozoService } from './couriers/shipmozo.service'
 import { XpressbeesService } from './couriers/xpressbees.service'
 import { calculateOrderWeights } from './courierWeightCalculation.service'
@@ -877,6 +878,39 @@ const normalizeServiceabilityWeightToGrams = (value: unknown) => {
   return numericValue > 50 ? Math.round(numericValue) : Math.round(numericValue * 1000)
 }
 
+const normalizeShipmentBoxes = (params: ShipmentParams) => {
+  const directBoxes = Array.isArray(params?.boxes) ? params.boxes : []
+  const nestedBoxes = Array.isArray((params as any)?.parcel?.boxes) ? (params as any).parcel.boxes : []
+  return directBoxes.length ? directBoxes : nestedBoxes
+}
+
+const derivePackageMetricsFromBoxes = (boxes: any[]) => {
+  let totalWeightKg = 0
+  let maxLength = 0
+  let maxBreadth = 0
+  let maxHeight = 0
+
+  for (const box of boxes) {
+    const quantity = Math.max(1, Number(box?.quantity ?? box?.qty ?? 1) || 1)
+    const rawWeight = Number(box?.weight ?? 0)
+    const unit = String(box?.weight_unit || box?.unit || '').trim().toLowerCase()
+    const weightKg =
+      unit === 'gm' || (!unit && rawWeight > 50) ? rawWeight / 1000 : rawWeight
+
+    totalWeightKg += Math.max(0, weightKg) * quantity
+    maxLength = Math.max(maxLength, Number(box?.length ?? 0) || 0)
+    maxBreadth = Math.max(maxBreadth, Number(box?.breadth ?? box?.width ?? 0) || 0)
+    maxHeight = Math.max(maxHeight, Number(box?.height ?? 0) || 0)
+  }
+
+  return {
+    package_weight: Number(totalWeightKg.toFixed(3)),
+    package_length: maxLength,
+    package_breadth: maxBreadth,
+    package_height: maxHeight,
+  }
+}
+
 //ADMIN CALCULATION
 export const fetchAvailableCouriersWithRatesAdmin = async (
   params: NimbusServiceabilityParams,
@@ -1003,9 +1037,11 @@ export const fetchAvailableCouriersWithRates = async (
 
     // const isReverseShipment = params.isReverse === true || params.payment_type === 'reverse'
 
+    const serviceabilityParams = params as any
+
     // Build registry of enabled couriers by service provider
     // Filter by business type: check if business_type JSONB array contains 'b2c'
-    const SUPPORTED_PROVIDERS = ['shipmozo']
+    const SUPPORTED_PROVIDERS = ['icarry', 'shipmozo']
     const systemCourierRows = await db
       .select({
         id: couriers.id,
@@ -1412,16 +1448,106 @@ export const fetchAvailableCouriersWithRates = async (
       })
     }
 
+    let icarryAvailable = false
+    let icarryResp: any = null
+    if (enabledProviders.has('icarry')) {
+      const icarry = new IcarryService()
+      const originPincode = normalizePincode(params.origin ?? params.source_pincode)?.toString()
+      const destinationPincode = normalizePincode(
+        params.destination ?? params.destination_pincode,
+      )?.toString()
+      const orderAmountValue = Number(params.order_amount ?? params.orderAmount ?? 0)
+      const shipmentModeHint = String(
+        serviceabilityParams.transport_speed ??
+          serviceabilityParams.shipping_mode ??
+          serviceabilityParams.shipment_mode ??
+          '',
+      )
+        .trim()
+        .toLowerCase()
+      const shipmentMode = shipmentModeHint.includes('hyper')
+        ? 'H'
+        : shipmentModeHint.includes('air') || shipmentModeHint.includes('express')
+          ? 'E'
+          : 'S'
+
+      if (originPincode && destinationPincode && orderAmountValue > 0) {
+        try {
+          icarryResp = await icarry.estimateRates({
+            length: Number(serviceabilityParams.length ?? 0),
+            breadth: Number(serviceabilityParams.breadth ?? 0),
+            height: Number(serviceabilityParams.height ?? 0),
+            weight: Number(serviceabilityParams.weight ?? 0),
+            destination_pincode: destinationPincode,
+            origin_pincode: originPincode,
+            destination_country_code: 'IN',
+            origin_country_code: 'IN',
+            shipment_mode: shipmentMode,
+            shipment_type: params.payment_type === 'cod' ? 'C' : 'P',
+            shipment_value: orderAmountValue,
+            sender_address: serviceabilityParams.pickup?.address ?? serviceabilityParams.pickup_details?.address ?? '',
+            sender_city: serviceabilityParams.pickup?.city ?? serviceabilityParams.pickup_details?.city ?? '',
+            consignee_address: serviceabilityParams.consignee?.address ?? '',
+            consignee_city: serviceabilityParams.consignee?.city ?? '',
+          })
+
+          const iCarryEstimates = Array.isArray(icarryResp?.estimate)
+            ? icarryResp.estimate
+            : Array.isArray(icarryResp?.msg)
+              ? icarryResp.msg
+              : []
+          icarryAvailable = iCarryEstimates.length > 0
+          console.log('[Serviceability] iCarry response', {
+            success: icarryResp?.success,
+            records: iCarryEstimates.length,
+          })
+        } catch (err: any) {
+          console.error('iCarry serviceability error:', err?.response?.data || err?.message || err)
+        }
+      }
+    }
+
+    if (icarryAvailable) {
+      registerServiceableProvider('icarry', {
+        providerId: 'icarry',
+        providerName: 'iCarry',
+        codAvailable: normalizedPaymentType === 'cod',
+        prepaidAvailable: normalizedPaymentType !== 'cod',
+        edd: '3-5 Days',
+        raw: icarryResp,
+      })
+
+      console.log('[Serviceability] iCarry candidate couriers prepared', {
+        mode: isCalculator ? 'calculator' : 'standard',
+        destination: params.destination?.toString(),
+        available: icarryAvailable,
+        records: Array.isArray(icarryResp?.estimate)
+          ? icarryResp.estimate.length
+          : Array.isArray(icarryResp?.msg)
+            ? icarryResp.msg.length
+            : 0,
+        candidates: providerCourierBuckets.get('icarry')?.rows.length ?? 0,
+      })
+    }
+
     for (const [providerKey, bucket] of providerCourierBuckets.entries()) {
       const providerMeta = serviceableProviders.get(providerKey)
       if (!providerMeta) continue
 
       for (const courier of bucket.rows) {
+        const icarryRecord =
+          providerKey === 'icarry'
+            ? (Array.isArray(icarryResp?.estimate) ? icarryResp.estimate : Array.isArray(icarryResp?.msg) ? icarryResp.msg : []).find(
+                (record: any) =>
+                  String(record?.courier_id || record?.courierId || '').trim() ===
+                  String(courier.id).trim(),
+              )
+            : null
         const xpressbeesRecord =
           providerKey === 'xpressbees'
             ? xpressbeesResp?.records?.find(
-                (record: any) => String(record?.id || '').trim() === String(courier.id).trim(),
-              )
+              (record: any) => String(record?.id || '').trim() === String(courier.id).trim(),
+            )
             : null
         const shipmozoRecord =
           providerKey === 'shipmozo'
@@ -1431,7 +1557,7 @@ export const fetchAvailableCouriersWithRates = async (
                 return String(recordId || '').trim() === String(courier.id).trim()
               })
             : null
-        const providerRecord = xpressbeesRecord || shipmozoRecord
+        const providerRecord = xpressbeesRecord || shipmozoRecord || icarryRecord
         providerMeta.matchedCourierIds.add(Number(courier.id))
         combinedCouriers.push({
           id: courier.id,
@@ -1444,11 +1570,18 @@ export const fetchAvailableCouriersWithRates = async (
           approxZone: null,
           createdAt: courier.createdAt,
           courier_cost_estimate:
+            icarryRecord?.courier_cost ??
+            icarryRecord?.total ??
+            icarryRecord?.shipping ??
             providerRecord?.total_charges ??
             providerRecord?.freight_charges ??
             providerRecord?.rate ??
             providerRecord?.charge ??
             null,
+          shipping_charges: icarryRecord?.shipping ?? null,
+          tax_charges: icarryRecord?.tax ?? null,
+          surcharge_charges: icarryRecord?.surcharge ?? null,
+          fsc_charges: icarryRecord?.fsc ?? null,
           freight_charges: providerRecord?.freight_charges ?? null,
           cod_charges: providerRecord?.cod_charges ?? null,
           total_charges: providerRecord?.total_charges ?? null,
@@ -2152,11 +2285,12 @@ export const fetchAvailableCouriersWithRatesB2B = async (
 export interface ShipmentParams {
   order_number: string // corresponds to b2c_orders.id
   payment_type?: 'cod' | 'prepaid' | 'reverse' | 'replacement'
+  shipment_id?: string | number
   package_weight?: number
   package_length?: number
   package_breadth?: number
   package_height?: number
-  integration_type?: 'delhivery' | 'ekart' | 'xpressbees' | 'shipmozo' | string
+  integration_type?: 'delhivery' | 'ekart' | 'xpressbees' | 'shipmozo' | 'icarry' | string
   provider_code?: string // Opaque provider code (alternative to integration_type)
   request_auto_pickup?: 'yes' | 'no'
   shipping_charges?: number
@@ -2164,6 +2298,7 @@ export interface ShipmentParams {
   freight_charges?: number // What platform charges seller (based on rate card)
   courier_cost?: number // Estimated courier cost from serviceability response (can be updated later via webhook)
   boxes?: any
+  parcel?: any
   prepaid_amount?: string
   transaction_fee?: number
   order_date: Date
@@ -2192,6 +2327,9 @@ export interface ShipmentParams {
   height?: number
   isReverse?: boolean
   transport_speed?: string
+  shipment_mode?: string
+  shipping_mode?: string
+  mode?: string
   address_type?: string
   ewbn?: string
   ewb?: string
@@ -2459,6 +2597,28 @@ export const createB2CShipmentService = async (
 ) => {
   await requireMerchantOrderReadiness(userId)
 
+  const normalizedBoxes = normalizeShipmentBoxes(params)
+  if (normalizedBoxes.length) {
+    params.boxes = normalizedBoxes
+    ;(params as any).parcel = {
+      ...((params as any).parcel || {}),
+      boxes: normalizedBoxes,
+    }
+
+    if (
+      !Number(params.package_weight ?? 0) ||
+      !Number(params.package_length ?? 0) ||
+      !Number(params.package_breadth ?? 0) ||
+      !Number(params.package_height ?? 0)
+    ) {
+      const derivedMetrics = derivePackageMetricsFromBoxes(normalizedBoxes)
+      params.package_weight = Number(params.package_weight ?? 0) || derivedMetrics.package_weight
+      params.package_length = Number(params.package_length ?? 0) || derivedMetrics.package_length
+      params.package_breadth = Number(params.package_breadth ?? 0) || derivedMetrics.package_breadth
+      params.package_height = Number(params.package_height ?? 0) || derivedMetrics.package_height
+    }
+  }
+
   // 🔹 Handle provider_code: Convert provider_code to integration_type if provided
   // Users can send either integration_type (direct) or provider_code (opaque code from serviceability API)
   if (!params.integration_type && params.provider_code) {
@@ -2620,7 +2780,7 @@ export const createB2CShipmentService = async (
           console.log(
             `✅ Derived integration_type: ${params.integration_type} from courier_id: ${params.courier_id} (courier: ${matchedCourier.name})`,
           )
-        } else if (serviceProvider === 'shipmozo') {
+        } else if (serviceProvider === 'shipmozo' || serviceProvider === 'icarry') {
           params.integration_type = serviceProvider
           console.log(
             `Derived integration_type: ${params.integration_type} from courier_id: ${params.courier_id} (courier: ${matchedCourier.name})`,
@@ -2630,7 +2790,7 @@ export const createB2CShipmentService = async (
         } else {
           throw new HttpError(
             400,
-            `Unsupported serviceProvider: ${serviceProvider}. Supported provider for booking: shipmozo.`,
+            `Unsupported serviceProvider: ${serviceProvider}. Supported providers for booking: shipmozo, icarry.`,
           )
         }
       } else {
@@ -3110,10 +3270,10 @@ export const createB2CShipmentService = async (
   try {
     // 1️⃣ CREATE SHIPMENT
     const requestedIntegrationType = String(params.integration_type || '').toLowerCase()
-    const allowedIntegrationTypes = ['shipmozo']
+    const allowedIntegrationTypes = ['shipmozo', 'icarry']
     if (!requestedIntegrationType || !allowedIntegrationTypes.includes(requestedIntegrationType)) {
       throw new Error(
-        `Invalid integration_type: ${params.integration_type}. Supported value: shipmozo.`,
+        `Invalid integration_type: ${params.integration_type}. Supported values: shipmozo, icarry.`,
       )
     }
 
@@ -3122,6 +3282,7 @@ export const createB2CShipmentService = async (
       | 'ekart'
       | 'xpressbees'
       | 'shipmozo'
+      | 'icarry'
     const providerName =
       integrationType === 'delhivery'
         ? 'Delhivery'
@@ -3129,7 +3290,9 @@ export const createB2CShipmentService = async (
           ? 'Ekart Logistics'
           : integrationType === 'xpressbees'
             ? 'Xpressbees'
-            : 'Shipmozo'
+            : integrationType === 'icarry'
+              ? 'iCarry'
+              : 'Shipmozo'
 
     let manifestFailure: DelhiveryManifestError | null = null
     let shipmentSuccessPackage: any = null
@@ -3477,6 +3640,89 @@ export const createB2CShipmentService = async (
         courier_cost: providerCourierCost,
         sort_code: providerSortCode,
       }
+    } else if (integrationType === 'icarry') {
+      console.log('Using iCarry API...')
+      const icarry = new IcarryService()
+
+      if (isReverseShipment) {
+        let reverseShipmentId = String(params.shipment_id ?? '').trim()
+
+        if (!reverseShipmentId) {
+          if (!originalOrderId) {
+            throw new Error('Original order ID or shipment_id is required for iCarry reverse shipment')
+          }
+
+          const [originalOrder] = await db
+            .select()
+            .from(b2c_orders)
+            .where(eq(b2c_orders.id, originalOrderId))
+            .limit(1)
+
+          if (!originalOrder) {
+            throw new Error('Original order not found for iCarry reverse shipment')
+          }
+
+          reverseShipmentId = String(originalOrder.shipment_id ?? '').trim()
+          if (!reverseShipmentId) {
+            throw new Error(
+              'Original iCarry order is missing shipment_id required for reverse shipment',
+            )
+          }
+        }
+
+        shipmentData = await icarry.createReverseShipment({
+          shipment_id: reverseShipmentId,
+          courier_id: params.courier_id,
+        })
+      } else {
+        shipmentData = await icarry.createShipment(params)
+      }
+
+      const icarryPackage = shipmentData?.data || shipmentData
+      const icarryReference =
+        icarryPackage?.awb_number || icarryPackage?.tracking_number || null
+      const icarryShipmentId =
+        icarryPackage?.shipment_id || icarryPackage?.pickup_id || icarryReference || null
+
+      if (!shipmentData?.status || !icarryReference) {
+        console.error('Invalid iCarry shipment:', shipmentData)
+        throw new HttpError(
+          500,
+          isReverseShipment
+            ? 'iCarry reverse shipment creation failed'
+            : 'iCarry shipment creation failed',
+        )
+      }
+
+      const icarryCourierName =
+        icarryPackage?.courier_company_service ||
+        icarryPackage?.courier_company ||
+        icarryPackage?.courier ||
+        'iCarry'
+
+      shipmentSuccessPackage = {
+        waybill: String(icarryReference),
+        label: icarryPackage?.label ?? null,
+        manifest: icarryPackage?.manifest ?? null,
+        courier_name: icarryCourierName,
+        courier_id: params?.courier_id ?? null,
+        status: shipmentData?.message ?? null,
+        sort_code: null,
+      }
+
+      providerCourierCost = params?.courier_cost ?? null
+      providerSortCode = null
+
+      shipmentMeta = {
+        shipment_id: icarryShipmentId ?? undefined,
+        awb_number: String(icarryReference),
+        courier_name: icarryCourierName,
+        courier_id: params.courier_id ? Number(params.courier_id) : null,
+        label: icarryPackage?.label ?? undefined,
+        manifest: icarryPackage?.manifest ?? undefined,
+        courier_cost: providerCourierCost,
+        sort_code: providerSortCode,
+      }
     } else {
       throw new Error(`Unsupported integration_type: ${integrationType}`)
     }
@@ -3544,7 +3790,12 @@ export const createB2CShipmentService = async (
       userId,
       courierId: courierIdForRate,
       serviceProvider: params.integration_type ?? null,
-      mode: selectedDelhiveryShippingMode ?? null,
+      mode:
+        selectedDelhiveryShippingMode ||
+        normalizeB2CShippingMode(
+          params.shipping_mode ?? params.shipment_mode ?? params.transport_speed ?? params.mode,
+        ) ||
+        null,
       selectedMaxSlabWeight,
       zoneIdOverride: params.zone_id ?? null,
       originPincode: String(pickupPincode),
@@ -6704,6 +6955,91 @@ const mapShipmozoTracking = (raw: any, order: OrderSummary): ProviderNormalizedT
   }
 }
 
+const mapIcarryTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
+  const data = raw?.data ?? raw ?? {}
+  const history: TrackingHistoryItem[] = []
+
+  const scanSources = [
+    data?.history,
+    data?.tracking_history,
+    data?.track_history,
+    data?.trackingEvents,
+    data?.tracking_events,
+    data?.events,
+    data?.scan_detail,
+    data?.scans,
+  ]
+
+  const scans = scanSources.find((value) => Array.isArray(value))
+  if (Array.isArray(scans)) {
+    scans.forEach((scan: any) => {
+      const entry = scan?.ScanDetail ?? scan?.TrackingDetail ?? scan?.detail ?? scan
+      pushHistoryEvent(history, {
+        statusCode:
+          entry?.status_code ??
+          entry?.StatusCode ??
+          entry?.code ??
+          entry?.status ??
+          entry?.current_status,
+        message:
+          entry?.message ??
+          entry?.Status ??
+          entry?.status ??
+          entry?.remarks ??
+          entry?.description ??
+          entry?.current_status,
+        location: entry?.location ?? entry?.Location ?? entry?.city ?? entry?.branch,
+        time: entry?.event_time ?? entry?.timestamp ?? entry?.time ?? entry?.created_at,
+      })
+    })
+  }
+
+  const status = sanitizeString(
+    data?.status ??
+      data?.current_status ??
+      data?.shipment_status ??
+      data?.tracking_status ??
+      history[0]?.message ??
+      order.order_status,
+    order.order_status ?? '',
+  )
+
+  const courierName = sanitizeString(
+    data?.courier_name ??
+      data?.courier ??
+      data?.carrier_name ??
+      data?.carrier ??
+      data?.MethodDescription ??
+      'iCarry',
+    'iCarry',
+  )
+
+  const edd = sanitizeString(
+    data?.edd ??
+      data?.expected_delivery_date ??
+      data?.expectedDeliveryDate ??
+      data?.estimated_delivery_date ??
+      '',
+  )
+
+  const shipmentInfo = sanitizeString(
+    data?.message ??
+      data?.remark ??
+      data?.remarks ??
+      data?.note ??
+      data?.description ??
+      '',
+  )
+
+  return {
+    history,
+    status,
+    edd: edd || undefined,
+    shipment_info: shipmentInfo || undefined,
+    courier_name: courierName,
+  }
+}
+
 const buildTrackingResponse = (
   order: OrderSummary,
   providerData: ProviderNormalizedTracking,
@@ -6850,6 +7186,7 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
   if (providerKey !== 'shipmozo' && order.courier_partner) {
     const partner = order.courier_partner.toLowerCase()
     if (partner.includes('shipmozo')) providerKey = 'shipmozo'
+    if (partner.includes('icarry')) providerKey = 'icarry'
   }
 
   let providerData: ProviderNormalizedTracking
@@ -6860,6 +7197,10 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
       const shipmozoService = new ShipmozoService()
       const raw = await shipmozoService.trackOrder(normalizedAwb)
       providerData = mapShipmozoTracking(raw, order)
+    } else if (providerKey === 'icarry') {
+      const icarryService = new IcarryService()
+      const raw = await icarryService.trackOrder(order.shipment_id || normalizedAwb)
+      providerData = mapIcarryTracking(raw, order)
     } else {
       if (localTrackingData.history.length) {
         return buildTrackingResponse(order, localTrackingData)

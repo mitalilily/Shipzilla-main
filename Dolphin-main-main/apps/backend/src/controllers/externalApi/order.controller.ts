@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { Response } from 'express'
 import { db } from '../../models/client'
+import { IcarryService } from '../../models/services/couriers/icarry.service'
 import { ShipmozoService } from '../../models/services/couriers/shipmozo.service'
 import {
   createB2CShipmentService,
@@ -10,6 +11,9 @@ import {
   trackByAwbService,
   trackByOrderService,
 } from '../../models/services/shiprocket.service'
+import { syncIcarryShipmentChargesForUser } from '../../models/services/icarryBillingSync.service'
+import { printIcarryShipmentLabelForUser } from '../../models/services/icarryShipmentLabel.service'
+import { syncIcarryShipmentStatusesForUser } from '../../models/services/icarryShipmentStatusSync.service'
 import { presignDownload } from '../../models/services/upload.service'
 import { applyCancellationRefundOnce } from '../../models/services/webhookProcessor'
 import { b2c_orders } from '../../schema/schema'
@@ -301,11 +305,11 @@ export const cancelOrderController = async (req: any, res: Response) => {
 
     let cancellationResult: any = null
     const provider = String(order.integration_type || '').toLowerCase()
-    if (provider !== 'shipmozo') {
+    if (!['shipmozo', 'icarry'].includes(provider)) {
       return res.status(400).json({
         success: false,
         error: 'Unsupported provider',
-        message: `Only Shipmozo is currently supported for cancellation. Found: ${order.integration_type}`,
+        message: `Only Shipmozo and iCarry are currently supported for cancellation. Found: ${order.integration_type}`,
       })
     }
 
@@ -318,11 +322,16 @@ export const cancelOrderController = async (req: any, res: Response) => {
     }
 
     try {
-      const shipmozo = new ShipmozoService()
-      cancellationResult = await shipmozo.cancelShipment({
-        orderId: order.order_number || order.id,
-        awbNumber: order.awb_number,
-      })
+      if (provider === 'icarry') {
+        const icarry = new IcarryService()
+        cancellationResult = await icarry.cancelShipment(order.shipment_id || order.awb_number)
+      } else {
+        const shipmozo = new ShipmozoService()
+        cancellationResult = await shipmozo.cancelShipment({
+          orderId: order.order_number || order.id,
+          awbNumber: order.awb_number,
+        })
+      }
     } catch (err: any) {
       console.error('Courier cancellation error:', err)
       return res.status(502).json({
@@ -334,6 +343,8 @@ export const cancelOrderController = async (req: any, res: Response) => {
 
     const providerCancelAccepted =
       cancellationResult?.success === true ||
+      (typeof cancellationResult?.success === 'string' &&
+        cancellationResult.success.toLowerCase().includes('cancel')) ||
       cancellationResult?.result === '1' ||
       cancellationResult?.Success === true ||
       cancellationResult?.status === true ||
@@ -353,7 +364,7 @@ export const cancelOrderController = async (req: any, res: Response) => {
         message:
           cancellationResult?.error ||
           cancellationResult?.message ||
-          'Shipmozo did not confirm cancellation',
+          'Courier did not confirm cancellation',
         data: {
           provider,
           awb_number: order.awb_number,
@@ -465,6 +476,87 @@ export const getOrderLabelController = async (req: any, res: Response) => {
       success: false,
       error: 'Failed to fetch label',
       message: error.message || 'Internal server error',
+    })
+  }
+}
+
+/**
+ * Sync iCarry shipment billing charges for existing B2C orders
+ * POST /api/v1/orders/shipment-charges/sync
+ */
+export const syncShipmentChargesController = async (req: any, res: Response) => {
+  try {
+    const userId = req.userId
+    const result = await syncIcarryShipmentChargesForUser(
+      userId,
+      req.body?.shipment_ids ?? req.body?.shipmentIds,
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    })
+  } catch (error: any) {
+    console.error('Error syncing shipment charges via API:', error)
+    return res.status(typeof error?.statusCode === 'number' ? error.statusCode : 500).json({
+      success: false,
+      error: 'Failed to sync shipment charges',
+      message: error?.message || 'Internal server error',
+    })
+  }
+}
+
+/**
+ * Print iCarry shipment label for an existing B2C order
+ * POST /api/v1/orders/shipment-label/print
+ */
+export const printShipmentLabelController = async (req: any, res: Response) => {
+  try {
+    const userId = req.userId
+    const result = await printIcarryShipmentLabelForUser(
+      userId,
+      req.body?.shipment_id ?? req.body?.shipmentId,
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: 'Shipment label fetched successfully',
+      data: result,
+    })
+  } catch (error: any) {
+    console.error('Error printing shipment label via API:', error)
+    return res.status(typeof error?.statusCode === 'number' ? error.statusCode : 500).json({
+      success: false,
+      error: 'Failed to fetch shipment label',
+      message: error?.message || 'Internal server error',
+    })
+  }
+}
+
+/**
+ * Sync iCarry shipment statuses for existing B2C orders
+ * POST /api/v1/orders/shipment-status/sync
+ */
+export const syncShipmentStatusesController = async (req: any, res: Response) => {
+  try {
+    const userId = req.userId
+    const result = await syncIcarryShipmentStatusesForUser(
+      userId,
+      req.body?.shipment_ids ?? req.body?.shipmentIds,
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    })
+  } catch (error: any) {
+    console.error('Error syncing shipment statuses via API:', error)
+    return res.status(typeof error?.statusCode === 'number' ? error.statusCode : 500).json({
+      success: false,
+      error: 'Failed to sync shipment statuses',
+      message: error?.message || 'Internal server error',
     })
   }
 }

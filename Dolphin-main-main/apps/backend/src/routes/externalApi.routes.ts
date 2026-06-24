@@ -16,13 +16,19 @@ import {
   getOrderController,
   getOrderLabelController,
   getOrdersController,
+  printShipmentLabelController,
   retryFailedManifestController,
+  syncShipmentChargesController,
+  syncShipmentStatusesController,
   trackOrderController,
 } from '../controllers/externalApi/order.controller'
 import {
+  createIcarryPickupAddressController,
   createPickupAddressController,
+  deleteIcarryPickupAddressController,
   getPickupAddressesController,
   updatePickupAddressController,
+  updateIcarryPickupAddressController,
   requestPickupController,
 } from '../controllers/externalApi/pickup.controller'
 import {
@@ -30,7 +36,10 @@ import {
   getReturnQuoteController,
 } from '../controllers/externalApi/returns.controller'
 import { getRtoEventsController } from '../controllers/externalApi/rto.controller'
-import { checkServiceabilityController } from '../controllers/externalApi/serviceability.controller'
+import {
+  checkIcarryPincodeServiceabilityController,
+  checkServiceabilityController,
+} from '../controllers/externalApi/serviceability.controller'
 import { getShippingRatesController } from '../controllers/externalApi/shipping.controller'
 import {
   createWebhookController,
@@ -69,6 +78,16 @@ router.post('/webhooks/:id/regenerate-secret', requireAuth, regenerateWebhookSec
 // Check pincode serviceability and get available couriers
 router.get('/serviceability', requireApiKey, checkServiceabilityController)
 router.post('/serviceability', requireApiKey, checkServiceabilityController)
+router.get(
+  '/serviceability/icarry/pincode',
+  requireApiKey,
+  checkIcarryPincodeServiceabilityController,
+)
+router.post(
+  '/serviceability/icarry/pincode',
+  requireApiKey,
+  checkIcarryPincodeServiceabilityController,
+)
 
 // Get shipping rates (pre-order calculation)
 router.post('/shipping/rates', requireApiKey, getShippingRatesController)
@@ -84,6 +103,15 @@ router.get('/orders', requireApiKey, getOrdersController)
 
 // Track order
 router.get('/orders/track', requireApiKey, trackOrderController)
+
+// Sync shipment charges
+router.post('/orders/shipment-charges/sync', requireApiKey, syncShipmentChargesController)
+
+// Sync shipment statuses
+router.post('/orders/shipment-status/sync', requireApiKey, syncShipmentStatusesController)
+
+// Print shipment label
+router.post('/orders/shipment-label/print', requireApiKey, printShipmentLabelController)
 
 // Get order details
 router.get('/orders/:orderId', requireApiKey, getOrderController)
@@ -105,6 +133,9 @@ router.post('/manifest', requireApiKey, generateManifestController)
 // ============================================================================
 // PICKUP MANAGEMENT (Requires API Key)
 // ============================================================================
+router.post('/pickup-addresses/icarry', requireApiKey, createIcarryPickupAddressController)
+router.put('/pickup-addresses/icarry/:id', requireApiKey, updateIcarryPickupAddressController)
+router.delete('/pickup-addresses/icarry/:id', requireApiKey, deleteIcarryPickupAddressController)
 router.post('/pickup-addresses', requireApiKey, createPickupAddressController)
 router.get('/pickup-addresses', requireApiKey, getPickupAddressesController)
 router.put('/pickup-addresses/:id', requireApiKey, updatePickupAddressController)

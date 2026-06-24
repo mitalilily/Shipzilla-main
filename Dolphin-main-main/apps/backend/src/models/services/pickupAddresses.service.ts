@@ -49,6 +49,7 @@ export async function createPickupAddressService(data: CreatePickupDto, userId: 
         userId,
         addressId: pickupAddr.id,
         rtoAddressId,
+        icarryWarehouseId: data.icarryWarehouseId,
         isPrimary: data.isPrimary ?? isPrimary,
         isPickupEnabled: data.isPickupEnabled ?? true,
         isRTOSame,
@@ -206,6 +207,7 @@ export async function getPickupAddressesService(
   const data = await db
     .select({
       pickupId: pickupAddresses.id,
+      icarryWarehouseId: pickupAddresses.icarryWarehouseId,
       isPrimary: pickupAddresses.isPrimary,
       isPickupEnabled: pickupAddresses.isPickupEnabled,
       isRTOSame: pickupAddresses.isRTOSame,
@@ -247,4 +249,56 @@ export async function getPickupAddressesService(
     .offset(offset)
 
   return { data: data as unknown as HydratedPickupAddress[], totalCount }
+}
+
+export async function softDeletePickupAddressService(pickupId: string, userId: string) {
+  return await db.transaction(async (txn) => {
+    const [existing] = await txn
+      .select()
+      .from(pickupAddresses)
+      .where(and(eq(pickupAddresses.id, pickupId), eq(pickupAddresses.userId, userId)))
+      .limit(1)
+
+    if (!existing) {
+      return null
+    }
+
+    await txn
+      .update(pickupAddresses)
+      .set({
+        isPickupEnabled: false,
+        isPrimary: false,
+      })
+      .where(eq(pickupAddresses.id, pickupId))
+
+    if (existing.isPrimary) {
+      const [nextPrimary] = await txn
+        .select({ id: pickupAddresses.id })
+        .from(pickupAddresses)
+        .where(
+          and(
+            eq(pickupAddresses.userId, userId),
+            eq(pickupAddresses.isPickupEnabled, true),
+            ne(pickupAddresses.id, pickupId),
+          ),
+        )
+        .orderBy(asc(pickupAddresses.id))
+        .limit(1)
+
+      if (nextPrimary?.id) {
+        await txn
+          .update(pickupAddresses)
+          .set({ isPrimary: true })
+          .where(eq(pickupAddresses.id, nextPrimary.id))
+      }
+    }
+
+    const [updated] = await txn
+      .select()
+      .from(pickupAddresses)
+      .where(eq(pickupAddresses.id, pickupId))
+      .limit(1)
+
+    return updated
+  })
 }

@@ -87,6 +87,16 @@ export const getShiprocketStatusCode = (statusLabel: string | null | undefined):
 type ShiprocketAuthCredentials = {
   email?: string
   password?: string
+  apiToken?: string
+}
+
+type ShiprocketAuthOptions = {
+  skipCache?: boolean
+  skipStoredToken?: boolean
+}
+
+type ShiprocketRequestOptions = {
+  authToken?: string
 }
 
 type ShiprocketAuthResponse = {
@@ -172,6 +182,10 @@ const clearShiprocketTokenCache = () => {
 const resolveShiprocketCredentials = async (overrides?: ShiprocketAuthCredentials) => {
   let email = overrides?.email?.trim() || process.env.SHIPROCKET_EMAIL
   let password = overrides?.password || process.env.SHIPROCKET_PASSWORD
+  let apiToken =
+    overrides?.apiToken?.trim() ||
+    process.env.SHIPROCKET_API_TOKEN ||
+    process.env.SHIPROCKET_API_KEY
   let apiBase = process.env.SHIPROCKET_API_BASE || 'https://apiv2.shiprocket.in/v1/external'
 
   try {
@@ -179,6 +193,7 @@ const resolveShiprocketCredentials = async (overrides?: ShiprocketAuthCredential
     if (config) {
       email = overrides?.email?.trim() || config.email || email
       password = overrides?.password || config.password || password
+      apiToken = overrides?.apiToken?.trim() || config.apiToken || apiToken
       apiBase = config.apiBase || apiBase
     }
   } catch {
@@ -188,14 +203,17 @@ const resolveShiprocketCredentials = async (overrides?: ShiprocketAuthCredential
   return {
     email,
     password,
+    apiToken,
     apiBase: apiBase.replace(/\/+$/, ''),
   }
 }
 
 const authenticateShiprocket = async (
   overrides?: ShiprocketAuthCredentials,
+  options?: ShiprocketAuthOptions,
 ): Promise<ShiprocketAuthResponse> => {
-  const shouldUseCache = !overrides?.email && !overrides?.password
+  const shouldUseCache =
+    !options?.skipCache && !overrides?.email && !overrides?.password && !overrides?.apiToken
   if (shouldUseCache && cachedToken && tokenExpiry && Date.now() < tokenExpiry) {
     return {
       token: cachedToken,
@@ -204,7 +222,25 @@ const authenticateShiprocket = async (
     }
   }
 
-  const { email, password, apiBase } = await resolveShiprocketCredentials(overrides)
+  const { email, password, apiToken, apiBase } = await resolveShiprocketCredentials(overrides)
+
+  const shouldPreferPasswordLogin =
+    Boolean(overrides?.email?.trim() || overrides?.password) && !overrides?.apiToken?.trim()
+
+  if (!options?.skipStoredToken && apiToken && !shouldPreferPasswordLogin) {
+    const expiresAt = parseJwtExpiry(apiToken)
+    const tokenIsUsable = !expiresAt || Date.now() < expiresAt - 30_000
+
+    if (tokenIsUsable) {
+      const auth = {
+        token: apiToken,
+        expiresAt,
+        raw: { token: apiToken },
+      }
+      cacheShiprocketToken(auth)
+      return auth
+    }
+  }
 
   if (!email || !password) {
     throw new Error(
@@ -230,9 +266,9 @@ const authenticateShiprocket = async (
   return auth
 }
 
-export const getShiprocketToken = async (): Promise<string> => {
+export const getShiprocketToken = async (options?: ShiprocketAuthOptions): Promise<string> => {
   try {
-    const auth = await authenticateShiprocket()
+    const auth = await authenticateShiprocket(undefined, options)
     return auth.token
   } catch (error: any) {
     console.error('Shiprocket auth error:', error.response?.data || error.message)
@@ -296,6 +332,35 @@ const getApiBase = async (): Promise<string> => {
   return (process.env.SHIPROCKET_API_BASE || 'https://apiv2.shiprocket.in/v1/external').replace(/\/+$/, '')
 }
 
+/**
+ * GET /account/details/wallet-balance
+ * Fetch the current Shiprocket wallet balance
+ */
+export const getWalletBalance = async () => {
+  return shiprocketRequest('GET', '/account/details/wallet-balance')
+}
+
+/**
+ * GET /account/details/statement
+ * Fetch the Shiprocket account statement details
+ */
+export const getStatementDetails = async (params?: {
+  page?: number
+  per_page?: number
+  from?: string
+  to?: string
+}) => {
+  return shiprocketRequest('GET', '/account/details/statement', undefined, params)
+}
+
+/**
+ * GET /billing/discrepancy
+ * Fetch billing discrepancy data
+ */
+export const getDiscrepancyData = async () => {
+  return shiprocketRequest('GET', '/billing/discrepancy')
+}
+
 const getShiprocketServiceabilityBase = async (): Promise<string> => {
   return (
     process.env.SHIPROCKET_SERVICEABILITY_API_BASE ||
@@ -303,51 +368,26 @@ const getShiprocketServiceabilityBase = async (): Promise<string> => {
   ).replace(/\/+$/, '')
 }
 
-const shiprocketRequest = async (
-  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
-  endpoint: string,
-  data?: any,
-  params?: any,
-) => {
-  const token = await getShiprocketToken()
-  const apiBase = await getApiBase()
-  const url = `${apiBase}${endpoint}`
-  
-  const config: any = {
-    method,
-    url,
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  }
+const getShiprocketErrorMessage = (errorData: any) =>
+  errorData?.message ||
+  errorData?.error ||
+  (typeof errorData === 'string' ? errorData : JSON.stringify(errorData)) ||
+  'Shiprocket API error'
 
-  if (data && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
-    config.data = data
-  }
-  if (params) {
-    config.params = params
-  }
-
-  try {
-    const response = await axios(config)
-    return response.data
-  } catch (error: any) {
-    const errorData = error.response?.data || error.message
-    console.error(`[Shiprocket API Error] ${method} ${endpoint}:`, errorData)
-    throw new Error(errorData?.message || errorData?.error || JSON.stringify(errorData) || 'Shiprocket API error')
-  }
+const shouldRetryShiprocketAuth = (error: any) => {
+  const status = Number(error?.response?.status)
+  return status === 401 || status === 403
 }
 
-const shiprocketServiceabilityRequest = async (
+const performShiprocketRequest = async (
+  baseUrl: string,
+  token: string,
   method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   endpoint: string,
   data?: any,
   params?: any,
 ) => {
-  const token = await getShiprocketToken()
-  const apiBase = await getShiprocketServiceabilityBase()
-  const url = `${apiBase}${endpoint}`
+  const url = `${baseUrl}${endpoint}`
 
   const config: any = {
     method,
@@ -365,13 +405,96 @@ const shiprocketServiceabilityRequest = async (
     config.params = params
   }
 
+  return axios(config)
+}
+
+const shiprocketRequest = async (
+  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
+  endpoint: string,
+  data?: any,
+  params?: any,
+  options?: ShiprocketRequestOptions,
+) => {
+  const apiBase = await getApiBase()
+  const token = options?.authToken?.trim() || (await getShiprocketToken())
+
   try {
-    const response = await axios(config)
+    const response = await performShiprocketRequest(apiBase, token, method, endpoint, data, params)
     return response.data
   } catch (error: any) {
+    if (!options?.authToken && shouldRetryShiprocketAuth(error)) {
+      clearShiprocketTokenCache()
+
+      try {
+        const freshAuth = await authenticateShiprocket(undefined, {
+          skipCache: true,
+          skipStoredToken: true,
+        })
+        const retryResponse = await performShiprocketRequest(
+          apiBase,
+          freshAuth.token,
+          method,
+          endpoint,
+          data,
+          params,
+        )
+        return retryResponse.data
+      } catch (retryError: any) {
+        console.error(
+          `[Shiprocket API Retry Error] ${method} ${endpoint}:`,
+          retryError.response?.data || retryError.message,
+        )
+      }
+    }
+
+    const errorData = error.response?.data || error.message
+    console.error(`[Shiprocket API Error] ${method} ${endpoint}:`, errorData)
+    throw new Error(getShiprocketErrorMessage(errorData))
+  }
+}
+
+const shiprocketServiceabilityRequest = async (
+  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
+  endpoint: string,
+  data?: any,
+  params?: any,
+  options?: ShiprocketRequestOptions,
+) => {
+  const apiBase = await getShiprocketServiceabilityBase()
+  const token = options?.authToken?.trim() || (await getShiprocketToken())
+
+  try {
+    const response = await performShiprocketRequest(apiBase, token, method, endpoint, data, params)
+    return response.data
+  } catch (error: any) {
+    if (!options?.authToken && shouldRetryShiprocketAuth(error)) {
+      clearShiprocketTokenCache()
+
+      try {
+        const freshAuth = await authenticateShiprocket(undefined, {
+          skipCache: true,
+          skipStoredToken: true,
+        })
+        const retryResponse = await performShiprocketRequest(
+          apiBase,
+          freshAuth.token,
+          method,
+          endpoint,
+          data,
+          params,
+        )
+        return retryResponse.data
+      } catch (retryError: any) {
+        console.error(
+          `[Shiprocket Serviceability API Retry Error] ${method} ${endpoint}:`,
+          retryError.response?.data || retryError.message,
+        )
+      }
+    }
+
     const errorData = error.response?.data || error.message
     console.error(`[Shiprocket Serviceability API Error] ${method} ${endpoint}:`, errorData)
-    throw new Error(errorData?.message || errorData?.error || JSON.stringify(errorData) || 'Shiprocket serviceability API error')
+    throw new Error(getShiprocketErrorMessage(errorData))
   }
 }
 
@@ -382,10 +505,25 @@ const shiprocketServiceabilityRequest = async (
  * Check if a pincode is serviceable by a specific courier
  */
 export const checkCourierServiceability = async (params: {
-  pickup_postcode?: string
-  delivery_postcode: string
-  cod?: boolean
-  weight?: number
+  pickup_postcode: number | string
+  delivery_postcode: number | string
+  order_id?: number | string
+  cod?: boolean | number | string
+  weight?: number | string
+  is_new_hyperlocal?: boolean | number | string
+  lat_from?: number | string
+  long_from?: number | string
+  lat_to?: number | string
+  long_to?: number | string
+  length?: number | string
+  breadth?: number | string
+  height?: number | string
+  declared_value?: number | string
+  mode?: 'Surface' | 'Air' | string
+  is_return?: number | string
+  couriers_type?: number | string
+  only_local?: number | string
+  qc_check?: number | string
   deliveryslot?: string
   coupon_id?: number
 }) => {
@@ -402,6 +540,14 @@ export const getSelfServiceability = async (params?: {
   payment_type?: string
 }) => {
   return shiprocketRequest('GET', '/courier/serviceability/self', undefined, params)
+}
+
+/**
+ * GET /open/postcode/details
+ * Get locality details for a postcode
+ */
+export const getPostcodeDetails = async (postcode: number | string) => {
+  return shiprocketRequest('GET', '/open/postcode/details', undefined, { postcode })
 }
 
 // ───────────────────────────── 2. ORDERS ─────────────────────────────
@@ -432,14 +578,19 @@ export const getOrderDetails = async (orderId: number) => {
 export const listAllOrders = async (params?: {
   page?: number
   per_page?: number
-  sort?: string
-  status?: string
-  payment_mode?: string
-  from_date?: string
-  to_date?: string
+  sort?: 'ASC' | 'DESC' | string
+  sort_by?: 'id' | 'status' | string
+  from?: string
+  to?: string
+  updated_from?: string
+  updated_to?: string
   search?: string
   filter_by?: 'status' | 'payment_method' | 'delivery_country' | 'channel_order_id' | string
   filter?: string
+  pickup_location?: string
+  channel_id?: number | string
+  fbs?: number | string
+  fbs_all_orders?: number | string
 }) => {
   return shiprocketRequest('GET', '/orders', undefined, params)
 }
@@ -498,6 +649,7 @@ export const assignAwbToShipment = async (params: {
   shipment_id: number | string
   courier_id?: number | string
   status?: 'reassign' | string
+  is_return?: number | string
 }) => {
   return shiprocketRequest('POST', '/courier/assign/awb', params)
 }
@@ -507,8 +659,8 @@ export const assignAwbToShipment = async (params: {
  * Generate shipping label for an AWB
  */
 export const generateLabel = async (params: {
-  shipment_id: number | string
-  awb_number: string
+  shipment_id: Array<number | string> | number | string
+  awb_number?: string
   is_return?: number
 }) => {
   return shiprocketRequest('POST', '/courier/generate/label', params)
@@ -556,23 +708,50 @@ export const exportShipments = async (params?: {
 export const listShipments = async (params?: {
   page?: number
   per_page?: number
-  sort?: string
-  status?: string
-  payment_mode?: string
-  from_date?: string
-  to_date?: string
+  sort?: 'ASC' | 'DESC' | string
+  sort_by?: string
+  filter?: string
+  filter_by?: string
 }) => {
   return shiprocketRequest('GET', '/shipments', undefined, params)
+}
+
+/** GET /shipments/{shipment_id} */
+export const getShipmentDetails = async (shipmentId: number | string) => {
+  return shiprocketRequest('GET', `/shipments/${shipmentId}`)
+}
+
+/** POST /orders/cancel/shipment/awbs */
+export const cancelShipmentsByAwb = async (params: { awbs: string[] }) => {
+  return shiprocketRequest('POST', '/orders/cancel/shipment/awbs', params)
+}
+
+/** POST /manifests/generate */
+export const generateManifest = async (params: {
+  shipment_id: Array<number | string>
+}) => {
+  return shiprocketRequest('POST', '/manifests/generate', params)
+}
+
+/** POST /manifests/print */
+export const printManifest = async (params: {
+  order_ids: Array<number | string>
+}) => {
+  return shiprocketRequest('POST', '/manifests/print', params)
 }
 
 // ───────────────────────────── 4. TRACKING ─────────────────────────────
 
 /**
  * GET /courier/track
- * Track shipment by AWB
+ * Track shipment by AWB or order ID
  */
-export const trackShipment = async (awb: string) => {
-  return shiprocketRequest('GET', '/courier/track', undefined, { awb })
+export const trackShipment = async (params: {
+  awb?: string
+  order_id?: string
+  channel_id?: number | string
+}) => {
+  return shiprocketRequest('GET', '/courier/track', undefined, params)
 }
 
 /**
@@ -583,14 +762,29 @@ export const trackShipmentByOrderId = async (orderId: number) => {
   return shiprocketRequest('GET', `/courier/track/orders/${orderId}`)
 }
 
+/** GET /courier/track/shipment/{shipment_id} */
+export const trackShipmentByShipmentId = async (shipmentId: number | string) => {
+  return shiprocketRequest('GET', `/courier/track/shipment/${encodeURIComponent(String(shipmentId))}`)
+}
+
+/** GET /courier/track/awb/{awb_code} */
+export const trackShipmentByAwb = async (awb: string) => {
+  return shiprocketRequest('GET', `/courier/track/awb/${encodeURIComponent(awb)}`)
+}
+
+/** POST /courier/track/awbs */
+export const trackShipmentsByAwbs = async (params: { awbs: string[] }) => {
+  return shiprocketRequest('POST', '/courier/track/awbs', params)
+}
+
 // ───────────────────────────── 5. PICKUP LOCATIONS ─────────────────────────────
 
 /**
- * GET /settings/company/addpickup
+ * GET /settings/company/pickup
  * Get all pickup locations
  */
 export const getPickupLocations = async () => {
-  return shiprocketRequest('GET', '/settings/company/addpickup')
+  return shiprocketRequest('GET', '/settings/company/pickup')
 }
 
 /**
@@ -608,8 +802,11 @@ export const addPickupLocation = async (params: {
   state: string
   country: string
   pin_code: string
-  latitude?: string
-  longitude?: string
+  lat?: number | string
+  long?: number | string
+  address_type?: string
+  vendor_name?: string
+  gstin?: string
 }) => {
   return shiprocketRequest('POST', '/settings/company/addpickup', params)
 }
@@ -716,6 +913,40 @@ export const rescheduleNdr = async (params: {
   return shiprocketRequest('POST', '/ndr/reschedule', params)
 }
 
+/** GET /ndr/all */
+export const listAllNdrShipments = async (params?: {
+  page?: number
+  per_page?: number
+  from?: string
+  to?: string
+  search?: string
+}) => {
+  return shiprocketRequest('GET', '/ndr/all', undefined, params)
+}
+
+/** GET /ndr/{awb} */
+export const getNdrShipmentDetails = async (awb: string) => {
+  return shiprocketRequest('GET', `/ndr/${encodeURIComponent(awb)}`)
+}
+
+/** POST /ndr/{awb}/action */
+export const actionNdrShipment = async (
+  awb: string,
+  params: {
+    action: 'fake-attempt' | 're-attempt' | 'return' | string
+    comments: string
+    phone?: string
+    proof_audio?: string
+    proof_image?: string
+    remarks?: string
+    address1?: string
+    address2?: string
+    deferred_date?: string
+  },
+) => {
+  return shiprocketRequest('POST', `/ndr/${encodeURIComponent(awb)}/action`, params)
+}
+
 // ───────────────────────────── 8. WEBHOOKS ─────────────────────────────
 
 /**
@@ -753,7 +984,8 @@ export const listChannels = async () => {
  */
 export const addChannel = async (params: {
   name: string
-  channel: string
+  brand_name?: string
+  channel?: string
   url?: string
 }) => {
   return shiprocketRequest('POST', '/channels', params)
@@ -775,6 +1007,16 @@ export const generateInvoice = async (orderId: number) => {
  */
 export const printInvoice = async (orderId: number) => {
   return shiprocketRequest('POST', `/orders/print/invoice/${orderId}`)
+}
+
+/**
+ * POST /orders/print/invoice
+ * Generate one invoice document for one or more Shiprocket order IDs
+ */
+export const generateBulkInvoice = async (params: {
+  ids: Array<number | string>
+}) => {
+  return shiprocketRequest('POST', '/orders/print/invoice', params)
 }
 
 // ───────────────────────────── 11. CUSTOMER ─────────────────────────────
@@ -808,6 +1050,154 @@ export const listCustomers = async (params?: {
   return shiprocketRequest('GET', '/customers', undefined, params)
 }
 
+/**
+ * GET /products
+ * List all products in the Shiprocket account
+ */
+export const listProducts = async (params?: {
+  page?: number
+  per_page?: number
+  sort?: 'ASC' | 'DESC' | string
+  sort_by?: string
+  filter?: string
+  filter_by?: string
+}) => {
+  return shiprocketRequest('GET', '/products', undefined, params)
+}
+
+/**
+ * GET /inventory
+ * Get inventory details for product SKUs
+ */
+export const listInventory = async (params?: {
+  page?: number
+  per_page?: number
+  sort?: 'ASC' | 'DESC' | string
+  sort_by?: string
+}) => {
+  return shiprocketRequest('GET', '/inventory', undefined, params)
+}
+
+/**
+ * PUT /inventory/{product_id}/update
+ * Update inventory quantity for a product SKU
+ */
+export const updateInventory = async (
+  productId: number | string,
+  params: {
+    quantity: number | string
+    action: 'add' | 'replace' | 'remove' | string
+  },
+) => {
+  return shiprocketRequest('PUT', `/inventory/${productId}/update`, params)
+}
+
+/**
+ * GET /countries
+ * Get country codes and metadata from Shiprocket
+ */
+export const listCountries = async () => {
+  return shiprocketRequest('GET', '/countries')
+}
+
+/**
+ * GET /countries/show/{country_id}
+ * Get zones/details for a specific country
+ */
+export const listCountryZones = async (countryId: number | string) => {
+  return shiprocketRequest('GET', `/countries/show/${countryId}`)
+}
+
+/**
+ * GET /listings
+ * List all product listings in the Shiprocket account
+ */
+export const listListings = async (params?: {
+  page?: number
+  per_page?: number
+  sort?: 'ASC' | 'DESC' | string
+  sort_by?: string
+  filter?: string
+  filter_by?: string
+}) => {
+  return shiprocketRequest('GET', '/listings', undefined, params)
+}
+
+/**
+ * POST /listings/link
+ * Map a channel listing to a master product
+ */
+export const linkListingToProduct = async (params: {
+  product_id: number | string
+  listing_id: number | string
+  ID?: number | string
+}) => {
+  return shiprocketRequest('POST', '/listings/link', params)
+}
+
+/**
+ * GET /products/show/{product_id}
+ * Get details for a specific Shiprocket product
+ */
+export const getProductDetails = async (productId: number | string) => {
+  return shiprocketRequest('GET', `/products/show/${productId}`)
+}
+
+/**
+ * POST /products
+ * Create a new product in the Shiprocket account
+ */
+export const createProduct = async (params: {
+  sku: string
+  HSN?: string
+  name: string
+  tax_code?: string | number
+  type: 'Single' | 'Multiple' | string
+  qty: number | string
+  low_stock?: string | number
+  category_code?: string
+  description?: string
+  brand?: string
+  size?: number | string
+  weight?: number | string
+  length?: number | string
+  width?: number | string
+  height?: number | string
+  ean?: string
+  upc?: string
+  isbn?: string
+  color?: string
+  imei_serialnumber?: string
+  cost_price?: number | string
+  mrp?: number | string
+  status?: boolean | number | string
+  image_url?: string
+  qc_details?: Record<string, any>
+}) => {
+  return shiprocketRequest('POST', '/products', params)
+}
+
+/**
+ * POST /products/qc-product-update/{productID}
+ * Convert an existing product into a QC product
+ */
+export const updateQcProduct = async (
+  productId: number | string,
+  params: {
+    sku: string
+    product_image: string
+    serial_no?: string
+    size?: string
+    color?: string
+    brand?: string
+    brand_box?: string
+    product_imei?: string
+    check_damaged_product?: number | boolean | string
+  },
+) => {
+  return shiprocketRequest('POST', `/products/qc-product-update/${productId}`, params)
+}
+
 // ───────────────────────────── 12. RETURNS / RTO ─────────────────────────────
 
 /**
@@ -820,6 +1210,7 @@ export const createReturnOrder = async (params: {
   channel_id?: number | string
   pickup_customer_name: string
   pickup_last_name?: string
+  company_name?: string
   pickup_address: string
   pickup_address_2?: string
   pickup_city: string
@@ -1448,6 +1839,104 @@ export const importOrdersBulk = async (file: {
 }
 
 /**
+ * POST /products/import
+ * Import products in bulk from a CSV file
+ */
+export const importProductsBulk = async (file: {
+  buffer: Buffer
+  originalname?: string
+  mimetype?: string
+}) => {
+  const token = await getShiprocketToken()
+  const apiBase = await getApiBase()
+  const form = new FormData()
+  form.append('file', file.buffer, {
+    filename: file.originalname || 'products.csv',
+    contentType: file.mimetype || 'text/csv',
+  })
+
+  const response = await axios.post(`${apiBase}/products/import`, form, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...form.getHeaders(),
+    },
+    maxBodyLength: Infinity,
+    maxContentLength: Infinity,
+  })
+
+  return response.data
+}
+
+/**
+ * GET /products/sample
+ * Get a sample CSV format for bulk product import
+ */
+export const getProductsSampleCsv = async () => {
+  return shiprocketRequest('GET', '/products/sample')
+}
+
+/**
+ * POST /listings/import
+ * Import catalog mappings from a CSV file
+ */
+export const importListingMappingsBulk = async (file: {
+  buffer: Buffer
+  originalname?: string
+  mimetype?: string
+}) => {
+  const token = await getShiprocketToken()
+  const apiBase = await getApiBase()
+  const form = new FormData()
+  form.append('file', file.buffer, {
+    filename: file.originalname || 'listings.csv',
+    contentType: file.mimetype || 'text/csv',
+  })
+
+  const response = await axios.post(`${apiBase}/listings/import`, form, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...form.getHeaders(),
+    },
+    maxBodyLength: Infinity,
+    maxContentLength: Infinity,
+  })
+
+  return response.data
+}
+
+/**
+ * GET /listings/export/mapped
+ * Export mapped channel listings as a CSV download URL
+ */
+export const exportMappedListings = async () => {
+  return shiprocketRequest('GET', '/listings/export/mapped')
+}
+
+/**
+ * GET /listings/export/unmapped
+ * Export unmapped channel listings as a CSV download URL
+ */
+export const exportUnmappedListings = async () => {
+  return shiprocketRequest('GET', '/listings/export/unmapped')
+}
+
+/**
+ * GET /listings/sample
+ * Get a sample catalogue sheet for reference
+ */
+export const exportListingsSample = async () => {
+  return shiprocketRequest('GET', '/listings/sample')
+}
+
+/**
+ * GET /errors/{import_id}/check
+ * Check import results for file imports
+ */
+export const checkImportErrors = async (importId: number | string) => {
+  return shiprocketRequest('GET', `/errors/${importId}/check`)
+}
+
+/**
  * GET /courier/courierListWithCounts
  * List couriers with counts and filter by type
  */
@@ -1466,8 +1955,8 @@ export const updateBlockedPincodes = async (params: {
     delivery_blocked: string[]
   }
   action: 'block' | 'unblock' | string
-}) => {
-  return shiprocketServiceabilityRequest('POST', '/blocked-pincodes/upload', params)
+}, options?: ShiprocketRequestOptions) => {
+  return shiprocketServiceabilityRequest('POST', '/blocked-pincodes/upload', params, undefined, options)
 }
 
 /**
@@ -1479,6 +1968,6 @@ export const getBlockedPincodes = async (params?: {
   search?: string
   per_page?: number | string
   current_page?: number | string
-}) => {
-  return shiprocketServiceabilityRequest('GET', '/block-pincodes/get', undefined, params)
+}, options?: ShiprocketRequestOptions) => {
+  return shiprocketServiceabilityRequest('GET', '/block-pincodes/get', undefined, params, options)
 }

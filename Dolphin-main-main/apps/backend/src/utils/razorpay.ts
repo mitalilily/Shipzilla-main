@@ -88,3 +88,12 @@ export function isValidSig(body: string, sig: string) {
     .digest('hex')
   return expected === sig
 }
+
+export function isValidPaymentSignature(orderId: string, paymentId: string, signature: string) {
+  const expected = crypto
+    .createHmac('sha256', getActiveRazorpaySecret())
+    .update(`${orderId}|${paymentId}`)
+    .digest('hex')
+
+  return expected === signature
+}

@@ -1,6 +1,7 @@
 // scripts/processPendingWebhooks.ts
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
+import { asc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '../models/client'
+import { processIcarryWebhookPayload } from '../models/services/icarryWebhook.service'
 import {
   processDelhiveryWebhook,
   processShipmozoWebhook,
@@ -21,19 +22,29 @@ const resolvePendingProvider = (payload: any, status: unknown) =>
     ? 'xpressbees'
     : String(status || '').startsWith('shipmozo:')
       ? 'shipmozo'
-      : 'delhivery')
+      : String(status || '').startsWith('icarry:')
+        ? 'icarry'
+        : 'delhivery')
 
 const unwrapPendingPayload = (payload: any) =>
-  payload?.__provider === 'xpressbees' || payload?.__provider === 'shipmozo'
+  payload?.__provider === 'xpressbees' ||
+  payload?.__provider === 'shipmozo' ||
+  payload?.__provider === 'icarry'
     ? payload?.body || {}
     : payload
 
 const providerLabel = (provider: string) =>
-  provider === 'xpressbees' ? 'Xpressbees' : provider === 'shipmozo' ? 'Shipmozo' : 'Delhivery'
+  provider === 'xpressbees'
+    ? 'Xpressbees'
+    : provider === 'shipmozo'
+      ? 'Shipmozo'
+      : provider === 'icarry'
+        ? 'iCarry'
+        : 'Delhivery'
 
 export async function processPendingWebhooks() {
   if (isProcessingPendingWebhooks) {
-    console.log('⏭️ Skipping pending webhook run: previous run still in progress')
+    console.log('Skipping pending webhook run: previous run still in progress')
     return
   }
 
@@ -51,7 +62,7 @@ export async function processPendingWebhooks() {
       return
     }
 
-    console.log(`🔄 Processing pending webhooks... count=${events.length}`)
+    console.log(`Processing pending webhooks... count=${events.length}`)
 
     const pendingCounts = new Map<string, number>()
     const pendingIdsByKey = new Map<string, string[]>()
@@ -115,7 +126,7 @@ export async function processPendingWebhooks() {
           thresholdClosedKeys.add(pendingKey)
           expiredCount += deletedRows.length
           console.warn(
-            `⌛ Deleted pending webhook queue for ${pendingKey} after ${duplicateCount} repeated pending entries`,
+            `Deleted pending webhook queue for ${pendingKey} after ${duplicateCount} repeated pending entries`,
           )
           continue
         }
@@ -140,9 +151,15 @@ export async function processPendingWebhooks() {
             typeof rawPayload?.reference_id === 'string' ||
             typeof rawPayload?.order_id === 'string' ||
             typeof awb === 'string')
+        const looksLikeIcarry =
+          provider === 'icarry' &&
+          (typeof rawPayload?.awb === 'string' ||
+            typeof rawPayload?.waybill === 'string' ||
+            typeof rawPayload?.tracking_number === 'string' ||
+            typeof awb === 'string')
 
-        if (!looksLikeDelhivery && !looksLikeXpressbees && !looksLikeShipmozo) {
-          console.warn(`⚠️ Skipping unsupported pending webhook ${event.id} (AWB: ${awb || 'N/A'})`)
+        if (!looksLikeDelhivery && !looksLikeXpressbees && !looksLikeShipmozo && !looksLikeIcarry) {
+          console.warn(`Skipping unsupported pending webhook ${event.id} (AWB: ${awb || 'N/A'})`)
           skippedCount++
           await db
             .update(pending_webhooks)
@@ -156,7 +173,9 @@ export async function processPendingWebhooks() {
             ? await processXpressbeesWebhook(rawPayload)
             : provider === 'shipmozo'
               ? await processShipmozoWebhook(rawPayload)
-              : await processDelhiveryWebhook(rawPayload)
+              : provider === 'icarry'
+                ? await processIcarryWebhookPayload(rawPayload)
+                : await processDelhiveryWebhook(rawPayload)
 
         if (result.success) {
           processedCount++
@@ -164,13 +183,10 @@ export async function processPendingWebhooks() {
             .update(pending_webhooks)
             .set({ processed_at: new Date(), status: 'processed' })
             .where(eq(pending_webhooks.id, event.id))
-          console.log(
-            `✅ Replayed pending ${providerLabel(provider)} webhook for AWB ${awb}`,
-          )
+          console.log(`Replayed pending ${providerLabel(provider)} webhook for AWB ${awb}`)
           continue
         }
 
-        // Keep in queue only while within max age and order is still not present.
         if (result.reason === 'order_not_found') {
           if (ageMinutes >= MAX_PENDING_AGE_MINUTES) {
             expiredCount++
@@ -179,28 +195,26 @@ export async function processPendingWebhooks() {
               .set({ processed_at: new Date(), status: 'expired_order_not_found' })
               .where(eq(pending_webhooks.id, event.id))
             console.warn(
-              `⌛ Expired pending ${providerLabel(provider)} webhook for AWB ${awb} after ${ageMinutes}m (order still missing)`,
+              `Expired pending ${providerLabel(provider)} webhook for AWB ${awb} after ${ageMinutes}m (order still missing)`,
             )
           } else {
             deferredCount++
             console.log(
-              `⏳ Delaying pending ${providerLabel(provider)} webhook for AWB ${awb}: order still missing`,
+              `Delaying pending ${providerLabel(provider)} webhook for AWB ${awb}: order still missing`,
             )
           }
           continue
         }
 
-        // For hard-invalid payloads, mark processed to avoid infinite retries.
         skippedCount++
         await db
           .update(pending_webhooks)
           .set({ processed_at: new Date(), status: `skipped_${result.reason || 'unknown'}` })
           .where(eq(pending_webhooks.id, event.id))
         console.warn(
-          `⚠️ Marked pending webhook as processed for AWB ${awb} due to non-retryable reason: ${result.reason}`,
+          `Marked pending webhook as processed for AWB ${awb} due to non-retryable reason: ${result.reason}`,
         )
       } catch (error: any) {
-        // Keep row pending on runtime failures only up to max age.
         if (ageMinutes >= MAX_PENDING_AGE_MINUTES) {
           expiredCount++
           await db
@@ -208,12 +222,12 @@ export async function processPendingWebhooks() {
             .set({ processed_at: new Date(), status: 'expired_runtime_error' })
             .where(eq(pending_webhooks.id, event.id))
           console.error(
-            `⌛ Expired pending webhook ${event.id} (AWB: ${awb || 'N/A'}) after runtime failures for ${ageMinutes}m`,
+            `Expired pending webhook ${event.id} (AWB: ${awb || 'N/A'}) after runtime failures for ${ageMinutes}m`,
           )
         } else {
           deferredCount++
           console.error(
-            `❌ Failed processing pending webhook ${event.id} (AWB: ${awb || 'N/A'}):`,
+            `Failed processing pending webhook ${event.id} (AWB: ${awb || 'N/A'}):`,
             error?.message || error,
           )
         }
@@ -221,7 +235,7 @@ export async function processPendingWebhooks() {
     }
 
     console.log(
-      `📊 Pending webhook run complete: processed=${processedCount}, deferred=${deferredCount}, skipped=${skippedCount}, expired=${expiredCount}, batch_limit=${MAX_EVENTS_PER_RUN}`,
+      `Pending webhook run complete: processed=${processedCount}, deferred=${deferredCount}, skipped=${skippedCount}, expired=${expiredCount}, batch_limit=${MAX_EVENTS_PER_RUN}`,
     )
   } finally {
     isProcessingPendingWebhooks = false

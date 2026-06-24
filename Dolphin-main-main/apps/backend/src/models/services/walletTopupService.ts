@@ -1,5 +1,5 @@
 import { and, eq, or } from 'drizzle-orm'
-import { razorpay } from '../../utils/razorpay'
+import { getActiveRazorpayKeyId, razorpay } from '../../utils/razorpay'
 import { db } from '../client'
 import { wallets, walletTopups } from '../schema/wallet'
 import { createWalletTransaction } from './wallet.service'
@@ -51,18 +51,12 @@ export async function createWalletOrder(
     status: 'created',
   })
 
-  // Get the correct key based on mode (same logic as razorpay.ts)
-  const MODE: 'test' | 'live' =
-    (process.env.RAZORPAY_MODE as 'test' | 'live') ??
-    (process.env.NODE_ENV === 'production' ? 'live' : 'test')
-  const keyId = MODE === 'live' ? process.env.RAZORPAY_KEY_ID_PROD! : process.env.RAZORPAY_KEY_ID!
-
   // Return Razorpay order details for frontend
   return {
     orderId: razorpayOrder.id,
     amount: razorpayOrder.amount,
     currency: razorpayOrder.currency,
-    key: keyId,
+    key: getActiveRazorpayKeyId(),
     name: 'Shipzilla',
     description: 'Wallet Recharge',
     prefill: {
@@ -77,9 +71,7 @@ export async function createWalletOrder(
 }
 
 /* 2️⃣  success */
-export async function confirmSuccess(orderId: string, paymentId: string, paise: number) {
-  const amount = paise / 100
-
+export async function confirmSuccess(orderId: string, paymentId: string) {
   // Handle both 'created' and 'processing' statuses (frontend may mark as processing first)
   const [row] = await db
     .update(walletTopups)

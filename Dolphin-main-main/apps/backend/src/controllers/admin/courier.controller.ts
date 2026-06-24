@@ -12,11 +12,13 @@ import {
 } from '../../models/services/courierIntegration.service'
 import {
   DEFAULT_EKART_BASE_URL,
+  DEFAULT_ICARRY_BASE_URL,
   DEFAULT_SHIPMOZO_BASE_URL,
   DEFAULT_SHIPROCKET_BASE_URL,
   normalizeEkartBaseUrl,
 } from '../../models/services/courierCredentials.service'
 import { EkartService } from '../../models/services/couriers/ekart.service'
+import { IcarryService } from '../../models/services/couriers/icarry.service'
 import { ShipmozoService } from '../../models/services/couriers/shipmozo.service'
 import { XpressbeesService } from '../../models/services/couriers/xpressbees.service'
 import { fetchAvailableCouriersWithRatesAdmin } from '../../models/services/shiprocket.service'
@@ -29,8 +31,6 @@ import {
   isIntegratedCourierProvider,
   normalizeCourierProvider,
 } from '../../utils/courierProviders'
-
-const DEFAULT_ICARRY_BASE_URL = ''
 
 const maskSecret = (value?: string | null) => {
   const secret = String(value || '').trim()
@@ -395,6 +395,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         provider: 'icarry',
         apiBase: DEFAULT_ICARRY_BASE_URL,
         username: '',
+        clientId: '',
         hasPassword: false,
         hasApiKey: false,
         apiKeyMasked: '',
@@ -422,6 +423,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           provider: 'icarry',
           apiBase: row.apiBase || DEFAULT_ICARRY_BASE_URL,
           username: row.username || '',
+          clientId: row.clientId || '',
           hasPassword: Boolean((row.password || '').trim()),
           hasApiKey: Boolean(apiKey.trim()),
           apiKeyMasked: maskSecret(apiKey),
@@ -874,11 +876,12 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
 }
 
 export const updateIcarryCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, username, password, apiKey, webhookSecret } = req.body || {}
+  const { apiBase, username, clientId, password, apiKey, webhookSecret } = req.body || {}
 
   try {
     const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
     const nextUsername = typeof username === 'string' ? username.trim() : undefined
+    const nextClientId = typeof clientId === 'string' ? clientId.trim() : undefined
     const nextPassword = typeof password === 'string' ? password.trim() : undefined
     const nextApiKey = typeof apiKey === 'string' ? apiKey.trim() : undefined
     const nextWebhookSecret =
@@ -904,6 +907,9 @@ export const updateIcarryCredentialsController = async (req: Request, res: Respo
       if (nextUsername !== undefined) {
         updatePayload.username = nextUsername
       }
+      if (nextClientId !== undefined) {
+        updatePayload.clientId = nextClientId
+      }
       if (hasPassword) {
         updatePayload.password = nextPassword
       }
@@ -924,7 +930,7 @@ export const updateIcarryCredentialsController = async (req: Request, res: Respo
         apiBase: nextApiBase || DEFAULT_ICARRY_BASE_URL,
         clientName: '',
         apiKey: hasApiKey ? nextApiKey : '',
-        clientId: '',
+        clientId: nextClientId || '',
         username: nextUsername || '',
         password: hasPassword ? nextPassword : '',
         webhookSecret: hasWebhookSecret ? nextWebhookSecret : '',
@@ -935,6 +941,7 @@ export const updateIcarryCredentialsController = async (req: Request, res: Respo
       .select({
         apiBase: courier_credentials.apiBase,
         username: courier_credentials.username,
+        clientId: courier_credentials.clientId,
         password: courier_credentials.password,
         apiKey: courier_credentials.apiKey,
         webhookSecret: courier_credentials.webhookSecret,
@@ -950,12 +957,14 @@ export const updateIcarryCredentialsController = async (req: Request, res: Respo
         provider: 'icarry',
         apiBase: saved?.apiBase || DEFAULT_ICARRY_BASE_URL,
         username: saved?.username || '',
+        clientId: saved?.clientId || '',
         hasPassword: Boolean((saved?.password || '').trim()),
         hasApiKey: Boolean((saved?.apiKey || '').trim()),
         apiKeyMasked: maskSecret(saved?.apiKey),
         hasWebhookSecret: Boolean((saved?.webhookSecret || '').trim()),
       },
     })
+    IcarryService.clearCachedConfig()
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update iCarry credentials' })

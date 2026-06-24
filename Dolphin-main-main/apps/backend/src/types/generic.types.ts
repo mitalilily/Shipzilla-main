@@ -19,6 +19,7 @@ export interface IAddress {
   addressLine1: string
   addressLine2?: string
   landmark?: string
+  addressNickname?: string
 
   city: string
   state: string
@@ -39,6 +40,7 @@ export interface IPickupAddress {
   userId: string
   addressId: string
   rtoAddressId?: string | null
+  icarryWarehouseId?: string | null
 
   isPrimary: boolean
   isPickupEnabled: boolean
@@ -55,6 +57,7 @@ export interface IPickupAddress {
 export interface CreatePickupDto {
   pickup: Omit<IAddress, 'id' | 'userId' | 'type' | 'createdAt' | 'updatedAt'>
   rtoAddress?: Omit<IAddress, 'id' | 'userId' | 'type' | 'createdAt' | 'updatedAt'>
+  icarryWarehouseId?: string
   isPrimary?: boolean
   isPickupEnabled?: boolean
 }
@@ -68,6 +71,7 @@ export interface UpdatePickupDto {
 
 export interface HydratedPickupAddress {
   pickupId: string
+  icarryWarehouseId?: string | null
   isPrimary: boolean
   isPickupEnabled: boolean
   pickup: IAddress

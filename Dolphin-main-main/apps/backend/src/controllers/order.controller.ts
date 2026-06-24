@@ -14,6 +14,9 @@ import {
   trackByOrderService,
 } from '../models/services/shiprocket.service'
 import { regenerateOrderDocumentsServiceAdmin } from '../models/services/adminOrders.service'
+import { syncIcarryShipmentChargesForUser as syncIcarryShipmentChargesService } from '../models/services/icarryBillingSync.service'
+import { printIcarryShipmentLabelForUser } from '../models/services/icarryShipmentLabel.service'
+import { syncIcarryShipmentStatusesForUser } from '../models/services/icarryShipmentStatusSync.service'
 
 export const createB2CShipmentController = async (req: any, res: Response) => {
   try {
@@ -369,6 +372,84 @@ export const regenerateOrderDocumentsController = async (req: any, res: Response
     return res.status(statusCode).json({
       success: false,
       message: error?.message || 'Failed to regenerate order documents',
+    })
+  }
+}
+
+export const syncIcarryShipmentChargesController = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.sub
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' })
+    }
+
+    const result = await syncIcarryShipmentChargesService(
+      userId,
+      req.body?.shipment_ids ?? req.body?.shipmentIds,
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    })
+  } catch (error: any) {
+    const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500
+    return res.status(statusCode).json({
+      success: false,
+      message: error?.message || 'Failed to sync iCarry shipment charges.',
+    })
+  }
+}
+
+export const printIcarryShipmentLabelController = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.sub
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' })
+    }
+
+    const result = await printIcarryShipmentLabelForUser(
+      userId,
+      req.body?.shipment_id ?? req.body?.shipmentId,
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: 'iCarry shipment label fetched successfully',
+      data: result,
+    })
+  } catch (error: any) {
+    const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500
+    return res.status(statusCode).json({
+      success: false,
+      message: error?.message || 'Failed to print iCarry shipment label.',
+    })
+  }
+}
+
+export const syncIcarryShipmentStatusesController = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.sub
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' })
+    }
+
+    const result = await syncIcarryShipmentStatusesForUser(
+      userId,
+      req.body?.shipment_ids ?? req.body?.shipmentIds,
+    )
+
+    return res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    })
+  } catch (error: any) {
+    const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500
+    return res.status(statusCode).json({
+      success: false,
+      message: error?.message || 'Failed to sync iCarry shipment statuses.',
     })
   }
 }

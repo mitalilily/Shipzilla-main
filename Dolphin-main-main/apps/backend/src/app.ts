@@ -6,6 +6,8 @@ import http from 'http'
 import path from 'path'
 import { initSocketServer } from './config/socketServer'
 import { shopifyOrderWebhookController } from './controllers/shopify.controller'
+import { icarryWebhookHandler } from './controllers/webhooks/icarry.webhook'
+import { razorpayWebhook } from './controllers/webhooks/razorpay.webhooks'
 import { shipmozoWebhookHandler } from './controllers/webhooks/shipmozo.webhook'
 import adminCourierRoutes from './routes/adminRoutes/adminCourier.routes'
 import adminSupportRoutes from './routes/adminRoutes/adminSupport.routes'
@@ -156,9 +158,13 @@ const shipmozoJsonParser = express.json({
     req.rawBody = buf.toString('utf8')
   },
 })
+const icarryJsonParser = express.json()
+const icarryFormParser = express.urlencoded({ extended: true })
 
 app.post('/api/webhook/shipmozo', shipmozoJsonParser, shipmozoWebhookHandler)
 app.post('/api/webhook/shipmozo/track', shipmozoJsonParser, shipmozoWebhookHandler)
+app.post('/api/webhook/icarry', icarryFormParser, icarryJsonParser, icarryWebhookHandler)
+app.post('/api/payments/wallet/webhook', express.raw({ type: 'application/json' }), razorpayWebhook)
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))

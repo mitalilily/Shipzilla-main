@@ -5,12 +5,14 @@
 
 // Map integration types to opaque codes that don't reveal the provider
 const PROVIDER_CODE_MAP: Record<string, string> = {
+  icarry: 'IC4R7',
   shipmozo: 'SM6Q3',
   shiprocket: 'SR9X2',
 }
 
 // Reverse map: provider code -> integration type
 const PROVIDER_CODE_REVERSE_MAP: Record<string, string> = {
+  IC4R7: 'icarry',
   SM6Q3: 'shipmozo',
   SR9X2: 'shiprocket',
 }
@@ -31,14 +33,14 @@ export const getOpaqueProviderCode = (integrationType: string | null | undefined
  */
 export const getIntegrationTypeFromProviderCode = (
   providerCode: string | null | undefined,
-): 'shipmozo' | 'shiprocket' | null => {
+): 'icarry' | 'shipmozo' | 'shiprocket' | null => {
   if (!providerCode) return null
 
   const normalizedCode = providerCode.trim().toUpperCase()
   const integrationType = PROVIDER_CODE_REVERSE_MAP[normalizedCode]
 
   if (integrationType) {
-    return integrationType as 'shipmozo' | 'shiprocket'
+    return integrationType as 'icarry' | 'shipmozo' | 'shiprocket'
   }
 
   return null
