@@ -569,27 +569,24 @@ export const getMerchantDashboardStats = async (userId: string) => {
     message: string
   }> = []
 
-  if (deliverySuccessRate >= 90) {
+  if (todayOrders.length > 0) {
     insights.push({
       type: 'good',
-      message: `Delivery success is strong at ${deliverySuccessRate}%.`,
-    })
-  } else if (deliverySuccessRate > 0 && deliverySuccessRate < 75) {
-    insights.push({
-      type: 'warning',
-      message: `Delivery success dropped to ${deliverySuccessRate}%. Prioritize interventions.`,
+      message: `${todayOrders.length} orders were created today.`,
     })
   }
 
-  if (ordersGrowth > 0) {
+  if (deliveredToday.length > 0) {
     insights.push({
       type: 'good',
-      message: `Orders are up ${ordersGrowth}% versus the previous week.`,
+      message: `${deliveredToday.length} orders were delivered today.`,
     })
-  } else if (ordersGrowth < 0) {
+  }
+
+  if (pendingOrders.length > 0 || inTransitOrders.length > 0) {
     insights.push({
-      type: 'warning',
-      message: `Orders are down ${Math.abs(ordersGrowth)}% this week.`,
+      type: 'notice',
+      message: `${pendingOrders.length} pending and ${inTransitOrders.length} in-transit orders are active right now.`,
     })
   }
 
@@ -600,10 +597,24 @@ export const getMerchantDashboardStats = async (userId: string) => {
     })
   }
 
-  if (avgDeliveryTime > 7) {
+  if (pendingActions.weightDiscrepancyCount > 0) {
     insights.push({
       type: 'warning',
-      message: `Average delivery time is ${avgDeliveryTime} days. Consider faster lanes.`,
+      message: `${pendingActions.weightDiscrepancyCount} weight discrepancies are awaiting review.`,
+    })
+  }
+
+  if (invoiceStatus.overdue.count > 0) {
+    insights.push({
+      type: 'warning',
+      message: `${invoiceStatus.overdue.count} invoices are overdue.`,
+    })
+  }
+
+  if (openTickets.length > 0 || inProgressTickets.length > 0) {
+    insights.push({
+      type: 'notice',
+      message: `${openTickets.length} open and ${inProgressTickets.length} in-progress support tickets need follow-up.`,
     })
   }
 

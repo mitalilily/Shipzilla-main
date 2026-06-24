@@ -106,12 +106,12 @@ const CourierCredentials = () => {
       {
         onSuccess: () => {
           toast({ title: 'iCarry credentials updated', status: 'success' })
-            setIcarryForm((prev) => ({
-              ...prev,
-              password: '',
-              apiKey: '',
-              webhookSecret: '',
-            }))
+          setIcarryForm((prev) => ({
+            ...prev,
+            password: '',
+            apiKey: '',
+            webhookSecret: '',
+          }))
         },
         onError: (err) => {
           toast({

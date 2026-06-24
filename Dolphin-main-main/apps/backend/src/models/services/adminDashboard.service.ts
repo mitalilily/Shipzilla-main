@@ -423,15 +423,17 @@ export const getAdminDashboardStats = async () => {
     message: string
   }> = []
 
-  if (deliverySuccessRate >= 90) {
+  if (todayOrders.length > 0) {
     insights.push({
       type: 'good',
-      message: `Delivery success is steady at ${deliverySuccessRate}% across live orders.`,
+      message: `${todayOrders.length} orders were created today across the platform.`,
     })
-  } else if (deliverySuccessRate > 0 && deliverySuccessRate < 75) {
+  }
+
+  if (deliveredToday.length > 0) {
     insights.push({
-      type: 'warning',
-      message: `Delivery success is down to ${deliverySuccessRate}%. Review courier exceptions.`,
+      type: 'good',
+      message: `${deliveredToday.length} orders were delivered today.`,
     })
   }
 
@@ -453,6 +455,27 @@ export const getAdminDashboardStats = async () => {
     insights.push({
       type: 'notice',
       message: `${pendingKyc.length} KYC records are waiting in the verification queue.`,
+    })
+  }
+
+  if (overdueTickets.length > 0) {
+    insights.push({
+      type: 'warning',
+      message: `${overdueTickets.length} support tickets are overdue.`,
+    })
+  }
+
+  if (activeWeightDiscrepancies.length > 0) {
+    insights.push({
+      type: 'warning',
+      message: `${activeWeightDiscrepancies.length} weight discrepancy cases are still open.`,
+    })
+  }
+
+  if (todayUsers.length > 0) {
+    insights.push({
+      type: 'notice',
+      message: `${todayUsers.length} new customer accounts were created today.`,
     })
   }
 

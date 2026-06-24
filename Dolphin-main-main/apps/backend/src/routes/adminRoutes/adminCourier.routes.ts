@@ -9,7 +9,6 @@ import {
   importShippingRatesController,
   updateIcarryCredentialsController,
   updateShiprocketCredentialsController,
-  updateShipmozoCredentialsController,
   updateShippingRateController,
 } from '../../controllers/admin/courier.controller'
 import { isAdminMiddleware } from '../../middlewares/isAdmin'
@@ -41,12 +40,6 @@ router.put(
   requireAuth,
   isAdminMiddleware,
   updateShiprocketCredentialsController,
-)
-router.put(
-  '/credentials/shipmozo',
-  requireAuth,
-  isAdminMiddleware,
-  updateShipmozoCredentialsController,
 )
 router.put(
   '/credentials/icarry',
