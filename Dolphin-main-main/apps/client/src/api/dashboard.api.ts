@@ -125,6 +125,16 @@ export interface MerchantDashboardStats {
   geographic: {
     topDestinations: TopDestination[]
   }
+  insights: Array<{
+    type: 'good' | 'warning' | 'notice'
+    message: string
+  }>
+  recommendations: Array<{
+    message: string
+    action: string
+    path: string
+    priority: 'high' | 'medium' | 'low'
+  }>
   charts: {
     ordersByDate: { date: string; orders: number }[]
     revenueByDate: { date: string; revenue: number }[]

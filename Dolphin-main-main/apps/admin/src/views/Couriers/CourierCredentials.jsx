@@ -35,6 +35,7 @@ const CourierCredentials = () => {
   const [icarryForm, setIcarryForm] = useState({
     apiBase: '',
     username: '',
+    clientId: '',
     password: '',
     apiKey: '',
     webhookSecret: '',
@@ -54,6 +55,7 @@ const CourierCredentials = () => {
       setIcarryForm({
         apiBase: data.icarry.apiBase || '',
         username: data.icarry.username || '',
+        clientId: data.icarry.clientId || '',
         password: '',
         apiKey: '',
         webhookSecret: '',
@@ -96,6 +98,7 @@ const CourierCredentials = () => {
       {
         apiBase: icarryForm.apiBase,
         username: icarryForm.username,
+        clientId: icarryForm.clientId,
         ...(icarryForm.password ? { password: icarryForm.password } : {}),
         ...(icarryForm.apiKey ? { apiKey: icarryForm.apiKey } : {}),
         ...(icarryForm.webhookSecret ? { webhookSecret: icarryForm.webhookSecret } : {}),
@@ -103,12 +106,12 @@ const CourierCredentials = () => {
       {
         onSuccess: () => {
           toast({ title: 'iCarry credentials updated', status: 'success' })
-          setIcarryForm((prev) => ({
-            ...prev,
-            password: '',
-            apiKey: '',
-            webhookSecret: '',
-          }))
+            setIcarryForm((prev) => ({
+              ...prev,
+              password: '',
+              apiKey: '',
+              webhookSecret: '',
+            }))
         },
         onError: (err) => {
           toast({
@@ -149,11 +152,11 @@ const CourierCredentials = () => {
             <FormControl>
               <FormLabel>API Base URL</FormLabel>
               <Input
-                value={shipmozoForm.apiBase}
+                value={shiprocketForm.apiBase}
                 onChange={(e) =>
-                  setShipmozoForm((prev) => ({ ...prev, apiBase: e.target.value }))
+                  setShiprocketForm((prev) => ({ ...prev, apiBase: e.target.value }))
                 }
-                placeholder="https://shipping-api.com/app/api/v1"
+                placeholder="https://apiv2.shiprocket.in/v1/external"
               />
             </FormControl>
 
@@ -264,6 +267,17 @@ const CourierCredentials = () => {
             </FormControl>
 
             <FormControl>
+              <FormLabel>Client / Warehouse ID</FormLabel>
+              <Input
+                value={icarryForm.clientId}
+                onChange={(e) =>
+                  setIcarryForm((prev) => ({ ...prev, clientId: e.target.value }))
+                }
+                placeholder="iCarry client or warehouse identifier"
+              />
+            </FormControl>
+
+            <FormControl>
               <FormLabel>Password</FormLabel>
               <Input
                 type="password"
@@ -306,7 +320,7 @@ const CourierCredentials = () => {
               isLoading={updateIcarry.isPending}
               alignSelf="flex-start"
             >
-              Save iCarry Credentials
+              Save iCarry Rate Card Credentials
             </Button>
           </VStack>
         </Box>

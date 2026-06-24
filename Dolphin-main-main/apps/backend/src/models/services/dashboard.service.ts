@@ -564,6 +564,104 @@ export const getMerchantDashboardStats = async (userId: string) => {
   const openTickets = tickets.filter((t) => t.status === 'open')
   const inProgressTickets = tickets.filter((t) => t.status === 'in_progress')
 
+  const insights: Array<{
+    type: 'good' | 'warning' | 'notice'
+    message: string
+  }> = []
+
+  if (deliverySuccessRate >= 90) {
+    insights.push({
+      type: 'good',
+      message: `Delivery success is strong at ${deliverySuccessRate}%.`,
+    })
+  } else if (deliverySuccessRate > 0 && deliverySuccessRate < 75) {
+    insights.push({
+      type: 'warning',
+      message: `Delivery success dropped to ${deliverySuccessRate}%. Prioritize interventions.`,
+    })
+  }
+
+  if (ordersGrowth > 0) {
+    insights.push({
+      type: 'good',
+      message: `Orders are up ${ordersGrowth}% versus the previous week.`,
+    })
+  } else if (ordersGrowth < 0) {
+    insights.push({
+      type: 'warning',
+      message: `Orders are down ${Math.abs(ordersGrowth)}% this week.`,
+    })
+  }
+
+  if (pendingActions.ndrCount > 0 || pendingActions.rtoCount > 0) {
+    insights.push({
+      type: 'notice',
+      message: `${pendingActions.ndrCount} NDR and ${pendingActions.rtoCount} RTO orders need action.`,
+    })
+  }
+
+  if (avgDeliveryTime > 7) {
+    insights.push({
+      type: 'warning',
+      message: `Average delivery time is ${avgDeliveryTime} days. Consider faster lanes.`,
+    })
+  }
+
+  const recommendations: Array<{
+    message: string
+    action: string
+    path: string
+    priority: 'high' | 'medium' | 'low'
+  }> = []
+
+  if (walletBalance < 500) {
+    recommendations.push({
+      message: `Wallet balance is ₹${walletBalance.toFixed(0)}. Recharge before creating more shipments.`,
+      action: 'Recharge wallet',
+      path: '/billing/wallet_transactions',
+      priority: 'high',
+    })
+  }
+
+  if (pendingActions.ndrCount > 0) {
+    recommendations.push({
+      message: `${pendingActions.ndrCount} NDR orders need customer or address action.`,
+      action: 'Review NDR',
+      path: '/ops/ndr',
+      priority: 'high',
+    })
+  }
+
+  if (pendingActions.rtoCount > 0 || rtoRate > 5) {
+    recommendations.push({
+      message: `${pendingActions.rtoCount} RTO cases are active. Audit return-heavy lanes and courier choices.`,
+      action: 'Check RTO',
+      path: '/ops/rto',
+      priority: 'medium',
+    })
+  }
+
+  if (pendingActions.weightDiscrepancyCount > 0) {
+    recommendations.push({
+      message: `${pendingActions.weightDiscrepancyCount} weight discrepancies are waiting for review.`,
+      action: 'Open disputes',
+      path: '/reconciliation/weight',
+      priority: 'medium',
+    })
+  }
+
+  const lowPerformingCourier = Object.entries(courierPerformance).find(
+    ([, courier]) => courier.count > 0 && courier.deliveryRate > 0 && courier.deliveryRate < 85,
+  )
+  if (lowPerformingCourier) {
+    recommendations.push({
+      message: `${lowPerformingCourier[0]} is below 85% delivery success.`,
+      action: 'Tune priority',
+      path: '/settings/courier_priority',
+      priority: 'medium',
+    })
+  }
+
   return {
     success: true,
     data: {
@@ -618,6 +716,8 @@ export const getMerchantDashboardStats = async (userId: string) => {
       geographic: {
         topDestinations,
       },
+      insights,
+      recommendations,
       // Charts
       charts: {
         ordersByDate: Object.entries(ordersByDate).map(([date, count]) => ({ date, orders: count })),

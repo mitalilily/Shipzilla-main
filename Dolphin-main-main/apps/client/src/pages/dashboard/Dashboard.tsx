@@ -55,11 +55,6 @@ const widgetComponents: Record<string, React.ComponentType<any>> = {
   topDestinations: TopDestinationsCard,
 }
 
-const toNum = (value: unknown) => {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 export default function Dashboard() {
   const theme = useTheme()
   const { data: stats, isLoading, error, refetch, isRefetching } = useMerchantDashboardStats()
@@ -147,56 +142,10 @@ export default function Dashboard() {
   const actions = stats.actions || {}
   const couriers = stats.couriers || {}
   const charts = stats.charts || {}
+  const insights = stats.insights || []
+  const recommendations = stats.recommendations || []
   const hasActionItems =
     (actions.ndrCount || 0) > 0 || (actions.rtoCount || 0) > 0 || (actions.pendingInvoices || 0) > 0
-  const hasLowCourierPerformance = Object.values(couriers.performance || {}).some(
-    (courier) =>
-      toNum(courier?.count) > 0 &&
-      toNum(courier?.deliveryRate) > 0 &&
-      toNum(courier?.deliveryRate) < 85,
-  )
-  const recommendations = [
-    toNum(financial.walletBalance) < 500
-      ? {
-          message: `Wallet balance is ${formatCurrency(toNum(financial.walletBalance))}. Recharge before creating more shipments.`,
-          action: 'Recharge wallet',
-          path: '/billing/wallet_transactions',
-          priority: 'high' as const,
-        }
-      : null,
-    toNum(actions.ndrCount) > 0
-      ? {
-          message: `${toNum(actions.ndrCount)} NDR orders need customer or address action.`,
-          action: 'Review NDR',
-          path: '/ops/ndr',
-          priority: 'high' as const,
-        }
-      : null,
-    toNum(actions.rtoCount) > 0 || toNum(operational.rtoRate) > 5
-      ? {
-          message: `${toNum(actions.rtoCount)} RTO cases are active. Audit return-heavy lanes and courier choices.`,
-          action: 'Check RTO',
-          path: '/ops/rto',
-          priority: 'medium' as const,
-        }
-      : null,
-    toNum(actions.weightDiscrepancyCount) > 0
-      ? {
-          message: `${toNum(actions.weightDiscrepancyCount)} weight discrepancies are waiting for review.`,
-          action: 'Open disputes',
-          path: '/reconciliation/weight',
-          priority: 'medium' as const,
-        }
-      : null,
-    hasLowCourierPerformance
-      ? {
-          message: 'One or more high-volume couriers are below 85% delivery success.',
-          action: 'Tune priority',
-          path: '/settings/courier_priority',
-          priority: 'medium' as const,
-        }
-      : null,
-  ].filter((item) => item !== null)
 
   // Get widget order from preferences or use default
   const widgetOrder =
@@ -245,13 +194,7 @@ export default function Dashboard() {
     },
     quickActions: {},
     insights: {
-      operational,
-      trends: stats.trends || {
-        ordersGrowth: 0,
-        thisWeekOrders: 0,
-        lastWeekOrders: 0,
-      },
-      actions,
+      insights,
     },
     actionItems: { actions, formatCurrency },
     recommendations: { recommendations },

@@ -19,11 +19,11 @@ import {
   IconAlertTriangle,
   IconCheck,
   IconCoinRupee,
+  IconInfoCircle,
   IconMapPin,
   IconPackageExport,
   IconRefresh,
   IconTruck,
-  IconUsers,
 } from '@tabler/icons-react'
 import { DoorstepCourierScene, RollingVanScene } from 'components/Brand/AnimatedCourierScene'
 import Card from 'components/Card/Card'
@@ -92,6 +92,7 @@ export default function Dashboard() {
   const couriers = stats.couriers || {}
   const geographic = stats.geographic || {}
   const charts = stats.charts || {}
+  const insights = stats.insights || []
 
   const heroHighlights = [
     {
@@ -154,14 +155,14 @@ export default function Dashboard() {
                 <HStack justify="space-between" flexWrap="wrap" spacing={3}>
                   <VStack align="flex-start" spacing={1}>
                     <Text fontSize="xs" fontWeight="800" letterSpacing="0.16em" textTransform="uppercase" color="brand.500">
-                      Shipzilla operations deck
+                      Live operations snapshot
                     </Text>
                     <Heading size="lg" color={textPrimary} letterSpacing="-0.04em">
-                      Run admin operations from a clearer top layer.
+                      Admin insights are now sourced from live shipment and finance data.
                     </Heading>
                     <Text color={textSecondary} maxW="520px" lineHeight="1.75">
-                      The admin home now uses softer surfaces, stronger sectioning, and a more
-                      product-led flow for orders, finance, risk, and courier control.
+                      Monitor real order flow, revenue, delivery quality, KYC backlog, and courier
+                      exceptions from the current backend state.
                     </Text>
                   </VStack>
                   <HStack spacing={3}>
@@ -196,6 +197,51 @@ export default function Dashboard() {
                     </Box>
                   ))}
                 </SimpleGrid>
+
+                {insights.length > 0 ? (
+                  <Stack spacing={2.5}>
+                    {insights.slice(0, 3).map((insight, index) => (
+                      <Flex
+                        key={`${insight.type}-${index}`}
+                        p={3}
+                        borderRadius="18px"
+                        borderWidth="1px"
+                        borderColor={
+                          insight.type === 'warning'
+                            ? 'orange.200'
+                            : insight.type === 'good'
+                              ? 'green.200'
+                              : borderColor
+                        }
+                        bg={
+                          insight.type === 'warning'
+                            ? 'orange.50'
+                            : insight.type === 'good'
+                              ? 'green.50'
+                              : tileBg
+                        }
+                        align="flex-start"
+                        gap={3}
+                      >
+                        <Box
+                          color={
+                            insight.type === 'warning'
+                              ? 'orange.500'
+                              : insight.type === 'good'
+                                ? 'green.500'
+                                : 'brand.500'
+                          }
+                          pt={0.5}
+                        >
+                          <IconInfoCircle size={18} />
+                        </Box>
+                        <Text fontSize="sm" color={textPrimary} fontWeight="600" lineHeight="1.6">
+                          {insight.message}
+                        </Text>
+                      </Flex>
+                    ))}
+                  </Stack>
+                ) : null}
               </Stack>
             </CardBody>
           </Card>

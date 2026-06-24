@@ -418,6 +418,44 @@ export const getAdminDashboardStats = async () => {
     .sort((a, b) => (getOrderTimestamp(b)?.getTime() || 0) - (getOrderTimestamp(a)?.getTime() || 0))
     .slice(0, 10)
 
+  const insights: Array<{
+    type: 'good' | 'warning' | 'notice'
+    message: string
+  }> = []
+
+  if (deliverySuccessRate >= 90) {
+    insights.push({
+      type: 'good',
+      message: `Delivery success is steady at ${deliverySuccessRate}% across live orders.`,
+    })
+  } else if (deliverySuccessRate > 0 && deliverySuccessRate < 75) {
+    insights.push({
+      type: 'warning',
+      message: `Delivery success is down to ${deliverySuccessRate}%. Review courier exceptions.`,
+    })
+  }
+
+  if (todayPendingOrders.length > 0 || todayInTransitOrders.length > 0) {
+    insights.push({
+      type: 'notice',
+      message: `${todayPendingOrders.length} pending and ${todayInTransitOrders.length} in-transit orders are active today.`,
+    })
+  }
+
+  if (activeNdrOrders.length > 0 || rtoOrders.length > 0) {
+    insights.push({
+      type: 'warning',
+      message: `${activeNdrOrders.length} NDR and ${rtoOrders.length} RTO orders need attention.`,
+    })
+  }
+
+  if (pendingKyc.length > 0) {
+    insights.push({
+      type: 'notice',
+      message: `${pendingKyc.length} KYC records are waiting in the verification queue.`,
+    })
+  }
+
   return {
     success: true,
     data: {
@@ -499,6 +537,7 @@ export const getAdminDashboardStats = async () => {
         veryActive: veryActiveUserIds.size,
         pendingKyc: pendingKyc.length,
       },
+      insights,
       charts: {
         ordersByDate,
         ordersByIntegration,
