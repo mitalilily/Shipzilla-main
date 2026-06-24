@@ -35,10 +35,6 @@ export const createZone = async (data: any, businessType: 'b2b' | 'b2c') => {
   const effectiveBusinessType = (business_type ?? normalizedBusinessType).toUpperCase()
   const sanitizedStates = sanitizeStates(states)
 
-  if (effectiveBusinessType === 'B2B' && sanitizedStates.length === 0) {
-    throw new Error('Select at least one state for a B2B zone')
-  }
-
   // Zones are always global - no courier-specific zones (industry standard)
 
   try {
@@ -511,7 +507,8 @@ const remapB2BPincodesForZone = async (zoneId: string, externalClient?: any) => 
       }
     }
 
-    // Remove pincodes that no longer belong to this zone
+    // Remove only default state-driven rows that no longer belong to this zone.
+    // Manual overrides must survive so metro/special-exception zones do not get wiped out.
     if (!b2bPincodes) {
       throw new Error(
         'b2bPincodes table schema is not defined. Please ensure the schema is properly imported.',
@@ -520,7 +517,7 @@ const remapB2BPincodesForZone = async (zoneId: string, externalClient?: any) => 
     const existingRows = await tx.select().from(b2bPincodes).where(eq(b2bPincodes.zone_id, zoneId))
 
     for (const row of existingRows) {
-      if (!selectedStates.includes(row.state)) {
+      if (row.mapping_source === 'auto_state' && !selectedStates.includes(row.state)) {
         await tx.delete(b2bPincodes).where(eq(b2bPincodes.id, row.id))
       }
     }
@@ -535,24 +532,25 @@ const remapB2BPincodesForZone = async (zoneId: string, externalClient?: any) => 
       .where(inArray(locations.state, selectedStates))
 
     for (const location of locationRows) {
-      // Since zones are global, pincodes are mapped to zones only (no courier filtering)
+      // Since zones are global, pincodes are mapped to zones only (no courier filtering).
+      // Manual rows in another zone are treated as explicit overrides and should win.
       const [existing] = await tx
         .select()
         .from(b2bPincodes)
-        .where(
-          and(
-            eq(b2bPincodes.pincode, location.pincode),
-            eq(b2bPincodes.state, location.state),
-            // Note: b2bPincodes may still have courier_id for rate lookup, but zone mapping is global
-          ),
-        )
+        .where(eq(b2bPincodes.pincode, location.pincode))
         .limit(1)
 
       if (existing) {
-        if (existing.zone_id !== zoneId) {
+        if (existing.zone_id !== zoneId && existing.mapping_source !== 'manual') {
           await tx
             .update(b2bPincodes)
-            .set({ zone_id: zoneId })
+            .set({
+              zone_id: zoneId,
+              city: location.city,
+              state: location.state,
+              mapping_source: 'auto_state',
+              updated_at: new Date(),
+            })
             .where(eq(b2bPincodes.id, existing.id))
         }
       } else {
@@ -561,6 +559,7 @@ const remapB2BPincodesForZone = async (zoneId: string, externalClient?: any) => 
           city: location.city,
           state: location.state,
           zone_id: zoneId,
+          mapping_source: 'auto_state',
           // courier_id and service_provider are set at rate level, not zone level
           // Leave them null here - they'll be set when rates are configured
           courier_id: null,

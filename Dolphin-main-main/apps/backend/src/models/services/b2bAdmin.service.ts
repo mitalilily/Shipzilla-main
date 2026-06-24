@@ -15,6 +15,7 @@ import {
 import Papa from 'papaparse'
 
 import { db } from '../client'
+import { locations } from '../schema/locations'
 // Try importing the entire module first to debug
 import { checkHolidayCharge } from '../../utils/holidayChecker'
 import { tracking_events } from '../schema/trackingEvents'
@@ -57,6 +58,86 @@ const normalizeCourierScope = (scope?: CourierScope) => {
   const courierId = scope.courierId != null ? Number(scope.courierId) : null
   const serviceProvider = scope.serviceProvider ?? null
   return { courierId, serviceProvider }
+}
+
+const extractZoneRateMetadata = (metadata: unknown) => {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return { minCharge: null as number | null, maxWeightLimit: null as number | null }
+  }
+
+  const record = metadata as Record<string, unknown>
+  const rawMinCharge = record.min_charge ?? record.minCharge
+  const rawMaxWeightLimit = record.max_weight_limit ?? record.maxWeightLimit
+  const minCharge = rawMinCharge == null || rawMinCharge === '' ? null : Number(rawMinCharge)
+  const maxWeightLimit =
+    rawMaxWeightLimit == null || rawMaxWeightLimit === '' ? null : Number(rawMaxWeightLimit)
+
+  return {
+    minCharge: Number.isFinite(minCharge) ? minCharge : null,
+    maxWeightLimit: Number.isFinite(maxWeightLimit) ? maxWeightLimit : null,
+  }
+}
+
+const buildZoneRateMetadata = (
+  existingMetadata: unknown,
+  values: {
+    minCharge?: number | null
+    maxWeightLimit?: number | null
+  },
+) => {
+  const base =
+    existingMetadata && typeof existingMetadata === 'object' && !Array.isArray(existingMetadata)
+      ? { ...(existingMetadata as Record<string, unknown>) }
+      : {}
+
+  const nextMetadata: Record<string, unknown> = {
+    ...base,
+    min_charge: values.minCharge ?? null,
+    max_weight_limit: values.maxWeightLimit ?? null,
+  }
+
+  if (nextMetadata.min_charge == null) delete nextMetadata.min_charge
+  if (nextMetadata.max_weight_limit == null) delete nextMetadata.max_weight_limit
+
+  return Object.keys(nextMetadata).length ? nextMetadata : null
+}
+
+const buildScopedPincodeFilters = (
+  pincode: string,
+  courierId: number | null,
+  serviceProvider: string | null,
+) => {
+  const filters: SQLWrapper[] = [eq(b2bPincodes.pincode, pincode) as SQLWrapper]
+
+  if (courierId) {
+    filters.push(eq(b2bPincodes.courier_id, courierId) as SQLWrapper)
+  } else {
+    filters.push(isNull(b2bPincodes.courier_id) as SQLWrapper)
+  }
+
+  if (serviceProvider) {
+    filters.push(eq(b2bPincodes.service_provider, serviceProvider) as SQLWrapper)
+  } else {
+    filters.push(isNull(b2bPincodes.service_provider) as SQLWrapper)
+  }
+
+  return filters
+}
+
+const findScopedPincodeRecord = async (params: {
+  pincode: string
+  courierId: number | null
+  serviceProvider: string | null
+}) => {
+  const [existing] = await db
+    .select()
+    .from(b2bPincodes)
+    .where(
+      and(...buildScopedPincodeFilters(params.pincode, params.courierId, params.serviceProvider)),
+    )
+    .limit(1)
+
+  return existing
 }
 
 // -----------------------------
@@ -190,6 +271,8 @@ export const listPincodes = async (params: {
       city: b2bPincodes.city,
       state: b2bPincodes.state,
       zoneId: b2bPincodes.zone_id,
+      mappingSource: b2bPincodes.mapping_source,
+      mapping_source: b2bPincodes.mapping_source,
       courierId: b2bPincodes.courier_id,
       serviceProvider: b2bPincodes.service_provider,
       isOda: b2bPincodes.is_oda,
@@ -232,13 +315,44 @@ export const createPincode = async (payload: {
 }) => {
   const { courierId, serviceProvider } = normalizeCourierScope(payload.courierScope)
 
+  const pincode = payload.pincode.trim()
+  const city = payload.city.trim()
+  const state = payload.state.trim()
+  const existing = await findScopedPincodeRecord({ pincode, courierId, serviceProvider })
+
+  if (existing) {
+    const [record] = await db
+      .update(b2bPincodes)
+      .set({
+        pincode,
+        city,
+        state,
+        zone_id: payload.zoneId,
+        mapping_source: 'manual',
+        courier_id: courierId ?? null,
+        service_provider: serviceProvider ?? null,
+        is_oda: payload.flags?.isOda ?? existing.is_oda ?? false,
+        is_remote: payload.flags?.isRemote ?? existing.is_remote ?? false,
+        is_mall: payload.flags?.isMall ?? existing.is_mall ?? false,
+        is_sez: payload.flags?.isSez ?? existing.is_sez ?? false,
+        is_airport: payload.flags?.isAirport ?? existing.is_airport ?? false,
+        is_high_security: payload.flags?.isHighSecurity ?? existing.is_high_security ?? false,
+        updated_at: new Date(),
+      })
+      .where(eq(b2bPincodes.id, existing.id))
+      .returning()
+
+    return record
+  }
+
   const [record] = await db
     .insert(b2bPincodes)
     .values({
-      pincode: payload.pincode.trim(),
-      city: payload.city.trim(),
-      state: payload.state.trim(),
+      pincode,
+      city,
+      state,
       zone_id: payload.zoneId,
+      mapping_source: 'manual',
       courier_id: courierId ?? null,
       service_provider: serviceProvider ?? null,
       is_oda: payload.flags?.isOda ?? false,
@@ -268,6 +382,8 @@ export const updatePincode = async (
   if (payload.city) updateData.city = payload.city.trim()
   if (payload.state) updateData.state = payload.state.trim()
   if (payload.zoneId) updateData.zone_id = payload.zoneId
+  updateData.mapping_source = 'manual'
+  updateData.updated_at = new Date()
 
   if (payload.flags) {
     if (payload.flags.isOda != null) updateData.is_oda = payload.flags.isOda
@@ -311,7 +427,7 @@ export const bulkMovePincodes = async (ids: string[], targetZoneId: string) => {
   if (!ids.length) return { updated: 0 }
   const updated = await db
     .update(b2bPincodes)
-    .set({ zone_id: targetZoneId, updated_at: new Date() })
+    .set({ zone_id: targetZoneId, mapping_source: 'manual', updated_at: new Date() })
     .where(inArray(b2bPincodes.id, ids))
     .returning({ id: b2bPincodes.id })
   return { updated: updated.length }
@@ -321,6 +437,7 @@ export const bulkUpdatePincodeFlags = async (ids: string[], flags: PincodeFlags)
   if (!ids.length) return { updated: 0 }
 
   const updateData: Record<string, any> = {
+    mapping_source: 'manual',
     updated_at: new Date(),
   }
 
@@ -393,11 +510,13 @@ export const importPincodesFromCsv = async (
 
   const zoneCache = new Map<string, string>()
 
-  const resolveZoneId = async (row: PincodeCsvRecord) => {
+  const resolveZoneId = async (row: PincodeCsvRecord): Promise<string> => {
     if (row.zone_id) return row.zone_id
 
     const key = (row.zone_code ?? '').trim().toUpperCase()
-    if (!key && options.defaultZoneId) return options.defaultZoneId
+    if (!key && (options.defaultZoneId || options.zoneId)) {
+      return (options.defaultZoneId ?? options.zoneId) as string
+    }
 
     if (!key) throw new Error('Zone code missing for pincode row')
 
@@ -421,73 +540,72 @@ export const importPincodesFromCsv = async (
   const skipped: any[] = []
 
   for (const row of rows) {
-    // For B2B, we need zoneId - use defaultZoneId from options if available
-    // Since we're only updating existing pincodes, they already have a zone_id
-    // We'll find the pincode first and use its zone_id
     const pincode = row.pincode.trim()
+    const targetZoneId = await resolveZoneId(row)
 
     try {
-      // Find existing pincode by pincode only (since we're updating attributes)
-      // We need to match by pincode and courier scope
-      const whereConditions: any[] = [eq(b2bPincodes.pincode, pincode)]
-
-      if (courierId) {
-        whereConditions.push(eq(b2bPincodes.courier_id, courierId))
-      } else {
-        whereConditions.push(isNull(b2bPincodes.courier_id))
-      }
-
-      if (serviceProvider) {
-        whereConditions.push(eq(b2bPincodes.service_provider, serviceProvider))
-      } else {
-        whereConditions.push(isNull(b2bPincodes.service_provider))
-      }
-
-      // Add zone filter if provided
-      if (options.zoneId) {
-        whereConditions.push(eq(b2bPincodes.zone_id, options.zoneId))
-      }
-
-      const [existing] = await db
-        .select({
-          id: b2bPincodes.id,
-          city: b2bPincodes.city,
-          state: b2bPincodes.state,
-          zone_id: b2bPincodes.zone_id,
-        })
-        .from(b2bPincodes)
-        .where(and(...whereConditions))
+      const existing = await findScopedPincodeRecord({ pincode, courierId, serviceProvider })
+      const [location] = await db
+        .select()
+        .from(locations)
+        .where(eq(locations.pincode, pincode))
         .limit(1)
 
+      const city = row.city?.trim() || existing?.city || location?.city
+      const state = row.state?.trim() || existing?.state || location?.state
+
+      if (!city || !state) {
+        throw new Error(
+          `Pincode ${pincode} is missing city/state. Provide city and state in CSV for new mappings.`,
+        )
+      }
+
+      const resolvedCity: string = city
+      const resolvedState: string = state
+
+      if (!location) {
+        await db.insert(locations).values({
+          pincode,
+          city: resolvedCity,
+          state: resolvedState,
+          country: 'India',
+        })
+      }
+
+      const updateData: any = {
+        zone_id: targetZoneId,
+        city: resolvedCity,
+        state: resolvedState,
+        mapping_source: 'manual',
+        is_oda: truthy(row.is_oda),
+        is_remote: truthy(row.is_remote),
+        is_mall: truthy(row.is_mall),
+        is_sez: truthy(row.is_sez),
+        is_airport: truthy(row.is_airport),
+        is_high_security: truthy(row.is_high_security),
+        updated_at: new Date(),
+      }
+
       if (existing) {
-        // Update existing pincode attributes
-        // Only update city/state if provided in CSV, otherwise keep existing values
-        const updateData: any = {
+        await db.update(b2bPincodes).set(updateData).where(eq(b2bPincodes.id, existing.id))
+        updated += 1
+      } else {
+        await db.insert(b2bPincodes).values({
+          pincode,
+          city: resolvedCity,
+          state: resolvedState,
+          zone_id: targetZoneId,
+          mapping_source: 'manual',
+          courier_id: courierId ?? null,
+          service_provider: serviceProvider ?? null,
           is_oda: truthy(row.is_oda),
           is_remote: truthy(row.is_remote),
           is_mall: truthy(row.is_mall),
           is_sez: truthy(row.is_sez),
           is_airport: truthy(row.is_airport),
           is_high_security: truthy(row.is_high_security),
-          updated_at: new Date(),
-        }
-
-        // Only update city/state if provided in CSV
-        if (row.city?.trim()) {
-          updateData.city = row.city.trim()
-        }
-        if (row.state?.trim()) {
-          updateData.state = row.state.trim()
-        }
-
-        await db.update(b2bPincodes).set(updateData).where(eq(b2bPincodes.id, existing.id))
-        updated += 1
-      } else {
-        // Skip new pincodes - only update existing ones
-        skipped.push({
-          row,
-          error: `Pincode ${pincode} not found. Only existing pincodes can be updated.`,
         })
+        inserted += 1
       }
     } catch (err: any) {
       skipped.push({ row, error: err.message })
@@ -712,7 +830,16 @@ export const listZoneToZoneRates = async (params: {
       }
     }
 
-    return rows || []
+    return (rows || []).map((row: any) => {
+      const { minCharge, maxWeightLimit } = extractZoneRateMetadata(row.metadata)
+      return {
+        ...row,
+        minCharge,
+        min_charge: minCharge,
+        maxWeightLimit,
+        max_weight_limit: maxWeightLimit,
+      }
+    })
   } catch (error: any) {
     console.error('Error in listZoneToZoneRates:', error)
     console.error('Error stack:', error?.stack)
@@ -743,6 +870,8 @@ export const upsertZoneToZoneRate = async (payload: {
   volumetricFactor?: number
   courierScope?: CourierScope
   planId?: string | null
+  minCharge?: number | null
+  maxWeightLimit?: number | null
 }) => {
   // Validate required fields
   if (!payload.originZoneId || !payload.destinationZoneId) {
@@ -760,9 +889,10 @@ export const upsertZoneToZoneRate = async (payload: {
     // This avoids surprises where composite lookup might hit a different row.
     if (payload.id) {
       // Verify that both zones exist
-      const [originZone, destZone] = await Promise.all([
+      const [originZone, destZone, currentRate] = await Promise.all([
         db.select().from(zones).where(eq(zones.id, payload.originZoneId)).limit(1),
         db.select().from(zones).where(eq(zones.id, payload.destinationZoneId)).limit(1),
+        db.select().from(b2bZoneToZoneRates).where(eq(b2bZoneToZoneRates.id, payload.id)).limit(1),
       ])
 
       if (!originZone[0]) {
@@ -777,6 +907,10 @@ export const upsertZoneToZoneRate = async (payload: {
         origin_zone_id: payload.originZoneId,
         destination_zone_id: payload.destinationZoneId,
         rate_per_kg: payload.ratePerKg.toString(),
+        metadata: buildZoneRateMetadata(currentRate[0]?.metadata, {
+          minCharge: payload.minCharge ?? null,
+          maxWeightLimit: payload.maxWeightLimit ?? null,
+        }),
         updated_at: new Date(),
       }
 
@@ -844,6 +978,10 @@ export const upsertZoneToZoneRate = async (payload: {
     const updateData = {
       rate_per_kg: payload.ratePerKg.toString(),
       plan_id: payload.planId ?? null,
+      metadata: buildZoneRateMetadata(existing?.metadata, {
+        minCharge: payload.minCharge ?? null,
+        maxWeightLimit: payload.maxWeightLimit ?? null,
+      }),
       updated_at: new Date(),
     }
 
@@ -867,6 +1005,10 @@ export const upsertZoneToZoneRate = async (payload: {
           courier_id: courierId,
           service_provider: serviceProvider,
           plan_id: payload.planId ?? null,
+          metadata: buildZoneRateMetadata(null, {
+            minCharge: payload.minCharge ?? null,
+            maxWeightLimit: payload.maxWeightLimit ?? null,
+          }),
         })
         .returning()
       record = inserted
@@ -948,6 +1090,7 @@ export const importZoneRatesFromCsv = async (
   fileBuffer: Buffer,
   options: {
     courierScope?: CourierScope
+    planId?: string
   },
 ) => {
   const csv = fileBuffer.toString('utf8')
@@ -992,6 +1135,7 @@ export const importZoneRatesFromCsv = async (
         destinationZoneId,
         ratePerKg: Number(row.rate_per_kg),
         courierScope: options.courierScope,
+        planId: options.planId,
       })
 
       inserted += 1

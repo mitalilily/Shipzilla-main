@@ -62,6 +62,8 @@ export const b2bPincodes = createTable('b2b_pincodes', {
   city: varchar('city', { length: 120 }).notNull(),
   state: varchar('state', { length: 120 }).notNull(),
   zone_id: uuid('zone_id').notNull(),
+  // auto_state = default mapping from zone state coverage, manual = explicit override/import
+  mapping_source: varchar('mapping_source', { length: 32 }).default('manual').notNull(),
   courier_id: integer('courier_id'),
   service_provider: varchar('service_provider', { length: 100 }),
   is_oda: boolean('is_oda').default(false).notNull(),

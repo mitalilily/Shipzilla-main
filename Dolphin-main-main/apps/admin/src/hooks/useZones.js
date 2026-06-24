@@ -32,9 +32,9 @@ export function useZones(businessType = null, filters = {}) {
     onSuccess: () => {
       queryClient.invalidateQueries(['zones'])
       toast({
-        title: isB2B ? 'Zone saved & pincodes auto-mapped.' : 'Zone created successfully.',
+        title: isB2B ? 'B2B zone saved.' : 'Zone created successfully.',
         description: isB2B
-          ? 'All pincodes for the selected states are now mapped to this zone.'
+          ? 'State defaults were synced, and manual exception mappings stay protected.'
           : undefined,
         status: 'success',
         duration: 3000,
@@ -59,9 +59,9 @@ export function useZones(businessType = null, filters = {}) {
     onSuccess: (data) => {
       queryClient.invalidateQueries(queryKey)
       toast({
-        title: isB2B ? 'Zone updated & pincodes refreshed.' : data.message || 'Zone updated successfully',
+        title: isB2B ? 'B2B zone updated.' : data.message || 'Zone updated successfully',
         description: isB2B
-          ? 'Pincodes for the selected states have been remapped to this zone.'
+          ? 'State defaults were refreshed, and manual exception mappings stay protected.'
           : undefined,
         status: 'success',
         duration: 3000,

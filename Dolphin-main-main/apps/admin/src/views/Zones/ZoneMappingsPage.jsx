@@ -425,6 +425,9 @@ const ZoneMappingsPage = () => {
     ? [
         {
           pincode: '',
+          city: 'optional for existing pincodes, required for brand new ones',
+          state: 'optional for existing pincodes, required for brand new ones',
+          zone_code: 'optional when importing inside a zone page',
           is_oda: '0/1 or true/false or yes/no',
           is_remote: '0/1 or true/false or yes/no',
           is_mall: '0/1 or true/false or yes/no',
@@ -554,6 +557,7 @@ const ZoneMappingsPage = () => {
                 'Pincode',
                 'City',
                 'State',
+                'Source',
                 'ODA',
                 'Remote',
                 'Mall',
@@ -570,6 +574,7 @@ const ZoneMappingsPage = () => {
                 'pincode',
                 'city',
                 'state',
+                'mapping_source',
                 'is_oda',
                 'is_remote',
                 'is_mall',
@@ -588,6 +593,11 @@ const ZoneMappingsPage = () => {
         renderers={
           isB2B
             ? {
+                mapping_source: (value) => (
+                  <Tag size="sm" colorScheme={value === 'auto_state' ? 'blue' : 'orange'}>
+                    {value === 'auto_state' ? 'State Default' : 'Manual Override'}
+                  </Tag>
+                ),
                 is_oda: (_value, row) => renderFlagSwitch(row, 'is_oda'),
                 is_remote: (_value, row) => renderFlagSwitch(row, 'is_remote'),
                 is_mall: (_value, row) => renderFlagSwitch(row, 'is_mall'),

@@ -53,6 +53,7 @@ export function useZoneMappings(
   const mappings = isB2B
     ? rawMappings.map((item) => ({
         ...item,
+        mapping_source: item.mapping_source ?? item.mappingSource ?? 'manual',
         is_oda: item.is_oda ?? item.isOda ?? false,
         is_remote: item.is_remote ?? item.isRemote ?? false,
         is_mall: item.is_mall ?? item.isMall ?? false,
@@ -214,7 +215,8 @@ export function useZoneMappings(
     onSuccess: () => {
       queryClient.invalidateQueries(['zoneMappings', zoneId])
       toast({
-        title: 'Pincodes remapped from state list.',
+        title: 'Default state mappings refreshed.',
+        description: 'Manual exception mappings were preserved.',
         status: 'success',
         duration: 3000,
         isClosable: true,

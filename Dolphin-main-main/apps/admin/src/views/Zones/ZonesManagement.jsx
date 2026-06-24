@@ -140,12 +140,6 @@ const ZonesManagement = ({ defaultBusinessType = null }) => {
       newErrors.name = 'Zone name is required'
       valid = false
     }
-    // Zones are always global - no courier selection needed (industry standard)
-    if (businessType === 'B2B' && (!zoneForm.states || zoneForm.states.length === 0)) {
-      newErrors.states = 'Select at least one state for this zone'
-      valid = false
-    }
-
     setErrors(newErrors)
     return valid
   }
@@ -229,7 +223,7 @@ const ZonesManagement = ({ defaultBusinessType = null }) => {
                   <Text fontWeight="semibold">Enterprise Zones</Text>
                 </HStack>
                 <Text fontSize="sm" color="gray.600">
-                  State-driven zones that auto-map pincodes and tie into the rate matrix.
+                  Default state zones with protected manual overrides for metros and special lanes.
                 </Text>
               </Stack>
             </Tab>
@@ -262,7 +256,7 @@ const ZonesManagement = ({ defaultBusinessType = null }) => {
                         'Code',
                         'Name',
                         'Description',
-                        'States',
+                        'Default States',
                         'Created At',
                       ]
                     : ['id', 'Code', 'Name', 'Description', 'Created At']
@@ -374,7 +368,7 @@ const ZonesManagement = ({ defaultBusinessType = null }) => {
                     'Code',
                     'Name',
                     'Description',
-                    'States',
+                    'Default States',
                     'Created At',
                   ]
                 : ['id', 'Code', 'Name', 'Description', 'Created At']
@@ -517,13 +511,14 @@ const ZonesManagement = ({ defaultBusinessType = null }) => {
                 B2B Zone Coverage
               </Text>
               <Text fontSize="sm" color="gray.600">
-                Zones are shared across all couriers. Each courier will have different rates for the same zone pairs.
-                You'll select the courier when creating rates.
+                Zones are shared across all couriers. Use states only for default coverage. Metro,
+                NCR, and other special exceptions should be created or imported from the Mappings
+                screen so they stay protected during future remaps.
               </Text>
 
-              <FormControl isRequired isInvalid={Boolean(errors.states)}>
+              <FormControl isInvalid={Boolean(errors.states)}>
                 <Flex align="center" justify="space-between" mb={2}>
-                  <FormLabel m={0}>States in this zone</FormLabel>
+                  <FormLabel m={0}>Default states in this zone</FormLabel>
                   {isLoadingStates && <Spinner size="sm" />}
                 </Flex>
 
@@ -586,8 +581,9 @@ const ZonesManagement = ({ defaultBusinessType = null }) => {
                   </CheckboxGroup>
                 </Box>
                 <FormHelperText>
-                  We will auto-map every pincode from the selected states to this zone. Adjust
-                  special pincodes later from Pincode Management.
+                  Optional for B2B. Select states only when this zone is the default bucket for the
+                  whole state. Leave empty for exception-only zones like metro, NCR, or special
+                  lanes.
                 </FormHelperText>
                 <FormErrorMessage>{errors.states}</FormErrorMessage>
               </FormControl>
