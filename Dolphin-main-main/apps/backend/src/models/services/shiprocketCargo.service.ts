@@ -271,6 +271,16 @@ export type ShiprocketCargoCreateWarehouseResponse = {
   [key: string]: unknown
 }
 
+export type ShiprocketCargoUpdateWarehousePayload = {
+  name: string
+  client_id: number
+  address: ShiprocketCargoWarehouseAddressPayload
+  warehouse_code?: string | null
+  contact_person_name: string
+  contact_person_email?: string
+  contact_person_contact_no: string
+}
+
 export type ShiprocketCargoWarehouseListItem = {
   id?: number
   name?: string
@@ -564,4 +574,16 @@ export const getShiprocketCargoWarehouses = async (
         page,
       },
     },
+  )
+
+export const updateShiprocketCargoWarehouse = async (
+  warehouseId: string | number,
+  payload: ShiprocketCargoUpdateWarehousePayload,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoCreateWarehouseResponse>(
+    'PUT',
+    `/api/warehouses/${encodeURIComponent(String(warehouseId))}/`,
+    payload,
+    options,
   )
