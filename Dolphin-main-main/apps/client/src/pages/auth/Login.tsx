@@ -381,7 +381,7 @@ export default function Login() {
                   >
                     {UI_ONLY_AUTH
                       ? 'Choose OTP access or email plus password. Both options are local demo flows, and any generated code is only there to support the UI experience.'
-                      : 'Choose OTP access or email plus password. If the backend exposes an OTP or verification token, the page will display it inline for you.'}
+                      : 'Choose OTP access or email plus password. Verification codes are sent only to the account email.'}
                   </Typography>
                 </Stack>
 

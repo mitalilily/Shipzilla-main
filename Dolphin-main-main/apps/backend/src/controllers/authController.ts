@@ -32,11 +32,6 @@ const env = process.env.NODE_ENV || 'development'
 // Load the correct .env file
 dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`) })
 
-const parseBooleanEnv = (value: string | undefined, defaultValue: boolean) => {
-  if (value === undefined) return defaultValue
-  return value === 'true'
-}
-
 const maskEmailForLog = (email: string) => {
   const [localPart = '', domain = ''] = email.split('@')
   if (!localPart || !domain) return '[invalid-email]'
@@ -46,8 +41,6 @@ const maskEmailForLog = (email: string) => {
 }
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
-const allowInlineOtp = parseBooleanEnv(process.env.ALLOW_INLINE_OTP, false)
-const exposeAuthCodes = parseBooleanEnv(process.env.EXPOSE_AUTH_CODES, env !== 'production') || allowInlineOtp
 
 export const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString()
 
@@ -175,8 +168,6 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
   try {
     console.log('[Auth OTP] Request received', {
       email: maskEmailForLog(normalizedEmail),
-      exposeAuthCodes,
-      allowInlineOtp,
       env,
     })
 
@@ -217,26 +208,13 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
       })
     }
 
-    if (!exposeAuthCodes) {
-      console.log('[Auth OTP] Sending OTP email', {
-        email: maskEmailForLog(normalizedEmail),
-      })
-      await sendVerificationEmail(normalizedEmail, otp)
-    } else {
-      console.log('[Auth OTP] Skipping OTP email because auth codes are exposed inline', {
-        email: maskEmailForLog(normalizedEmail),
-      })
-      console.log('[Auth OTP] TEST CODE', {
-        email: maskEmailForLog(normalizedEmail),
-        otp,
-      })
-    }
+    console.log('[Auth OTP] Sending OTP email', {
+      email: maskEmailForLog(normalizedEmail),
+    })
+    await sendVerificationEmail(normalizedEmail, otp)
 
     return res.json({
-      message: exposeAuthCodes
-        ? 'Verification code generated successfully'
-        : 'OTP sent successfully to your email',
-      ...(exposeAuthCodes || env === 'development' || allowInlineOtp ? { otp } : {}),
+      message: 'OTP sent successfully to your email',
     })
   } catch (err) {
     console.error('[Auth OTP] Error in requestOtp', {

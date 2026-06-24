@@ -123,19 +123,16 @@ export default function PasswordLoginForm({ setStep, step, setOpenTerms }: IPass
           password: emailForm.password,
         },
         {
-          onSuccess: ({ message, token, refreshToken, user, verificationToken }) => {
+          onSuccess: ({ message, token, refreshToken, user }) => {
             if (message) {
               toast.open({
-                message:
-                  verificationToken || message.includes('Verification code generated')
-                    ? 'Verification code sent to your email.'
-                    : message,
+                message,
                 severity: 'success',
                 position: { vertical: 'top', horizontal: 'center' },
               })
             }
 
-            if (message.includes('Verification email sent') || message.includes('Verification code generated')) {
+            if (message.includes('Verification email sent')) {
               setStep(1)
               return
             }

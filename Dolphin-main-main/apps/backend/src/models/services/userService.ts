@@ -21,10 +21,6 @@ import path from 'path'
 // Load correct .env based on NODE_ENV
 const env = process.env.NODE_ENV || 'development'
 dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`) })
-const parseBooleanEnv = (value: string | undefined, defaultValue: boolean) => {
-  if (value === undefined) return defaultValue
-  return value === 'true'
-}
 
 const maskEmailForLog = (email: string) => {
   const [localPart = '', domain = ''] = email.split('@')
@@ -33,7 +29,6 @@ const maskEmailForLog = (email: string) => {
     localPart.length <= 2 ? `${localPart[0] ?? '*'}*` : `${localPart.slice(0, 2)}***`
   return `${visibleLocal}@${domain}`
 }
-const exposeAuthCodes = parseBooleanEnv(process.env.EXPOSE_AUTH_CODES, env !== 'production')
 
 // Define User and NewUser types for convenience
 export type User = typeof users.$inferSelect
@@ -475,30 +470,16 @@ export const handleEmailVerificationRequest = async (
       await updateUserVerificationToken(normalizedEmail, token, expiresAt, tx)
       shouldSendEmail = true
 
-      if (shouldSendEmail && !exposeAuthCodes) {
-        console.log('[Auth Email Verification] Sending verification email', {
-          email: maskEmailForLog(normalizedEmail),
-          existingUser: true,
-        })
-        await sendVerificationEmail(normalizedEmail, token)
-      } else if (shouldSendEmail) {
-        console.log('[Auth Email Verification] Skipping verification email because auth codes are exposed inline', {
-          email: maskEmailForLog(normalizedEmail),
-          existingUser: true,
-        })
-        console.log('[Auth Email Verification] TEST CODE', {
-          email: maskEmailForLog(normalizedEmail),
-          verificationToken: token,
-        })
-      }
+      console.log('[Auth Email Verification] Sending verification email', {
+        email: maskEmailForLog(normalizedEmail),
+        existingUser: true,
+      })
+      await sendVerificationEmail(normalizedEmail, token)
 
       return {
         status: 200,
         data: {
-          message: exposeAuthCodes
-            ? 'Verification code generated'
-            : 'Verification email sent',
-          ...(exposeAuthCodes ? { verificationToken: token } : {}),
+          message: 'Verification email sent',
         },
       }
     }
@@ -534,28 +515,16 @@ export const handleEmailVerificationRequest = async (
 
     shouldSendEmail = true
 
-    if (shouldSendEmail && !exposeAuthCodes) {
-      console.log('[Auth Email Verification] Sending verification email', {
-        email: maskEmailForLog(normalizedEmail),
-        existingUser: false,
-      })
-      await sendVerificationEmail(normalizedEmail, token)
-    } else if (shouldSendEmail) {
-      console.log('[Auth Email Verification] Skipping verification email because auth codes are exposed inline', {
-        email: maskEmailForLog(normalizedEmail),
-        existingUser: false,
-      })
-      console.log('[Auth Email Verification] TEST CODE', {
-        email: maskEmailForLog(normalizedEmail),
-        verificationToken: token,
-      })
-    }
+    console.log('[Auth Email Verification] Sending verification email', {
+      email: maskEmailForLog(normalizedEmail),
+      existingUser: false,
+    })
+    await sendVerificationEmail(normalizedEmail, token)
 
     return {
       status: 201,
       data: {
-        message: exposeAuthCodes ? 'Verification code generated' : 'Verification email sent',
-        ...(exposeAuthCodes ? { verificationToken: token } : {}),
+        message: 'Verification email sent',
       },
     }
   })

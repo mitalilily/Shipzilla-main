@@ -12,9 +12,7 @@ import CustomInput from '../UI/inputs/CustomInput'
 import CustomModal from '../UI/modal/CustomModal'
 import { toast } from '../UI/Toast'
 import { getAuthErrorMessage } from './getAuthErrorMessage'
-import AuthCodePreview from './AuthCodePreview'
 import CodeInput from './CodeInput'
-import { extractInlineCode } from './inlineCode'
 import { brand } from '../../theme/brand'
 import { UI_ONLY_AUTH } from '../../utils/authMode'
 
@@ -25,7 +23,6 @@ export default function OtpLoginPanel() {
   const [email, setEmail] = useState(sessionStorage.getItem('activeEmail') ?? '')
   const [code, setCode] = useState('')
   const [termsChecked, setTermsChecked] = useState(false)
-  const [inlineOtp, setInlineOtp] = useState('')
   const [error, setError] = useState('')
   const [openTerms, setOpenTerms] = useState(false)
 
@@ -56,11 +53,10 @@ export default function OtpLoginPanel() {
 
     if (UI_ONLY_AUTH) {
       setError('')
-      setInlineOtp(String(Math.floor(100000 + Math.random() * 900000)))
       setStep('verify')
       setCode('')
       toast.open({
-        message: 'Demo verification code generated. Enter any 6 digits to continue.',
+        message: 'Demo verification step ready. Enter any 6 digits to continue.',
         severity: 'success',
       })
       return
@@ -68,15 +64,11 @@ export default function OtpLoginPanel() {
 
     setError('')
     requestOtp(email.trim().toLowerCase(), {
-      onSuccess: (response: any) => {
-        const inlineCode = extractInlineCode(response)
-        setInlineOtp(inlineCode)
+      onSuccess: () => {
         setStep('verify')
         setCode('')
         toast.open({
-          message: inlineCode
-            ? 'Verification code generated. Use the inline code preview below.'
-            : 'Verification code sent to your email.',
+          message: 'Verification code sent to your email.',
           severity: 'success',
         })
       },
@@ -140,16 +132,6 @@ export default function OtpLoginPanel() {
             : 'Use your registered business email to securely access the Shipzilla seller dashboard. Enter the 6-digit verification code sent to your inbox to continue and manage orders, shipping, billing, and operations seamlessly.'}
         </Typography>
       </Stack>
-
-      <AuthCodePreview
-        title="Console OTP preview"
-        code={inlineOtp}
-        helper={
-          UI_ONLY_AUTH
-            ? 'In UI-only auth mode, the latest demo OTP appears here so local testing, reviews, and QA can move through the shipping workspace quickly.'
-            : 'When auth codes are exposed by the backend, the latest OTP appears here as well as in your console logs or email flow.'
-        }
-      />
 
       {step === 'request' ? (
         <Box component="form" onSubmit={handleRequest}>

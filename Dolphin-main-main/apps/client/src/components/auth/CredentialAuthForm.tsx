@@ -14,9 +14,7 @@ import CustomInput from '../UI/inputs/CustomInput'
 import CustomModal from '../UI/modal/CustomModal'
 import { toast } from '../UI/Toast'
 import { getAuthErrorMessage } from './getAuthErrorMessage'
-import AuthCodePreview from './AuthCodePreview'
 import CodeInput from './CodeInput'
-import { extractInlineCode } from './inlineCode'
 import { brand } from '../../theme/brand'
 
 interface CredentialAuthFormProps {
@@ -32,7 +30,6 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
   const [termsChecked, setTermsChecked] = useState(false)
-  const [inlineCode, setInlineCode] = useState('')
   const [openTerms, setOpenTerms] = useState(false)
   const [error, setError] = useState('')
 
@@ -79,8 +76,6 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
     }
 
     if (UI_ONLY_AUTH) {
-      const verificationCode = Math.random().toString(36).slice(2, 10).toUpperCase()
-      setInlineCode(verificationCode)
       setStep('verify')
       setCode('')
       toast.open({
@@ -100,9 +95,6 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
       },
       {
         onSuccess: (response: any) => {
-          const verificationCode = extractInlineCode(response)
-          setInlineCode(verificationCode)
-
           if (response?.token && response?.refreshToken) {
             sessionStorage.setItem('activeEmail', email.trim().toLowerCase())
             setUserId(response?.user?.id)
@@ -111,13 +103,11 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
             return
           }
 
-          if (verificationCode || response?.message?.includes('Verification')) {
+          if (response?.message?.includes('Verification')) {
             setStep('verify')
             setCode('')
             toast.open({
-              message: verificationCode
-                ? 'Verification code generated. Use the inline preview below.'
-                : 'Verification code sent to your email.',
+              message: 'Verification code sent to your email.',
               severity: 'success',
             })
             return
@@ -186,7 +176,7 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
         : 'This password login is UI-only for demo use. No real account verification happens before entering the app.'
       : mode === 'signup'
         ? 'We keep the existing backend flow intact. Your name is used only to prefill onboarding after verification.'
-        : 'If this account needs email verification, the existing backend will issue a code and the UI will reveal it inline here.'
+        : 'If this account needs email verification, the verification code will be sent to the account email.'
 
   return (
     <Stack spacing={2.2}>
@@ -198,16 +188,6 @@ export default function CredentialAuthForm({ mode }: CredentialAuthFormProps) {
           {description}
         </Typography>
       </Stack>
-
-      <AuthCodePreview
-        title={mode === 'signup' ? 'Signup verification preview' : 'Password flow verification preview'}
-        code={inlineCode}
-        helper={
-          UI_ONLY_AUTH
-            ? 'A local demo code is generated here for convenience, but any 8 characters will unlock the UI-only auth flow.'
-            : 'If the backend exposes verification tokens for this flow, the latest code appears here so you can continue without checking the console separately.'
-        }
-      />
 
       {step === 'form' ? (
         <Stack component="form" spacing={1.1} onSubmit={handleRequest}>
