@@ -44,6 +44,9 @@ if [ ! -f "$BACKEND_ENV" ]; then
   exit 1
 fi
 
+mkdir -p "$APP_ROOT/apps/backend"
+install -m 600 "$BACKEND_ENV" "$APP_ROOT/apps/backend/.env.production"
+
 mkdir -p "$PUBLIC_ROOT/landing" "$PUBLIC_ROOT/app" "$PUBLIC_ROOT/admin"
 
 echo "[deploy] Node: $(node --version)"

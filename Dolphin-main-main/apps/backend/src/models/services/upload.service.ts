@@ -10,7 +10,7 @@ import {
   isR2StorageConfigured,
 } from './localStorage.service'
 import { r2 } from '../../config/r2Client'
-import { getBucketName, StorageConfigurationError } from '../../utils/functions'
+import { getBucketName, normalizeR2Endpoint, StorageConfigurationError } from '../../utils/functions'
 
 import * as dotenv from 'dotenv'
 import path from 'path'
@@ -89,7 +89,8 @@ const extractKeyFromUrl = (url: string, bucket?: string): string | null => {
       }
     }
 
-    if (process.env.R2_ENDPOINT && url.startsWith(process.env.R2_ENDPOINT)) {
+    const normalizedEndpoint = normalizeR2Endpoint(process.env.R2_ENDPOINT, bucket)
+    if (normalizedEndpoint && url.startsWith(normalizedEndpoint)) {
       const urlObj = new URL(url)
       const pathParts = urlObj.pathname.split('/').filter(Boolean)
       if (pathParts.length > 1) {
@@ -133,7 +134,8 @@ export const presignUpload = async ({
   })
 
   const uploadUrl = await getSignedUrl(r2, command, { expiresIn: 60 * 5 })
-  const publicUrl = `${process.env.R2_ENDPOINT}/${bucket}/${key}`
+  const normalizedEndpoint = normalizeR2Endpoint(process.env.R2_ENDPOINT, bucket)
+  const publicUrl = `${normalizedEndpoint || process.env.R2_ENDPOINT}/${bucket}/${key}`
 
   return { uploadUrl, key, publicUrl, bucket, storageMode: 'r2' as const }
 }

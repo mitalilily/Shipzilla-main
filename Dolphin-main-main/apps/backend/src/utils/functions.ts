@@ -80,6 +80,30 @@ const cleanEnvValue = (value?: string) => {
   return trimmed || undefined
 }
 
+export const normalizeR2Endpoint = (endpoint?: string, bucketHint?: string) => {
+  const trimmed = cleanEnvValue(endpoint)
+  if (!trimmed) return undefined
+
+  try {
+    const url = new URL(trimmed)
+    const pathParts = url.pathname.split('/').filter(Boolean)
+    const normalizedBucket = cleanEnvValue(bucketHint)
+
+    if (
+      normalizedBucket &&
+      pathParts.length > 0 &&
+      pathParts[pathParts.length - 1] === normalizedBucket
+    ) {
+      pathParts.pop()
+      url.pathname = pathParts.length ? `/${pathParts.join('/')}` : ''
+    }
+
+    return url.toString().replace(/\/+$/, '')
+  } catch {
+    return trimmed.replace(/\/+$/, '')
+  }
+}
+
 export const getBucketName = () => {
   const envName = process.env.NODE_ENV || 'development'
   const envBucketKey =
