@@ -226,6 +226,11 @@ export type ShiprocketCargoTrackShipmentResponse = {
   [key: string]: unknown
 }
 
+export type ShiprocketCargoBulkTrackShipmentResponse =
+  | ShiprocketCargoTrackShipmentResponse
+  | ShiprocketCargoTrackShipmentResponse[]
+  | Record<string, unknown>
+
 export type ShiprocketCargoWarehouseAddressPayload = {
   address_line_1: string
   address_line_2?: string
@@ -563,6 +568,22 @@ export const trackShiprocketCargoShipment = async (
     undefined,
     options,
   )
+
+export const bulkTrackShiprocketCargoShipments = async (
+  waybillNumbers: Array<string | number> | string,
+  options?: ShiprocketCargoRequestOptions,
+) => {
+  const normalized = Array.isArray(waybillNumbers)
+    ? waybillNumbers.map((value) => String(value).trim()).filter(Boolean).join(',')
+    : String(waybillNumbers).trim()
+
+  return shiprocketCargoRequest<ShiprocketCargoBulkTrackShipmentResponse>(
+    'GET',
+    `/api/shipment/track/${encodeURIComponent(normalized)}/`,
+    undefined,
+    options,
+  )
+}
 
 export const createShiprocketCargoWarehouse = async (
   payload: ShiprocketCargoCreateWarehousePayload,
