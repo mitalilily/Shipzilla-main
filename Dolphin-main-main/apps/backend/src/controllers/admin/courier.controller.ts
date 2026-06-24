@@ -2,6 +2,7 @@ import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { Request, Response } from 'express'
 import Papa from 'papaparse'
 import { db } from '../../models/client'
+import { b2c_orders } from '../../models/schema/b2cOrders'
 import {
   deleteCourierService,
   deleteShippingRate,
@@ -22,6 +23,7 @@ import { IcarryService } from '../../models/services/couriers/icarry.service'
 import { ShipmozoService } from '../../models/services/couriers/shipmozo.service'
 import { XpressbeesService } from '../../models/services/couriers/xpressbees.service'
 import { fetchAvailableCouriersWithRatesAdmin } from '../../models/services/shiprocket.service'
+import { listCouriersWithCounts } from '../../models/services/shiprocketExtended.service'
 import { courier_credentials } from '../../models/schema/courierCredentials'
 import { couriers } from '../../models/schema/couriers'
 import { getAllZones } from '../../models/services/zone.service'
@@ -36,6 +38,265 @@ const maskSecret = (value?: string | null) => {
   const secret = String(value || '').trim()
   if (!secret) return ''
   return `${secret.slice(0, 4)}${'*'.repeat(Math.max(secret.length - 8, 0))}${secret.slice(-4)}`
+}
+
+type SyncedCourierRecord = {
+  id: number
+  name: string
+  businessType: ('b2c' | 'b2b')[]
+}
+
+const normalizeBusinessTypes = (value: unknown, fallback: ('b2c' | 'b2b')[] = ['b2c', 'b2b']) => {
+  const raw = Array.isArray(value) ? value : []
+  const normalized = raw.filter(
+    (type): type is 'b2c' | 'b2b' => type === 'b2c' || type === 'b2b',
+  )
+  return normalized.length ? normalized : fallback
+}
+
+const normalizeNumericCourierId = (value: unknown) => {
+  const parsed = Number(String(value ?? '').trim())
+  if (!Number.isFinite(parsed)) return null
+  return parsed
+}
+
+const normalizeCourierName = (...values: unknown[]) => {
+  for (const value of values) {
+    const normalized = String(value ?? '').trim()
+    if (normalized) return normalized
+  }
+  return ''
+}
+
+const extractArrayPayload = (value: any): any[] => {
+  if (Array.isArray(value)) return value
+  if (!value || typeof value !== 'object') return []
+
+  const directCandidates = [
+    value.data,
+    value.results,
+    value.records,
+    value.couriers,
+    value.estimate,
+    value.msg,
+    value.response,
+  ]
+
+  for (const candidate of directCandidates) {
+    if (Array.isArray(candidate)) return candidate
+  }
+
+  return Object.values(value).find((candidate) => Array.isArray(candidate)) || []
+}
+
+const normalizeShiprocketCourier = (row: any): SyncedCourierRecord | null => {
+  const id = normalizeNumericCourierId(
+    row?.courier_company_id ?? row?.courier_id ?? row?.id ?? row?.carrier_id,
+  )
+  const name = normalizeCourierName(
+    row?.courier_name,
+    row?.name,
+    row?.courier_company,
+    row?.carrier_name,
+    row?.label,
+  )
+
+  if (!id || !name) return null
+
+  return {
+    id,
+    name,
+    businessType: normalizeBusinessTypes(row?.business_type, ['b2c']),
+  }
+}
+
+const normalizeIcarryCourier = (row: any): SyncedCourierRecord | null => {
+  const id = normalizeNumericCourierId(row?.courier_id ?? row?.courierId ?? row?.id)
+  const name = normalizeCourierName(
+    row?.courier_name,
+    row?.courierName,
+    row?.courier_group_name,
+    row?.group_name,
+    row?.name,
+  )
+
+  if (!id || !name) return null
+
+  return {
+    id,
+    name,
+    businessType: normalizeBusinessTypes(row?.business_type, ['b2c', 'b2b']),
+  }
+}
+
+const dedupeCourierCatalog = (records: SyncedCourierRecord[]) => {
+  const byId = new Map<number, SyncedCourierRecord>()
+
+  for (const record of records) {
+    const existing = byId.get(record.id)
+    if (!existing) {
+      byId.set(record.id, record)
+      continue
+    }
+
+    byId.set(record.id, {
+      id: record.id,
+      name: existing.name.length >= record.name.length ? existing.name : record.name,
+      businessType: Array.from(new Set([...existing.businessType, ...record.businessType])) as (
+        | 'b2c'
+        | 'b2b'
+      )[],
+    })
+  }
+
+  return [...byId.values()]
+}
+
+const upsertProviderCouriers = async (
+  serviceProvider: 'shiprocket' | 'icarry',
+  records: SyncedCourierRecord[],
+) => {
+  const normalizedRecords = dedupeCourierCatalog(records)
+  if (!normalizedRecords.length) {
+    return { total: 0, created: 0, updated: 0 }
+  }
+
+  const ids = normalizedRecords.map((record) => record.id)
+  const existingRows = await db
+    .select({ id: couriers.id })
+    .from(couriers)
+    .where(and(eq(couriers.serviceProvider, serviceProvider), inArray(couriers.id, ids)))
+
+  const existingIds = new Set(existingRows.map((row) => Number(row.id)))
+
+  await db
+    .insert(couriers)
+    .values(
+      normalizedRecords.map((record) => ({
+        id: record.id,
+        name: record.name,
+        serviceProvider,
+        businessType: record.businessType,
+        updatedAt: new Date(),
+      })),
+    )
+    .onConflictDoUpdate({
+      target: [couriers.id, couriers.serviceProvider],
+      set: {
+        name: sql.raw(`excluded."${couriers.name.name}"`),
+        businessType: sql.raw(`excluded."${couriers.businessType.name}"`),
+        updatedAt: new Date(),
+      },
+    })
+
+  const created = normalizedRecords.filter((record) => !existingIds.has(record.id)).length
+
+  return {
+    total: normalizedRecords.length,
+    created,
+    updated: normalizedRecords.length - created,
+  }
+}
+
+const syncShiprocketCourierCatalog = async () => {
+  const response = await listCouriersWithCounts({ type: 'all' })
+  const records = extractArrayPayload(response)
+    .map(normalizeShiprocketCourier)
+    .filter((record): record is SyncedCourierRecord => Boolean(record))
+
+  return upsertProviderCouriers('shiprocket', records)
+}
+
+const syncIcarryCourierCatalog = async (
+  payload: Record<string, any>,
+): Promise<{ total: number; created: number; updated: number }> => {
+  const service = new IcarryService()
+  const probes = [
+    {
+      length: Number(payload?.length ?? 10),
+      breadth: Number(payload?.breadth ?? 10),
+      height: Number(payload?.height ?? 10),
+      weight: Number(payload?.weight ?? 500),
+      origin_pincode: String(payload?.origin ?? payload?.origin_pincode ?? '400001'),
+      destination_pincode: String(
+        payload?.destination ?? payload?.destination_pincode ?? '560001',
+      ),
+      shipment_type: 'P',
+      shipment_mode: 'S',
+      shipment_value: Number(payload?.shipment_value ?? 1000),
+    },
+    {
+      length: Number(payload?.length ?? 10),
+      breadth: Number(payload?.breadth ?? 10),
+      height: Number(payload?.height ?? 10),
+      weight: Number(payload?.weight ?? 500),
+      origin_pincode: String(payload?.origin ?? payload?.origin_pincode ?? '110001'),
+      destination_pincode: String(
+        payload?.destination ?? payload?.destination_pincode ?? '700001',
+      ),
+      shipment_type: 'P',
+      shipment_mode: 'E',
+      shipment_value: Number(payload?.shipment_value ?? 1000),
+    },
+    {
+      length: Number(payload?.length ?? 10),
+      breadth: Number(payload?.breadth ?? 10),
+      height: Number(payload?.height ?? 10),
+      weight: Number(payload?.weight ?? 500),
+      origin_pincode: String(payload?.origin ?? payload?.origin_pincode ?? '500001'),
+      destination_pincode: String(
+        payload?.destination ?? payload?.destination_pincode ?? '560001',
+      ),
+      shipment_type: 'C',
+      shipment_mode: 'S',
+      shipment_value: Number(payload?.shipment_value ?? 1000),
+    },
+  ]
+
+  const records: SyncedCourierRecord[] = []
+  let lastError: any = null
+
+  for (const probe of probes) {
+    try {
+      const response = await service.estimateRates(probe)
+      const estimateRows = extractArrayPayload(response)
+      records.push(
+        ...estimateRows
+          .map(normalizeIcarryCourier)
+          .filter((record): record is SyncedCourierRecord => Boolean(record)),
+      )
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  if (!records.length && lastError) {
+    const historicalRows = await db
+      .select({
+        id: b2c_orders.courier_id,
+        name: b2c_orders.courier_partner,
+      })
+      .from(b2c_orders)
+      .where(sql`lower(${b2c_orders.integration_type}) = 'icarry'`)
+
+    records.push(
+      ...historicalRows
+        .map((row) =>
+          normalizeIcarryCourier({
+            courier_id: row.id,
+            courier_name: row.name,
+            business_type: ['b2c', 'b2b'],
+          }),
+        )
+        .filter((record): record is SyncedCourierRecord => Boolean(record)),
+    )
+
+    if (!records.length) {
+      throw lastError
+    }
+  }
+
+  return upsertProviderCouriers('icarry', records)
 }
 
 export interface ShippingRateFilters {
@@ -783,6 +1044,41 @@ export const updateShipmozoCredentialsController = async (req: Request, res: Res
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update Shipmozo credentials' })
+  }
+}
+
+export const syncProviderCouriersController = async (req: Request, res: Response) => {
+  const normalizedProvider = normalizeCourierProvider(req.params.serviceProvider)
+
+  try {
+    if (normalizedProvider !== 'shiprocket' && normalizedProvider !== 'icarry') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only Shiprocket and iCarry courier sync are supported here.',
+      })
+    }
+
+    const result =
+      normalizedProvider === 'shiprocket'
+        ? await syncShiprocketCourierCatalog()
+        : await syncIcarryCourierCatalog(req.body || {})
+
+    return res.json({
+      success: true,
+      message: `${normalizedProvider} couriers synced successfully`,
+      data: {
+        serviceProvider: normalizedProvider,
+        ...result,
+      },
+    })
+  } catch (err: any) {
+    console.error(`[syncProviderCouriersController] ${normalizedProvider} sync failed`, err)
+    return res.status(500).json({
+      success: false,
+      message:
+        err?.message ||
+        `Failed to sync ${normalizedProvider === 'shiprocket' ? 'Shiprocket' : 'iCarry'} couriers`,
+    })
   }
 }
 

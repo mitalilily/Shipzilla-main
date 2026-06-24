@@ -1,4 +1,5 @@
 import {
+  Button,
   Flex,
   HStack,
   Spinner,
@@ -12,11 +13,16 @@ import {
   Text,
   useToast,
 } from '@chakra-ui/react'
-import { useServiceProviders, useUpdateServiceProviderStatus } from 'hooks/useCouriers'
+import {
+  useServiceProviders,
+  useSyncCourierProviderCatalog,
+  useUpdateServiceProviderStatus,
+} from 'hooks/useCouriers'
 
 const ServiceProviders = () => {
   const { data: providers = [], isLoading, error } = useServiceProviders()
   const updateStatus = useUpdateServiceProviderStatus()
+  const syncProviderCatalog = useSyncCourierProviderCatalog()
   const toast = useToast()
 
   if (isLoading) return <Spinner size="md" />
@@ -42,6 +48,28 @@ const ServiceProviders = () => {
     )
   }
 
+  const handleSync = (provider) => {
+    syncProviderCatalog.mutate(
+      { serviceProvider: provider.serviceProvider },
+      {
+        onSuccess: (result) => {
+          toast({
+            title: `${provider.serviceProvider} couriers synced`,
+            description: `${result.total} total, ${result.created} new, ${result.updated} refreshed`,
+            status: 'success',
+          })
+        },
+        onError: (error) => {
+          toast({
+            title: `Failed to sync ${provider.serviceProvider} couriers`,
+            description: error?.response?.data?.message || error?.message,
+            status: 'error',
+          })
+        },
+      },
+    )
+  }
+
   return (
     <Flex direction="column" pt={{ base: '120px', md: '75px' }} gap={4}>
       <Text fontSize="xl" fontWeight="bold">
@@ -57,7 +85,7 @@ const ServiceProviders = () => {
             <Th isNumeric>Total Couriers</Th>
             <Th isNumeric>Enabled Couriers</Th>
             <Th>Status</Th>
-            <Th textAlign="right">Toggle</Th>
+            <Th textAlign="right">Actions</Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -80,6 +108,17 @@ const ServiceProviders = () => {
                 </Td>
                 <Td>
                   <HStack justify="flex-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSync(p)}
+                      isLoading={
+                        syncProviderCatalog.isPending &&
+                        syncProviderCatalog.variables?.serviceProvider === p.serviceProvider
+                      }
+                    >
+                      Sync Couriers
+                    </Button>
                     <Switch
                       colorScheme="green"
                       isChecked={p.isEnabled}

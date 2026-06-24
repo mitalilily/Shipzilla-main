@@ -32,16 +32,13 @@ import {
   useCouriers,
   useCreateCourier,
   useDeleteCourier,
+  useServiceProviders,
   useUpdateCourierStatus,
 } from 'hooks/useCouriers'
 import { useDebounce } from 'hooks/useDebounce'
 import { useState } from 'react'
 
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
-
-const providerOptions = [
-  { value: 'shipmozo', label: 'Shipmozo' },
-]
 
 const defaultFormData = { businessType: ['b2c', 'b2b'] }
 
@@ -63,6 +60,16 @@ const Couriers = () => {
     serviceProvider: '',
   })
   const debouncedSearch = useDebounce(filters.search, 500)
+  const { data: serviceProviders = [] } = useServiceProviders()
+  const providerOptions = serviceProviders.map((provider) => ({
+    value: provider.serviceProvider,
+    label:
+      provider.serviceProvider === 'shiprocket'
+        ? 'Shiprocket'
+        : provider.serviceProvider === 'icarry'
+          ? 'iCarry'
+          : provider.serviceProvider,
+  }))
 
   const {
     data: couriers = [],

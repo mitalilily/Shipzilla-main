@@ -5,6 +5,7 @@ import {
   getAllCouriersController,
   getAllCouriersListController,
   getServiceProvidersController,
+  syncProviderCouriersController,
   updateCourierStatusController,
   updateServiceProviderStatusController,
 } from '../controllers/admin/courier.controller'
@@ -45,6 +46,12 @@ router.patch(
   requireAuth,
   isAdminMiddleware,
   updateServiceProviderStatusController,
+)
+router.post(
+  '/providers/:serviceProvider/sync',
+  requireAuth,
+  isAdminMiddleware,
+  syncProviderCouriersController,
 )
 
 router.get('/', getCouriers)
