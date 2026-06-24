@@ -225,6 +225,52 @@ export type ShiprocketCargoTrackShipmentResponse = {
   [key: string]: unknown
 }
 
+export type ShiprocketCargoWarehouseAddressPayload = {
+  address_line_1: string
+  address_line_2?: string
+  pincode: string
+  city: string
+  state: string
+  country: string
+}
+
+export type ShiprocketCargoCreateWarehousePayload = {
+  name: string
+  client_id: number
+  address: ShiprocketCargoWarehouseAddressPayload
+  warehouse_code: string
+  contact_person_name: string
+  contact_person_email: string
+  contact_person_contact_no: string
+}
+
+export type ShiprocketCargoCreateWarehouseResponse = {
+  id?: number
+  name?: string
+  client?: {
+    id?: number
+    client_name?: string
+    [key: string]: unknown
+  }
+  address?: {
+    id?: number
+    address_line_1?: string
+    address_line_2?: string
+    pincode?: string
+    city?: string
+    state?: string
+    country?: string
+    landmark?: string | null
+    [key: string]: unknown
+  }
+  for_one_time_use?: boolean
+  contact_person_name?: string
+  contact_person_email?: string
+  contact_person_contact_no?: string
+  warehouse_code?: string
+  [key: string]: unknown
+}
+
 const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
 
 let cachedCargoAccessToken: string | null = null
@@ -454,5 +500,16 @@ export const trackShiprocketCargoShipment = async (
     'GET',
     `/api/shipment/track/${encodeURIComponent(String(waybillNumber))}/`,
     undefined,
+    options,
+  )
+
+export const createShiprocketCargoWarehouse = async (
+  payload: ShiprocketCargoCreateWarehousePayload,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoCreateWarehouseResponse>(
+    'POST',
+    '/api/warehouses/',
+    payload,
     options,
   )

@@ -13,6 +13,7 @@
     "check:external-api-smoke": "ts-node src/scripts/checkExternalApiSmoke.ts",
     "check:shiprocket-cargo-auth": "ts-node src/scripts/checkShiprocketCargoAuth.ts",
     "check:shiprocket-cargo-charges": "ts-node src/scripts/checkShiprocketCargoCharges.ts",
+    "check:shiprocket-cargo-create-warehouse": "ts-node src/scripts/checkShiprocketCargoCreateWarehouse.ts",
     "check:shiprocket-cargo-get-order": "ts-node src/scripts/checkShiprocketCargoGetOrder.ts",
     "check:shiprocket-cargo-get-shipment": "ts-node src/scripts/checkShiprocketCargoGetShipment.ts",
     "check:shiprocket-cargo-order": "ts-node src/scripts/checkShiprocketCargoOrderCreation.ts",
