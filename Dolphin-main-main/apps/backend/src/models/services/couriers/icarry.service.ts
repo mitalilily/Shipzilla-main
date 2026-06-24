@@ -587,7 +587,8 @@ export class IcarryService {
         }),
       )
 
-      const token = this.pickApiToken(response.data)
+      const parsedResponse = tryParseJson(response.data) as IcarryResponse
+      const token = this.pickApiToken(parsedResponse)
       if (!token) {
         throw new HttpError(502, 'iCarry login succeeded but no api_token was returned.')
       }

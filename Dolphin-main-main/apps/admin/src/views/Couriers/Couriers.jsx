@@ -1,6 +1,7 @@
 import { AddIcon, DeleteIcon, SearchIcon } from '@chakra-ui/icons'
 import {
   Badge,
+  Box,
   Button,
   Flex,
   FormControl,
@@ -20,7 +21,9 @@ import {
   PopoverTrigger,
   Portal,
   Select,
+  SimpleGrid,
   Spinner,
+  Stack,
   Switch,
   Text,
   Tooltip,
@@ -33,6 +36,7 @@ import {
   useCreateCourier,
   useDeleteCourier,
   useServiceProviders,
+  useSyncCourierProviderCatalog,
   useUpdateCourierStatus,
 } from 'hooks/useCouriers'
 import { useDebounce } from 'hooks/useDebounce'
@@ -40,7 +44,18 @@ import { useState } from 'react'
 
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 
+const allowedProviders = new Set(['shiprocket', 'icarry'])
 const defaultFormData = { businessType: ['b2c', 'b2b'] }
+const providerCopy = {
+  shiprocket: {
+    label: 'Shiprocket Cargo',
+    emptyState: 'No live Shiprocket couriers are synced yet.',
+  },
+  icarry: {
+    label: 'iCarry Rate Card',
+    emptyState: 'No live iCarry couriers are synced yet.',
+  },
+}
 
 const formatDateTime = (value) => {
   if (!value) return ''
@@ -60,7 +75,10 @@ const Couriers = () => {
     serviceProvider: '',
   })
   const debouncedSearch = useDebounce(filters.search, 500)
-  const { data: serviceProviders = [] } = useServiceProviders()
+  const { data: rawServiceProviders = [] } = useServiceProviders()
+  const serviceProviders = rawServiceProviders.filter((provider) =>
+    allowedProviders.has(provider.serviceProvider),
+  )
   const providerOptions = serviceProviders.map((provider) => ({
     value: provider.serviceProvider,
     label:
@@ -72,16 +90,18 @@ const Couriers = () => {
   }))
 
   const {
-    data: couriers = [],
+    data: rawCouriers = [],
     isLoading,
     error,
   } = useCouriers({
     search: debouncedSearch || undefined,
     serviceProvider: filters.serviceProvider || undefined,
   })
+  const couriers = rawCouriers.filter((courier) => allowedProviders.has(courier.serviceProvider))
   const createCourier = useCreateCourier()
   const deleteCourier = useDeleteCourier()
   const updateCourierStatus = useUpdateCourierStatus()
+  const syncProviderCatalog = useSyncCourierProviderCatalog()
   const [isModalOpen, setModalOpen] = useState(false)
   const [openPopoverId, setOpenPopoverId] = useState(null)
   const [formData, setFormData] = useState(defaultFormData)
@@ -111,6 +131,11 @@ const Couriers = () => {
   }
 
   const renderers = {
+    serviceProvider: (value) => (
+      <Badge colorScheme={value === 'shiprocket' ? 'purple' : 'blue'} variant="subtle">
+        {providerCopy[value]?.label || value}
+      </Badge>
+    ),
     isEnabled: (value) => (
       <Text fontWeight="semibold" color={value ? 'green.500' : 'red.500'}>
         {value ? 'Enabled' : 'Disabled'}
@@ -187,6 +212,45 @@ const Couriers = () => {
     createdAt: formatDateTime,
   }
 
+  const providerSummaries = serviceProviders.map((provider) => {
+    const providerCouriers = couriers.filter(
+      (courier) => courier.serviceProvider === provider.serviceProvider,
+    )
+    const enabledCount = providerCouriers.filter((courier) => courier.isEnabled).length
+
+    return {
+      ...provider,
+      label: providerCopy[provider.serviceProvider]?.label || provider.serviceProvider,
+      visibleCount: providerCouriers.length,
+      enabledVisibleCount: enabledCount,
+      emptyState:
+        providerCopy[provider.serviceProvider]?.emptyState ||
+        'No live provider couriers are synced yet.',
+    }
+  })
+
+  const handleSyncProvider = (serviceProvider) => {
+    syncProviderCatalog.mutate(
+      { serviceProvider },
+      {
+        onSuccess: (result) => {
+          toast({
+            title: `${providerCopy[serviceProvider]?.label || serviceProvider} synced`,
+            description: `${result.total} total, ${result.created} new, ${result.updated} refreshed`,
+            status: 'success',
+          })
+        },
+        onError: (err) => {
+          toast({
+            title: `Failed to sync ${providerCopy[serviceProvider]?.label || serviceProvider}`,
+            description: err?.response?.data?.message || err?.message,
+            status: 'error',
+          })
+        },
+      },
+    )
+  }
+
   const handleSave = () => {
     if (!formData?.courierName || !formData?.courierId || !formData?.serviceProvider) {
       toast({ title: 'Please fill all the required fields', status: 'warning' })
@@ -221,6 +285,69 @@ const Couriers = () => {
 
   return (
     <Flex direction="column" pt={{ base: '120px', md: '75px' }} gap={4}>
+      <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={4}>
+        {providerSummaries.map((provider) => (
+          <Box key={provider.serviceProvider} borderWidth="1px" borderRadius="lg" p={4}>
+            <Stack spacing={3}>
+              <HStack justify="space-between" align="flex-start">
+                <Box>
+                  <Text fontWeight="semibold">{provider.label}</Text>
+                  <Text fontSize="sm" color="gray.500">
+                    {provider.visibleCount > 0
+                      ? `${provider.visibleCount} live couriers available for admin customization.`
+                      : provider.emptyState}
+                  </Text>
+                </Box>
+                <Badge colorScheme={provider.visibleCount > 0 ? 'green' : 'orange'}>
+                  {provider.visibleCount > 0 ? 'Visible in admin' : 'Sync required'}
+                </Badge>
+              </HStack>
+              <HStack spacing={3} flexWrap="wrap">
+                <Badge colorScheme="purple" variant="subtle">
+                  {provider.totalCouriers} total synced
+                </Badge>
+                <Badge colorScheme="green" variant="subtle">
+                  {provider.enabledCouriers} enabled
+                </Badge>
+                <Badge colorScheme="blue" variant="subtle">
+                  {provider.enabledVisibleCount} shown in current list
+                </Badge>
+              </HStack>
+              <HStack>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleSyncProvider(provider.serviceProvider)}
+                  isLoading={
+                    syncProviderCatalog.isPending &&
+                    syncProviderCatalog.variables?.serviceProvider === provider.serviceProvider
+                  }
+                >
+                  Sync {provider.label}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      serviceProvider:
+                        prev.serviceProvider === provider.serviceProvider
+                          ? ''
+                          : provider.serviceProvider,
+                    }))
+                  }
+                >
+                  {filters.serviceProvider === provider.serviceProvider
+                    ? 'Show all providers'
+                    : 'Filter this provider'}
+                </Button>
+              </HStack>
+            </Stack>
+          </Box>
+        ))}
+      </SimpleGrid>
+
       <Flex direction={{ base: 'column', md: 'row' }} gap={4} justifyContent="space-between">
         <HStack spacing={3} flex={1} maxW={{ md: '600px' }}>
           <InputGroup>
@@ -266,6 +393,10 @@ const Couriers = () => {
           Add Courier
         </Button>
       </Flex>
+
+      <Text fontSize="sm" color="gray.500">
+        Toggle each courier or its business type directly from this table after syncing the live provider catalog.
+      </Text>
 
       <GenericTable
         title="Couriers List"

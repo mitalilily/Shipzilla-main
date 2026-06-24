@@ -1,8 +1,12 @@
 import {
+  Badge,
+  Box,
   Button,
   Flex,
   HStack,
+  SimpleGrid,
   Spinner,
+  Stack,
   Switch,
   Table,
   Tbody,
@@ -19,8 +23,21 @@ import {
   useUpdateServiceProviderStatus,
 } from 'hooks/useCouriers'
 
+const allowedProviders = new Set(['shiprocket', 'icarry'])
+const providerCopy = {
+  shiprocket: {
+    label: 'Shiprocket Cargo',
+    note: 'Sync real Shiprocket carrier catalog and control provider availability.',
+  },
+  icarry: {
+    label: 'iCarry Rate Card',
+    note: 'Sync live iCarry courier options and manage their active status.',
+  },
+}
+
 const ServiceProviders = () => {
-  const { data: providers = [], isLoading, error } = useServiceProviders()
+  const { data: rawProviders = [], isLoading, error } = useServiceProviders()
+  const providers = rawProviders.filter((provider) => allowedProviders.has(provider.serviceProvider))
   const updateStatus = useUpdateServiceProviderStatus()
   const syncProviderCatalog = useSyncCourierProviderCatalog()
   const toast = useToast()
@@ -76,8 +93,41 @@ const ServiceProviders = () => {
         Service Providers
       </Text>
       <Text fontSize="sm" color="gray.500">
-        Manage enabled courier providers available in the system.
+        Keep the two live carrier integrations visible, synced, and ready for courier-level control.
       </Text>
+      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+        {providers.map((provider) => {
+          const copy = providerCopy[provider.serviceProvider] || {
+            label: provider.serviceProvider,
+            note: 'Manage courier availability for this provider.',
+          }
+          return (
+            <Box key={provider.serviceProvider} borderWidth="1px" borderRadius="lg" p={4}>
+              <Stack spacing={3}>
+                <HStack justify="space-between" align="flex-start">
+                  <Box>
+                    <Text fontWeight="semibold">{copy.label}</Text>
+                    <Text fontSize="sm" color="gray.500">
+                      {copy.note}
+                    </Text>
+                  </Box>
+                  <Badge colorScheme={provider.totalCouriers > 0 ? 'green' : 'orange'}>
+                    {provider.totalCouriers > 0 ? 'Catalog synced' : 'Awaiting sync'}
+                  </Badge>
+                </HStack>
+                <HStack spacing={3}>
+                  <Badge colorScheme="purple" variant="subtle">
+                    {provider.totalCouriers} total
+                  </Badge>
+                  <Badge colorScheme="green" variant="subtle">
+                    {provider.enabledCouriers} enabled
+                  </Badge>
+                </HStack>
+              </Stack>
+            </Box>
+          )
+        })}
+      </SimpleGrid>
       <Table variant="simple">
         <Thead>
           <Tr>
@@ -98,7 +148,16 @@ const ServiceProviders = () => {
           ) : (
             providers.map((p) => (
               <Tr key={p.serviceProvider}>
-                <Td textTransform="capitalize">{p.serviceProvider}</Td>
+                <Td>
+                  <Stack spacing={0.5}>
+                    <Text fontWeight="semibold">
+                      {providerCopy[p.serviceProvider]?.label || p.serviceProvider}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      {p.serviceProvider}
+                    </Text>
+                  </Stack>
+                </Td>
                 <Td isNumeric>{p.totalCouriers}</Td>
                 <Td isNumeric>{p.enabledCouriers}</Td>
                 <Td>

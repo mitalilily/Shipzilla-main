@@ -270,7 +270,7 @@ const syncIcarryCourierCatalog = async (
     }
   }
 
-  if (!records.length && lastError) {
+  if (!records.length) {
     const historicalRows = await db
       .select({
         id: b2c_orders.courier_id,
@@ -291,7 +291,7 @@ const syncIcarryCourierCatalog = async (
         .filter((record): record is SyncedCourierRecord => Boolean(record)),
     )
 
-    if (!records.length) {
+    if (!records.length && lastError) {
       throw lastError
     }
   }
