@@ -15,6 +15,7 @@ type ShiprocketCargoAuthResponse = {
 type ShiprocketCargoRequestOptions = {
   accessToken?: string
   refreshToken?: string
+  apiBase?: string
   skipRefresh?: boolean
   query?: Record<string, unknown>
 }
@@ -316,6 +317,19 @@ export type ShiprocketCargoWarehouseListResponse = {
   [key: string]: unknown
 }
 
+export type ShiprocketCargoAddAppointmentPayload = {
+  is_appointment_taken: boolean
+  new_appointment_date?: string | null
+  appointment_date?: string | null
+  supporting_docs?: string[]
+  po_no?: string | null
+  po_expiry_date?: string | null
+  appointment_end_date?: string | null
+  new_appointment_end_date?: string | null
+}
+
+export type ShiprocketCargoAddAppointmentResponse = Record<string, unknown> | null
+
 const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
 
 let cachedCargoAccessToken: string | null = null
@@ -431,17 +445,19 @@ export const shiprocketCargoRequest = async <T = any>(
   body?: unknown,
   options?: ShiprocketCargoRequestOptions,
 ): Promise<T> => {
-  const { apiBase } = resolveShiprocketCargoCredentials()
+  const { apiBase } = resolveShiprocketCargoCredentials({ apiBase: options?.apiBase })
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const query = options?.query
   const token = options?.skipRefresh
     ? resolveShiprocketCargoCredentials({
         accessToken: options?.accessToken,
         refreshToken: options?.refreshToken,
+        apiBase: options?.apiBase,
       }).accessToken
     : await getShiprocketCargoAccessToken({
         accessToken: options?.accessToken,
         refreshToken: options?.refreshToken,
+        apiBase: options?.apiBase,
       })
 
   if (!token) {
@@ -584,6 +600,18 @@ export const updateShiprocketCargoWarehouse = async (
   shiprocketCargoRequest<ShiprocketCargoCreateWarehouseResponse>(
     'PUT',
     `/api/warehouses/${encodeURIComponent(String(warehouseId))}/`,
+    payload,
+    options,
+  )
+
+export const addShiprocketCargoAppointment = async (
+  shipmentId: string | number,
+  payload: ShiprocketCargoAddAppointmentPayload,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoAddAppointmentResponse>(
+    'PUT',
+    `/api/external/add_appointment/${encodeURIComponent(String(shipmentId))}/`,
     payload,
     options,
   )
