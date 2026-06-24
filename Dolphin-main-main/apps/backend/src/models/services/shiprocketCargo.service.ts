@@ -271,6 +271,41 @@ export type ShiprocketCargoCreateWarehouseResponse = {
   [key: string]: unknown
 }
 
+export type ShiprocketCargoWarehouseListItem = {
+  id?: number
+  name?: string
+  client?: {
+    id?: number
+    client_name?: string
+    [key: string]: unknown
+  }
+  address?: {
+    id?: number
+    address_line_1?: string
+    address_line_2?: string
+    pincode?: string
+    city?: string
+    state?: string
+    country?: string
+    landmark?: string | null
+    [key: string]: unknown
+  }
+  warehouse_code?: string
+  contact_person_name?: string
+  contact_person_email?: string
+  contact_person_contact_no?: string
+  [key: string]: unknown
+}
+
+export type ShiprocketCargoWarehouseListResponse = {
+  next?: string | null
+  previous?: string | null
+  current_page?: number
+  count?: number
+  results?: ShiprocketCargoWarehouseListItem[]
+  [key: string]: unknown
+}
+
 const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
 
 let cachedCargoAccessToken: string | null = null
@@ -512,4 +547,21 @@ export const createShiprocketCargoWarehouse = async (
     '/api/warehouses/',
     payload,
     options,
+  )
+
+export const getShiprocketCargoWarehouses = async (
+  page = 1,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoWarehouseListResponse>(
+    'GET',
+    '/api/warehouses/',
+    undefined,
+    {
+      ...options,
+      query: {
+        ...(options?.query || {}),
+        page,
+      },
+    },
   )

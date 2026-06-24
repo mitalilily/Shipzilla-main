@@ -16,6 +16,7 @@
     "check:shiprocket-cargo-create-warehouse": "ts-node src/scripts/checkShiprocketCargoCreateWarehouse.ts",
     "check:shiprocket-cargo-get-order": "ts-node src/scripts/checkShiprocketCargoGetOrder.ts",
     "check:shiprocket-cargo-get-shipment": "ts-node src/scripts/checkShiprocketCargoGetShipment.ts",
+    "check:shiprocket-cargo-get-warehouses": "ts-node src/scripts/checkShiprocketCargoGetWarehouses.ts",
     "check:shiprocket-cargo-order": "ts-node src/scripts/checkShiprocketCargoOrderCreation.ts",
     "check:shiprocket-cargo-shipment": "ts-node src/scripts/checkShiprocketCargoShipmentCreation.ts",
     "check:shiprocket-cargo-track": "ts-node src/scripts/checkShiprocketCargoTrackShipment.ts",
