@@ -12,6 +12,7 @@
     "check:rate-apis": "node -r ts-node/register src/scripts/checkRateCalculatorApis.ts",
     "check:external-api-smoke": "ts-node src/scripts/checkExternalApiSmoke.ts",
     "check:shiprocket-cargo-auth": "ts-node src/scripts/checkShiprocketCargoAuth.ts",
+    "check:shiprocket-cargo-order": "ts-node src/scripts/checkShiprocketCargoOrderCreation.ts",
     "check:shipmozo-apis": "ts-node src/scripts/checkShipmozoApis.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "drizzle-kit push",
