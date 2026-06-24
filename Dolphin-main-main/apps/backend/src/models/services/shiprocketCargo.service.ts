@@ -160,6 +160,50 @@ export type ShiprocketCargoOrderDetailsResponse = {
   [key: string]: unknown
 }
 
+export type ShiprocketCargoChargeCalculatorPackagingUnit = {
+  units: number
+  length: number
+  height: number
+  weight: number
+  width: number
+  unit?: string
+}
+
+export type ShiprocketCargoChargeCalculatorPayload = {
+  from_pincode: string
+  from_city: string
+  from_state: string
+  to_pincode: string
+  to_city: string
+  to_state: string
+  quantity: number
+  invoice_value: number
+  calculator_page: string
+  packaging_unit_details: ShiprocketCargoChargeCalculatorPackagingUnit[]
+}
+
+export type ShiprocketCargoChargeCalculatorRate = {
+  logo?: string | null
+  id?: number
+  common_name?: string | null
+  is_public?: boolean
+  is_shipment_ready?: boolean
+  is_pickup_ready?: boolean
+  mode_name?: string | null
+  mode_id?: number
+  delivery_partner?: string | null
+  is_rocketbox_account?: boolean
+  rates?: number
+  working?: Record<string, unknown>
+  transporter_id?: string | null
+  [key: string]: unknown
+}
+
+export type ShiprocketCargoChargeCalculatorResponse = Record<
+  string,
+  ShiprocketCargoChargeCalculatorRate
+>
+
 const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
 
 let cachedCargoAccessToken: string | null = null
@@ -367,5 +411,16 @@ export const getShiprocketCargoOrderDetails = async (
     'GET',
     `/api/external/get_order/${encodeURIComponent(String(orderId))}/`,
     undefined,
+    options,
+  )
+
+export const getShiprocketCargoShipmentCharges = async (
+  payload: ShiprocketCargoChargeCalculatorPayload,
+  options?: ShiprocketCargoRequestOptions,
+) =>
+  shiprocketCargoRequest<ShiprocketCargoChargeCalculatorResponse>(
+    'POST',
+    '/api/shipment/charges/',
+    payload,
     options,
   )
