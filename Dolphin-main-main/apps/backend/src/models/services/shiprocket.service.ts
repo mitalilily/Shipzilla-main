@@ -892,15 +892,18 @@ const derivePackageMetricsFromBoxes = (boxes: any[]) => {
 
   for (const box of boxes) {
     const quantity = Math.max(1, Number(box?.quantity ?? box?.qty ?? 1) || 1)
-    const rawWeight = Number(box?.weight ?? 0)
+    const rawWeight = Number(box?.weight ?? box?.weightKg ?? 0)
     const unit = String(box?.weight_unit || box?.unit || '').trim().toLowerCase()
     const weightKg =
       unit === 'gm' || (!unit && rawWeight > 50) ? rawWeight / 1000 : rawWeight
 
     totalWeightKg += Math.max(0, weightKg) * quantity
-    maxLength = Math.max(maxLength, Number(box?.length ?? 0) || 0)
-    maxBreadth = Math.max(maxBreadth, Number(box?.breadth ?? box?.width ?? 0) || 0)
-    maxHeight = Math.max(maxHeight, Number(box?.height ?? 0) || 0)
+    maxLength = Math.max(maxLength, Number(box?.length ?? box?.lengthCm ?? 0) || 0)
+    maxBreadth = Math.max(
+      maxBreadth,
+      Number(box?.breadth ?? box?.width ?? box?.breadthCm ?? 0) || 0,
+    )
+    maxHeight = Math.max(maxHeight, Number(box?.height ?? box?.heightCm ?? 0) || 0)
   }
 
   return {
@@ -911,6 +914,15 @@ const derivePackageMetricsFromBoxes = (boxes: any[]) => {
   }
 }
 
+const normalizeFlag = (value: unknown) => {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value === 1
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    return ['1', 'true', 'yes'].includes(normalized)
+  }
+  return false
+}
 //ADMIN CALCULATION
 export const fetchAvailableCouriersWithRatesAdmin = async (
   params: NimbusServiceabilityParams,
@@ -2180,8 +2192,28 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       .where(and(...rateConditions))
       .orderBy(desc(b2bZoneToZoneRates.effective_from))
 
+    const [originZoneDetails, destinationZoneDetails] = await Promise.all([
+      db
+        .select({ id: zones.id, code: zones.code, name: zones.name })
+        .from(zones)
+        .where(eq(zones.id, originZoneId))
+        .limit(1),
+      db
+        .select({ id: zones.id, code: zones.code, name: zones.name })
+        .from(zones)
+        .where(eq(zones.id, destinationZoneId))
+        .limit(1),
+    ])
+
+    const normalizedWeightGrams = normalizeServiceabilityWeightToGrams(params.weight)
+    const normalizedActualWeightKg =
+      normalizedWeightGrams > 0 ? Number((normalizedWeightGrams / 1000).toFixed(3)) : 0
+    const normalizedLength = Number(params.length ?? 0) || undefined
+    const normalizedBreadth = Number(params.breadth ?? 0) || undefined
+    const normalizedHeight = Number(params.height ?? 0) || undefined
+
     // Step 6: Build courier list with rates
-    const courierMap = new Map<number, any>()
+    const courierMap = new Map<string, any>()
 
     for (const rate of zoneToZoneRates) {
       if (!rate.courierId) continue
@@ -2192,35 +2224,96 @@ export const fetchAvailableCouriersWithRatesB2B = async (
 
       if (!isEnabled) continue
 
+      const courierKey = `${providerKey}__${Number(rate.courierId)}`
+
       // Get or create courier entry
-      if (!courierMap.has(rate.courierId)) {
+      if (!courierMap.has(courierKey)) {
         const [courierRow] = await db
           .select()
           .from(couriers)
-          .where(eq(couriers.id, rate.courierId))
+          .where(and(eq(couriers.id, rate.courierId), eq(couriers.serviceProvider, providerKey)))
           .limit(1)
 
         if (!courierRow) continue
 
-        courierMap.set(rate.courierId, {
+        let calculatedRate: Awaited<ReturnType<typeof calculateB2BRate>> | null = null
+        try {
+          calculatedRate = await calculateB2BRate({
+            originPincode: originPincode ?? '',
+            destinationPincode: destinationPincode ?? '',
+            weightKg: normalizedActualWeightKg,
+            length: normalizedLength,
+            width: normalizedBreadth,
+            height: normalizedHeight,
+            invoiceValue: Number(params.order_amount ?? params.orderAmount ?? 0),
+            paymentMode:
+              String(params.payment_type ?? '').toLowerCase() === 'cod' ? 'COD' : 'PREPAID',
+            courierScope: {
+              courierId: Number(rate.courierId),
+              serviceProvider: providerKey,
+            },
+            planId: activePlanId ?? undefined,
+          })
+        } catch (calculationError) {
+          console.error('[fetchAvailableCouriersWithRatesB2B] rate calculation failed', {
+            courierId: rate.courierId,
+            providerKey,
+            error: calculationError,
+          })
+        }
+
+        const billableWeightKg = Number(
+          calculatedRate?.calculation?.billableWeight ?? normalizedActualWeightKg ?? 0,
+        )
+        const volumetricWeightKg = Number(calculatedRate?.calculation?.volumetricWeight ?? 0)
+        const totalRate = Number(
+          calculatedRate?.charges?.total ?? Number(rate.ratePerKg ?? 0) * billableWeightKg,
+        )
+        const codCharges =
+          String(params.payment_type ?? '').toLowerCase() === 'cod'
+            ? (calculatedRate?.charges?.overheads || []).reduce((sum: number, charge: any) => {
+                const code = String(charge?.code ?? '').toUpperCase()
+                return code.includes('COD') ? sum + Number(charge?.amount ?? 0) : sum
+              }, 0)
+            : 0
+        const otherCharges = Math.max(
+          0,
+          Number(calculatedRate?.charges?.total ?? totalRate) -
+            Number(calculatedRate?.charges?.baseFreight ?? totalRate) -
+            codCharges,
+        )
+
+        courierMap.set(courierKey, {
           id: courierRow.id,
+          courier_option_key: courierKey,
           name: courierRow.name,
           integration_type: rate.serviceProvider?.toLowerCase() || 'unknown',
           serviceProvider: rate.serviceProvider?.toLowerCase(),
-          localRates: {},
+          rate: totalRate,
+          chargeable_weight: Math.round(billableWeightKg * 1000),
+          volumetric_weight: Math.round(volumetricWeightKg * 1000),
+          localRates: {
+            forward: {
+              rate: totalRate,
+              ratePerKg: Number(rate.ratePerKg ?? 0),
+              cod_charges: codCharges,
+              other_charges: otherCharges,
+              mode: 'b2b',
+            },
+          },
           approxZone: {
+            id: destinationZoneDetails[0]?.id ?? destinationZoneId,
+            code: destinationZoneDetails[0]?.code ?? '',
+            name: destinationZoneDetails[0]?.name ?? '',
             originZoneId,
+            originZoneCode: originZoneDetails[0]?.code ?? '',
+            originZoneName: originZoneDetails[0]?.name ?? '',
             destinationZoneId,
+            destinationZoneCode: destinationZoneDetails[0]?.code ?? '',
+            destinationZoneName: destinationZoneDetails[0]?.name ?? '',
           },
           createdAt: courierRow.createdAt,
         })
-      }
-
-      // Add rate to courier
-      const courier = courierMap.get(rate.courierId)!
-      courier.localRates.forward = {
-        ratePerKg: rate.ratePerKg,
-        volumetricFactor: rate.volumetricFactor,
       }
     }
 
@@ -4165,7 +4258,7 @@ export const createB2CShipmentService = async (
 
 //B2B
 
-export const createB2BShipmentService = async (
+const createB2BShipmentServiceLegacy = async (
   params: ShipmentParams,
   userId: string,
   is_external_api: boolean = false,
@@ -4446,6 +4539,440 @@ export const createB2BShipmentService = async (
 
   console.log(`B2B Order ${pendingOrder.id} successfully booked with Delhivery shipment.`)
   return shipmentData
+}
+
+export const createB2BShipmentService = async (
+  params: ShipmentParams,
+  userId: string,
+  is_external_api: boolean = false,
+) => {
+  await requireMerchantOrderReadiness(userId)
+
+  const normalizeJsonValue = (value: unknown) => {
+    if (!value) return null
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (!trimmed) return null
+      try {
+        return JSON.parse(trimmed)
+      } catch {
+        return null
+      }
+    }
+
+    if (typeof value === 'object') {
+      const keys = Object.keys(value as Record<string, unknown>).filter((key) => {
+        const child = (value as Record<string, unknown>)[key]
+        if (child === undefined || child === null) return false
+        if (typeof child === 'string') return child.trim().length > 0
+        return true
+      })
+      return keys.length ? value : null
+    }
+
+    return null
+  }
+
+  const normalizedOrderNumber = await ensureUniqueMerchantOrderNumber(
+    db as any,
+    userId,
+    params.order_number,
+  )
+
+  const normalizedBoxes = normalizeShipmentBoxes(params)
+    .map((box: any) => ({
+      quantity: Math.max(1, Number(box?.quantity ?? box?.qty ?? 1) || 1),
+      length: Number(box?.length ?? box?.lengthCm ?? 0) || 0,
+      breadth: Number(box?.breadth ?? box?.width ?? box?.breadthCm ?? 0) || 0,
+      height: Number(box?.height ?? box?.heightCm ?? 0) || 0,
+      weight: Number(box?.weight ?? box?.weightKg ?? 0) || 0,
+      weight_unit:
+        String(box?.weight_unit || box?.unit || '').trim().toLowerCase() === 'gm' ? 'gm' : 'kg',
+    }))
+    .filter((box: any) => box.length > 0 || box.breadth > 0 || box.height > 0 || box.weight > 0)
+
+  if (!normalizedBoxes.length) {
+    throw new HttpError(400, 'At least one valid box is required for B2B booking.')
+  }
+
+  const normalizedInvoices = Array.isArray((params as any)?.invoices)
+    ? (params as any).invoices
+        .map((invoice: any, index: number) => ({
+          invoiceNumber: String(
+            invoice?.invoiceNumber ?? invoice?.invoice_number ?? `INV-${index + 1}`,
+          ).trim(),
+          invoiceDate: String(invoice?.invoiceDate ?? invoice?.invoice_date ?? '').trim(),
+          invoiceValue: Number(invoice?.invoiceValue ?? invoice?.invoice_value ?? 0) || 0,
+        }))
+        .filter((invoice: any) => invoice.invoiceNumber || invoice.invoiceValue > 0)
+    : []
+
+  const normalizedOrderItems =
+    Array.isArray(params.order_items) && params.order_items.length
+      ? params.order_items.map((item) => ({
+          name: String(item?.name ?? 'Shipment Package').trim() || 'Shipment Package',
+          sku: String(item?.sku ?? item?.hsn ?? 'SKU').trim() || 'SKU',
+          qty: Math.max(1, Number(item?.qty ?? item?.quantity ?? 1) || 1),
+          price: Number(item?.price ?? 0) || 0,
+          hsn: String(item?.hsn ?? item?.hsnCode ?? '').trim(),
+          discount: Number(item?.discount ?? 0) || 0,
+          tax_rate: Number(item?.tax_rate ?? 0) || 0,
+        }))
+      : normalizedInvoices.length
+        ? normalizedInvoices.map((invoice: any, index: number) => ({
+            name: `Invoice ${invoice.invoiceNumber || index + 1}`,
+            sku: invoice.invoiceNumber || `INV-${index + 1}`,
+            qty: 1,
+            price: Number(invoice.invoiceValue || 0),
+            hsn: '',
+            discount: 0,
+            tax_rate: 0,
+          }))
+        : [
+            {
+              name: 'Shipment Package',
+              sku: 'PKG',
+              qty: 1,
+              price: Number(params.order_amount ?? 0) || 0,
+              hsn: '',
+              discount: 0,
+              tax_rate: 0,
+            },
+          ]
+
+  const derivedMetrics = derivePackageMetricsFromBoxes(normalizedBoxes)
+  const insuranceEnabled = normalizeFlag(params.is_insurance)
+  const invoiceValue = normalizedInvoices.length
+    ? normalizedInvoices.reduce(
+        (sum: number, invoice: any) => sum + Number(invoice.invoiceValue || 0),
+        0,
+      )
+    : Number(params.invoice_amount ?? params.order_amount ?? 0)
+
+  const bookingProviderInput = String(params.integration_type || '').trim().toLowerCase()
+  let bookingIntegrationType =
+    bookingProviderInput === 'shiprocket' ? 'shipmozo' : bookingProviderInput
+
+  if (!bookingIntegrationType && params.courier_id) {
+    const [courierRow] = await db
+      .select({ serviceProvider: couriers.serviceProvider })
+      .from(couriers)
+      .where(eq(couriers.id, Number(params.courier_id)))
+      .limit(1)
+
+    const derivedProvider = String(courierRow?.serviceProvider || '').trim().toLowerCase()
+    bookingIntegrationType = derivedProvider === 'shiprocket' ? 'shipmozo' : derivedProvider
+  }
+
+  if (!['shipmozo', 'icarry'].includes(bookingIntegrationType)) {
+    throw new HttpError(
+      400,
+      `Unsupported B2B integration_type: ${params.integration_type || 'unknown'}. Supported values: shiprocket, icarry.`,
+    )
+  }
+
+  params.order_number = normalizedOrderNumber
+  params.integration_type = bookingIntegrationType
+  params.boxes = normalizedBoxes
+  params.order_items = normalizedOrderItems
+  params.package_weight =
+    Number(params.package_weight ?? 0) > 0
+      ? Number(params.package_weight)
+      : derivedMetrics.package_weight
+  params.package_length =
+    Number(params.package_length ?? 0) > 0
+      ? Number(params.package_length)
+      : derivedMetrics.package_length
+  params.package_breadth =
+    Number(params.package_breadth ?? 0) > 0
+      ? Number(params.package_breadth)
+      : derivedMetrics.package_breadth
+  params.package_height =
+    Number(params.package_height ?? 0) > 0
+      ? Number(params.package_height)
+      : derivedMetrics.package_height
+  params.invoice_amount = invoiceValue
+
+  if (!params.invoice_number && normalizedInvoices[0]?.invoiceNumber) {
+    params.invoice_number = normalizedInvoices[0].invoiceNumber
+  }
+  if (!params.invoice_date && normalizedInvoices[0]?.invoiceDate) {
+    params.invoice_date = normalizedInvoices[0].invoiceDate
+  }
+
+  const pickupWarehouse = await fetchPickupWarehouseRecord(userId, params.pickup_location_id)
+  if (pickupWarehouse) {
+    params.pickup = buildPickupFromWarehouse(
+      pickupWarehouse,
+      params.pickup,
+      params.pickup_date,
+      params.pickup_time,
+    )
+  }
+
+  const pickupDetails = normalizeJsonValue(params.pickup) ?? {}
+  const rtoDetails = normalizeJsonValue(params.rto)
+  const rateScopeProvider =
+    bookingProviderInput === 'shiprocket'
+      ? 'shiprocket'
+      : bookingIntegrationType === 'shipmozo'
+        ? 'shiprocket'
+        : bookingIntegrationType
+
+  const courierId =
+    params.courier_id !== undefined && params.courier_id !== null
+      ? Number(params.courier_id)
+      : undefined
+  const serviceProvider = rateScopeProvider || undefined
+
+  let activePlanId: string | null = null
+  try {
+    const [userPlan] = await db
+      .select({ planId: userPlans.plan_id })
+      .from(userPlans)
+      .where(eq(userPlans.userId, userId))
+    activePlanId = userPlan?.planId ?? null
+  } catch (planErr) {
+    console.error('Failed to fetch B2B user plan for ROV:', planErr)
+  }
+
+  const rovCharge = insuranceEnabled
+    ? await computeRovChargeForOrder({
+        invoiceValue,
+        isInsurance: true,
+        courierId,
+        serviceProvider,
+        planId: activePlanId ?? undefined,
+      })
+    : 0
+
+  let chargesBreakdown: {
+    baseFreight: number
+    overheads: {
+      id: string
+      code?: string
+      name: string
+      type: string
+      amount: number
+      description?: string
+    }[]
+    demurrage: number
+    total: number
+  } | null = null
+
+  try {
+    const rateResult = await calculateB2BRate({
+      originPincode: params.pickup?.pincode ?? '',
+      destinationPincode: params.consignee.pincode,
+      weightKg: Number(params.package_weight ?? 0),
+      length: Number(params.package_length ?? 0) || undefined,
+      width: Number(params.package_breadth ?? 0) || undefined,
+      height: Number(params.package_height ?? 0) || undefined,
+      invoiceValue,
+      paymentMode: (params.payment_type ?? 'prepaid').toUpperCase() === 'COD' ? 'COD' : 'PREPAID',
+      courierScope: {
+        courierId: params.courier_id ? Number(params.courier_id) : undefined,
+        serviceProvider,
+      },
+      pickupDate: params.pickup?.pickup_date,
+      deliveryAddress: params.consignee.address,
+      planId: activePlanId ?? undefined,
+    })
+
+    if (rateResult?.charges) {
+      chargesBreakdown = {
+        baseFreight: rateResult.charges.baseFreight,
+        overheads: rateResult.charges.overheads,
+        demurrage: rateResult.charges.demurrage,
+        total: rateResult.charges.total,
+      }
+    }
+  } catch (err) {
+    console.error('Failed to compute B2B charges breakdown for order', params.order_number, err)
+  }
+
+  const [pendingOrder] = await db
+    .insert(b2b_orders)
+    .values({
+      order_number: normalizedOrderNumber,
+      order_date: params?.order_date,
+      order_amount: params?.order_amount,
+      user_id: userId,
+      company_name: params.consignee?.company_name ?? '',
+      company_gst: params.consignee?.gstin ?? '',
+      buyer_name: params.consignee.name,
+      buyer_phone: params.consignee.phone ?? '',
+      buyer_email: params.consignee.email ?? '',
+      address: params.consignee.address,
+      city: params.consignee.city,
+      state: params.consignee.state,
+      country: 'India',
+      pincode: params.consignee.pincode,
+      packages: normalizedBoxes,
+      order_type: params.payment_type,
+      order_status: 'pending',
+      invoice_number: params?.invoice_number,
+      invoice_date: params?.invoice_date,
+      invoice_amount: params?.invoice_amount ? String(params.invoice_amount) : null,
+      is_insurance: insuranceEnabled,
+      declared_value: insuranceEnabled ? invoiceValue : null,
+      rov_charge: insuranceEnabled ? rovCharge : null,
+      charges_breakdown: chargesBreakdown,
+      shipping_charges: params.shipping_charges ?? 0,
+      freight_charges: params.freight_charges ?? params.shipping_charges ?? 0,
+      courier_cost: params.courier_cost ?? null,
+      transaction_fee: params.transaction_fee ?? 0,
+      discount: params.discount ?? 0,
+      gift_wrap: params.gift_wrap ? Number(params.gift_wrap) : 0,
+      products: normalizedOrderItems,
+      weight: String(params.package_weight ?? ''),
+      length: String(params.package_length ?? ''),
+      breadth: String(params.package_breadth ?? ''),
+      height: String(params.package_height ?? ''),
+      actual_weight: String(params.package_weight ?? ''),
+      charged_weight: String(params.package_weight ?? ''),
+      volumetric_weight:
+        params.package_length && params.package_breadth && params.package_height
+          ? String(
+              Number(
+                (
+                  (Number(params.package_length) *
+                    Number(params.package_breadth) *
+                    Number(params.package_height)) /
+                  5000
+                ).toFixed(3),
+              ),
+            )
+          : null,
+      delivery_location: params.delivery_location ?? params.zone ?? null,
+      pickup_location_id: params.pickup_location_id ?? params.pickup?.warehouse_name ?? null,
+      pickup_details: pickupDetails,
+      rto_details: rtoDetails,
+      is_rto_different: params.is_rto_different === 'yes',
+      is_external_api: is_external_api ?? false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as any)
+    .returning({ id: b2b_orders.id })
+
+  const payload: ShipmentParams = {
+    ...params,
+    payment_type: params.payment_type === 'prepaid' ? 'prepaid' : 'cod',
+    request_auto_pickup: params.request_auto_pickup ?? 'no',
+    is_insurance: insuranceEnabled ? 1 : 0,
+    is_rto_different: params.is_rto_different ?? 'no',
+    package_weight: Number(params.package_weight ?? 0),
+    package_length: Number(params.package_length ?? 0),
+    package_breadth: Number(params.package_breadth ?? 0),
+    package_height: Number(params.package_height ?? 0),
+    order_items: normalizedOrderItems,
+    boxes: normalizedBoxes,
+    company: {
+      name: params.consignee?.company_name,
+      gst: params.consignee?.gstin,
+    },
+  }
+
+  let shipmentData: any
+
+  try {
+    if (bookingIntegrationType === 'shipmozo') {
+      const shipmozo = new ShipmozoService()
+      shipmentData = await shipmozo.createShipment({
+        ...payload,
+        collectable_amount:
+          payload.payment_type === 'cod' ? Number(payload.order_amount ?? 0) : 0,
+      })
+    } else {
+      const icarry = new IcarryService()
+      shipmentData = await icarry.createShipment({
+        ...payload,
+        shipment_mode:
+          String(payload.shipment_mode || payload.shipping_mode || '').trim() || 'S',
+      })
+    }
+  } catch (error: any) {
+    await db
+      .update(b2b_orders)
+      .set({
+        order_status: 'failed',
+        delivery_message: String(error?.message || 'B2B booking failed').slice(0, 100),
+        updated_at: new Date(),
+      })
+      .where(eq(b2b_orders.id, pendingOrder.id))
+    throw error
+  }
+
+  const shipmentRecord = shipmentData?.data || shipmentData || {}
+  const awbNumber =
+    shipmentRecord?.awb_number || shipmentRecord?.tracking_number || shipmentRecord?.awb || ''
+  const shipmentId =
+    shipmentRecord?.shipment_id ||
+    shipmentRecord?.reference_id ||
+    shipmentRecord?.pickup_id ||
+    shipmentRecord?.order_id ||
+    awbNumber
+  const courierPartner =
+    shipmentRecord?.courier_company_service ||
+    shipmentRecord?.courier_company ||
+    shipmentRecord?.courier_name ||
+    shipmentRecord?.courier ||
+    params.courier_partner ||
+    (rateScopeProvider === 'shiprocket' ? 'Shiprocket' : 'iCarry')
+  const courierCost =
+    shipmentRecord?.freight_charges ??
+    shipmentRecord?.charge ??
+    shipmentRecord?.cost ??
+    params.courier_cost ??
+    chargesBreakdown?.total ??
+    null
+  const labelUrl = shipmentRecord?.label ?? shipmentRecord?.label_url ?? null
+  const manifestUrl = shipmentRecord?.manifest ?? shipmentRecord?.manifest_url ?? null
+
+  if (!awbNumber) {
+    await db
+      .update(b2b_orders)
+      .set({
+        order_status: 'failed',
+        delivery_message: 'Courier did not return an AWB number',
+        updated_at: new Date(),
+      })
+      .where(eq(b2b_orders.id, pendingOrder.id))
+    throw new HttpError(502, 'Courier did not return an AWB number for the B2B shipment.')
+  }
+
+  await db
+    .update(b2b_orders)
+    .set({
+      order_status: 'booked',
+      shipment_id: shipmentId ? String(shipmentId) : null,
+      awb_number: String(awbNumber),
+      courier_partner: String(courierPartner),
+      courier_id: params.courier_id != null ? String(params.courier_id) : null,
+      label: labelUrl ? String(labelUrl) : null,
+      manifest: manifestUrl ? String(manifestUrl) : null,
+      courier_cost: courierCost != null ? String(Number(courierCost)) : null,
+      delivery_message: String(shipmentData?.message || shipmentData?.status || 'Booked').slice(
+        0,
+        100,
+      ),
+      updated_at: new Date(),
+    })
+    .where(eq(b2b_orders.id, pendingOrder.id))
+
+  return {
+    order_id: pendingOrder.id,
+    shipment_id: shipmentId ? String(shipmentId) : null,
+    awb_number: String(awbNumber),
+    courier_partner: String(courierPartner),
+    courier_id: params.courier_id ?? null,
+    label: labelUrl ? String(labelUrl) : null,
+    manifest: manifestUrl ? String(manifestUrl) : null,
+    courier_cost: courierCost != null ? Number(courierCost) : null,
+    provider: rateScopeProvider,
+    raw: shipmentData,
+  }
 }
 
 export const getAllB2COrdersService = async () => {
