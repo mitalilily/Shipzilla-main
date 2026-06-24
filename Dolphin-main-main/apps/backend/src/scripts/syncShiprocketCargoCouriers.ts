@@ -1,4 +1,5 @@
 import { getShiprocketCargoShipmentCharges } from '../models/services/shiprocketCargo.service'
+import cargoCourierCatalog from './shiprocketCargoCourierCatalog.json'
 
 type SyncedCourierRecord = {
   id: number
@@ -6,37 +7,7 @@ type SyncedCourierRecord = {
   businessType: ('b2c' | 'b2b')[]
 }
 
-const KNOWN_CARGO_COURIER_NAMES = new Set([
-  'Safex',
-  'Delhivery',
-  'Xpressbees',
-  'ScorpionExpress',
-  'Gati',
-  'TCIExpress',
-  'Delhivery Enterprise',
-  'OxyzenExpress',
-  'Bluedart',
-  'Movin',
-  'CargoPrime',
-  'Ekart',
-  'Smartr',
-  'Delhivery Heavy',
-  'SafeShip',
-  'VRL Logistics',
-  'Dependo',
-  'Rivigo',
-  'Delhivery KB',
-  'DP World',
-  'Shadowfax',
-  'Dtex Logistics',
-  'Pickndel',
-  'Pickrr',
-  'XP India',
-  'BluedartEnterprise',
-  'Batra Transport',
-  'Rivigo Priority',
-  'Logitrust',
-])
+const KNOWN_CARGO_COURIER_NAMES = new Set(cargoCourierCatalog.map((carrier) => carrier.name))
 
 const PROBES = [
   ['400076', 'Mumbai', 'Maharashtra', '110017', 'New Delhi', 'Delhi', 2, 1111, 12, 11, 11, 11],
@@ -185,10 +156,22 @@ const run = async () => {
   const records = [...discovered.values()].sort((a, b) => a.name.localeCompare(b.name))
   const matchedNames = records.map((record) => record.name)
   const missingNames = [...KNOWN_CARGO_COURIER_NAMES].filter((name) => !matchedNames.includes(name))
+  const catalogWithDiscovery = cargoCourierCatalog.map((carrier) => {
+    const discoveredRecord = records.find((record) => record.name === carrier.name)
+    return {
+      ...carrier,
+      discoveredLive: Boolean(discoveredRecord),
+      discoveredId: discoveredRecord?.id ?? null,
+      discoveredModes: discoveredRecord?.modes ?? [],
+      commonName: discoveredRecord?.commonName ?? null,
+    }
+  })
 
   const summary = {
+    totalCatalog: cargoCourierCatalog.length,
     totalDiscovered: records.length,
     discovered: records,
+    catalog: catalogWithDiscovery,
     missingFromLiveProbes: missingNames,
   }
 
