@@ -15,7 +15,8 @@
       "Mizoram",
       "Tripura"
     ],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "NE1",
@@ -24,7 +25,8 @@
     "region": "North East",
     "coverageType": "exception_city",
     "states": [],
-    "sheetCities": ["Guwahati"]
+    "sheetCities": ["Guwahati"],
+    "locationAliases": ["Guwahati"]
   },
   {
     "code": "E2",
@@ -33,7 +35,8 @@
     "region": "East",
     "coverageType": "default_state",
     "states": ["Odisha", "West Bengal", "Bihar", "Jharkhand"],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "E1",
@@ -42,7 +45,8 @@
     "region": "East",
     "coverageType": "exception_city",
     "states": [],
-    "sheetCities": ["Kolkata", "Siliguri", "Bhubaneshwar", "Bhubaneswar", "Patna", "Ranchi"]
+    "sheetCities": ["Kolkata", "Siliguri", "Bhubaneshwar", "Bhubaneswar", "Patna", "Ranchi"],
+    "locationAliases": ["Kolkata", "Siliguri", "Bhubaneshwar", "Bhubaneswar", "Patna", "Ranchi"]
   },
   {
     "code": "S4",
@@ -51,7 +55,8 @@
     "region": "South",
     "coverageType": "default_state",
     "states": ["Kerala"],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "S3",
@@ -60,7 +65,8 @@
     "region": "South",
     "coverageType": "default_state",
     "states": ["Tamil Nadu", "Puducherry"],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "S2",
@@ -69,7 +75,8 @@
     "region": "South",
     "coverageType": "default_state",
     "states": ["Telangana", "Andhra Pradesh", "Karnataka"],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "S1",
@@ -78,7 +85,8 @@
     "region": "South",
     "coverageType": "exception_city",
     "states": [],
-    "sheetCities": ["Hyderabad", "Bangalore", "Bengaluru", "Banglor", "Chennai"]
+    "sheetCities": ["Hyderabad", "Bangalore", "Bengaluru", "Banglor", "Chennai"],
+    "locationAliases": ["Hyderabad", "Bangalore", "Bengaluru", "Banglor", "Chennai"]
   },
   {
     "code": "W2",
@@ -87,7 +95,8 @@
     "region": "West",
     "coverageType": "default_state",
     "states": ["Dadra and Nagar Haveli and Daman and Diu", "Maharashtra", "Goa"],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "W1",
@@ -96,7 +105,8 @@
     "region": "West",
     "coverageType": "default_state",
     "states": ["Gujarat"],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "C2",
@@ -105,7 +115,8 @@
     "region": "Central",
     "coverageType": "default_state",
     "states": ["Madhya Pradesh", "Chhattisgarh"],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "C1",
@@ -114,7 +125,8 @@
     "region": "Central",
     "coverageType": "exception_city",
     "states": [],
-    "sheetCities": ["Indore", "Bhopal", "Raipur"]
+    "sheetCities": ["Indore", "Bhopal", "Raipur"],
+    "locationAliases": ["Indore", "Bhopal", "Raipur"]
   },
   {
     "code": "N4",
@@ -123,7 +135,8 @@
     "region": "North",
     "coverageType": "default_state",
     "states": ["Jammu and Kashmir", "Himachal Pradesh", "Ladakh"],
-    "sheetCities": []
+    "sheetCities": [],
+    "locationAliases": []
   },
   {
     "code": "N3",
@@ -132,7 +145,8 @@
     "region": "North",
     "coverageType": "default_state",
     "states": ["Haryana", "Uttar Pradesh", "Punjab", "Uttarakhand", "Rajasthan"],
-    "sheetCities": ["Baddi", "Jammu"]
+    "sheetCities": ["Baddi", "Jammu"],
+    "locationAliases": ["Baddi", "Jammu"]
   },
   {
     "code": "N2",
@@ -141,7 +155,8 @@
     "region": "North",
     "coverageType": "exception_city",
     "states": [],
-    "sheetCities": ["Chandigarh", "Ludhiana", "Dehradun"]
+    "sheetCities": ["Chandigarh", "Ludhiana", "Dehradun"],
+    "locationAliases": ["Chandigarh", "Ludhiana", "Dehradun"]
   },
   {
     "code": "N1",
@@ -150,6 +165,7 @@
     "region": "North",
     "coverageType": "exception_city",
     "states": [],
-    "sheetCities": ["Delhi", "Gurgaon", "Faridabad", "Ghaziabad", "Noida", "Sahibabad", "Jaipur"]
+    "sheetCities": ["Delhi", "Gurgaon", "Faridabad", "Ghaziabad", "Noida", "Sahibabad", "Jaipur"],
+    "locationAliases": ["Delhi", "Delhi NCR", "New Delhi", "Gurgaon", "Gurugram", "Faridabad", "Ghaziabad", "Noida", "Sahibabad", "Jaipur"]
   }
 ]
