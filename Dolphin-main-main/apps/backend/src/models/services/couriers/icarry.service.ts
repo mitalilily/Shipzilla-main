@@ -253,12 +253,23 @@ export const getIcarryStateNameForZoneId = (value: unknown) => {
 }
 
 const sanitizeNickname = (...parts: unknown[]) => {
-  const combined = parts
+  const normalizedCandidates = parts
     .map((part) => trim(part))
     .filter(Boolean)
-    .join('')
-  const lettersOnly = combined.replace(/[^a-zA-Z]/g, '')
-  return lettersOnly.length > 0 ? lettersOnly.slice(0, 40) : 'ShipzillaPickup'
+    .map((part) => String(part).replace(/[^a-zA-Z0-9]/g, ''))
+    .filter(Boolean)
+
+  const firstValidCandidate = normalizedCandidates.find((candidate) => candidate.length >= 3)
+  if (firstValidCandidate) {
+    return firstValidCandidate.slice(0, 25)
+  }
+
+  const combinedFallback = normalizedCandidates.join('')
+  if (combinedFallback.length >= 3) {
+    return combinedFallback.slice(0, 25)
+  }
+
+  return 'ShipzillaPickup'
 }
 
 const toNumber = (value: unknown, fallback = 0) => {
