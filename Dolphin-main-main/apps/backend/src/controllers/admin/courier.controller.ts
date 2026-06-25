@@ -1,8 +1,7 @@
-import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
+import { and, desc, eq, ilike, inArray, notInArray, or, sql } from 'drizzle-orm'
 import { Request, Response } from 'express'
 import Papa from 'papaparse'
 import { db } from '../../models/client'
-import { b2c_orders } from '../../models/schema/b2cOrders'
 import {
   deleteCourierService,
   deleteShippingRate,
@@ -158,7 +157,7 @@ const upsertProviderCouriers = async (
 ) => {
   const normalizedRecords = dedupeCourierCatalog(records)
   if (!normalizedRecords.length) {
-    return { total: 0, created: 0, updated: 0 }
+    return { total: 0, created: 0, updated: 0, removed: 0 }
   }
 
   const ids = normalizedRecords.map((record) => record.id)
@@ -168,6 +167,27 @@ const upsertProviderCouriers = async (
     .where(and(eq(couriers.serviceProvider, serviceProvider), inArray(couriers.id, ids)))
 
   const existingIds = new Set(existingRows.map((row) => Number(row.id)))
+
+  const staleRows = await db
+    .select({ id: couriers.id })
+    .from(couriers)
+    .where(
+      and(eq(couriers.serviceProvider, serviceProvider), notInArray(couriers.id, ids)),
+    )
+
+  if (staleRows.length) {
+    await db
+      .delete(couriers)
+      .where(
+        and(
+          eq(couriers.serviceProvider, serviceProvider),
+          inArray(
+            couriers.id,
+            staleRows.map((row) => Number(row.id)),
+          ),
+        ),
+      )
+  }
 
   await db
     .insert(couriers)
@@ -195,6 +215,7 @@ const upsertProviderCouriers = async (
     total: normalizedRecords.length,
     created,
     updated: normalizedRecords.length - created,
+    removed: staleRows.length,
   }
 }
 
@@ -209,7 +230,7 @@ const syncShiprocketCourierCatalog = async () => {
 
 const syncIcarryCourierCatalog = async (
   payload: Record<string, any>,
-): Promise<{ total: number; created: number; updated: number }> => {
+): Promise<{ total: number; created: number; updated: number; removed: number }> => {
   const service = new IcarryService()
   const probes = [
     {
@@ -271,29 +292,8 @@ const syncIcarryCourierCatalog = async (
   }
 
   if (!records.length) {
-    const historicalRows = await db
-      .select({
-        id: b2c_orders.courier_id,
-        name: b2c_orders.courier_partner,
-      })
-      .from(b2c_orders)
-      .where(sql`lower(${b2c_orders.integration_type}) = 'icarry'`)
-
-    records.push(
-      ...historicalRows
-        .map((row) =>
-          normalizeIcarryCourier({
-            courier_id: row.id,
-            courier_name: row.name,
-            business_type: ['b2c', 'b2b'],
-          }),
-        )
-        .filter((record): record is SyncedCourierRecord => Boolean(record)),
-    )
-
-    if (!records.length && lastError) {
-      throw lastError
-    }
+    if (lastError) throw lastError
+    throw new Error('iCarry courier sync returned no live courier records.')
   }
 
   return upsertProviderCouriers('icarry', records)
