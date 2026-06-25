@@ -6,7 +6,8 @@
   "notes": [
     "Source: b2b.pdf shared by boss.",
     "Matrix values are base rates per 1 kg.",
-    "matrixRateIncreasePercent applies a 30% uplift to base matrix charges during import."
+    "matrixRateIncreasePercent applies a 30% uplift to base matrix charges during import.",
+    "Peak, CPL, SDL, and Green remain deferred in the sheet and are not applied until pricing treatment is finalized."
   ],
   "matrixRateIncreasePercent": 30,
   "zoneCodes": ["N1", "N2", "N3", "N4", "C1", "C2", "W1", "W2", "S1", "S2", "S3", "S4", "E1", "E2", "NE1", "NE2"],
@@ -52,6 +53,7 @@
       "code": "PEAK_SURCHARGE",
       "name": "Peak Surcharge",
       "description": "Imported from BlueDart LTL boss sheet: 4% or 0 whichever is higher.",
+      "deferred": true,
       "type": "percent",
       "percent": 4,
       "appliesTo": "freight",
@@ -61,6 +63,7 @@
       "code": "CPL_SURCHARGE",
       "name": "CPL Surcharge",
       "description": "Imported from BlueDart LTL boss sheet: 0 per kg or 60 whichever is higher.",
+      "deferred": true,
       "type": "flat",
       "amount": 60,
       "appliesTo": "freight",
@@ -70,6 +73,7 @@
       "code": "SDL_SURCHARGE",
       "name": "Safe Delivery Surcharge",
       "description": "Imported from BlueDart LTL boss sheet: 2.8 per kg or 0 whichever is higher.",
+      "deferred": true,
       "type": "per_kg",
       "amount": 2.8,
       "appliesTo": "freight",
@@ -79,6 +83,7 @@
       "code": "GREEN_CHARGES",
       "name": "Green Charges",
       "description": "Imported from BlueDart LTL boss sheet: 0.25 per kg or 90 whichever is higher.",
+      "deferred": true,
       "type": "per_kg_or_flat",
       "amount": 0.25,
       "appliesTo": "freight",

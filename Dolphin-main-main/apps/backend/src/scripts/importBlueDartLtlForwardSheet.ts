@@ -1,13 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 import * as dotenv from 'dotenv'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../models/client'
 import { upsertZoneToZoneRate, upsertOverheadRule } from '../models/services/b2bAdmin.service'
 import {
   upsertAdditionalCharges,
   upsertVolumetricRules,
 } from '../models/services/b2bPricingConfig.service'
+import { b2bOverheadRules } from '../models/schema/zones'
 import { couriers } from '../models/schema/couriers'
 import { plans } from '../models/schema/plans'
 import { zones } from '../models/schema/zones'
@@ -19,6 +20,7 @@ type SheetRule = {
   code: string
   name: string
   description?: string
+  deferred?: boolean
   type:
     | 'flat_awb'
     | 'flat'
@@ -72,6 +74,31 @@ type CourierTarget = {
   id: number
   name: string
   serviceProvider: string
+}
+
+const deleteDeferredOverheadRules = async (params: {
+  courier: CourierTarget
+  planId: string
+  deferredCodes: string[]
+}) => {
+  if (!params.deferredCodes.length) {
+    return 0
+  }
+
+  const result = await db
+    .delete(b2bOverheadRules)
+    .where(
+      and(
+        eq(b2bOverheadRules.business_type, 'B2B'),
+        eq(b2bOverheadRules.plan_id, params.planId),
+        eq(b2bOverheadRules.courier_id, params.courier.id),
+        eq(b2bOverheadRules.service_provider, params.courier.serviceProvider),
+        inArray(b2bOverheadRules.code, params.deferredCodes),
+      ),
+    )
+    .returning({ id: b2bOverheadRules.id })
+
+  return result.length
 }
 
 const parseArgs = () => {
@@ -219,6 +246,11 @@ const applySheetToCourier = async (params: {
   sheet: SheetFile
   zoneMap: Map<string, string>
 }) => {
+  const activeOverheadRules = (params.sheet.overheadRules || []).filter((rule) => !rule.deferred)
+  const deferredOverheadCodes = (params.sheet.overheadRules || [])
+    .filter((rule) => rule.deferred)
+    .map((rule) => rule.code)
+
   for (const row of params.matrixPayload) {
     await upsertZoneToZoneRate({
       originZoneId: params.zoneMap.get(row.originZoneCode.toUpperCase()) as string,
@@ -251,7 +283,18 @@ const applySheetToCourier = async (params: {
     })
   }
 
-  for (const rule of params.sheet.overheadRules || []) {
+  const removedDeferredRules = await deleteDeferredOverheadRules({
+    courier: params.courier,
+    planId: params.planId,
+    deferredCodes: deferredOverheadCodes,
+  })
+  if (removedDeferredRules > 0) {
+    console.log(
+      `Removed ${removedDeferredRules} deferred overhead rule(s) for ${params.courier.name} (${params.courier.id})`,
+    )
+  }
+
+  for (const rule of activeOverheadRules) {
     await upsertOverheadRule({
       ...rule,
       planId: params.planId,
@@ -317,6 +360,12 @@ async function main() {
       .join(', ')}`,
   )
   console.log(`Matrix uplift: ${sheet.matrixRateIncreasePercent}%`)
+  const deferredRuleNames = (sheet.overheadRules || [])
+    .filter((rule) => rule.deferred)
+    .map((rule) => rule.name)
+  if (deferredRuleNames.length > 0) {
+    console.log(`Deferred surcharges: ${deferredRuleNames.join(', ')}`)
+  }
   console.log(
     `Example uplift: ${matrixPayload[0].originZoneCode} -> ${matrixPayload[0].destinationZoneCode} ${matrixPayload[0].baseRate} => ${matrixPayload[0].upliftedRate}`,
   )
