@@ -64,6 +64,12 @@ type SheetFile = {
   overheadRules?: SheetRule[]
 }
 
+type CourierTarget = {
+  id: number
+  name: string
+  serviceProvider: string
+}
+
 const parseArgs = () => {
   const args = process.argv.slice(2)
   const getArg = (name: string) => {
@@ -75,6 +81,8 @@ const parseArgs = () => {
     courierId: Number(getArg('--courier-id') || ''),
     serviceProvider: getArg('--service-provider') || '',
     planId: getArg('--plan-id') || '',
+    planName: getArg('--plan-name') || '',
+    allCouriers: args.includes('--all-couriers'),
     apply: args.includes('--apply'),
     sheetPath:
       getArg('--sheet') ||
@@ -90,31 +98,144 @@ const readSheet = (sheetPath: string): SheetFile => {
 const toRatePerKg = (baseRate: number, upliftPercent: number) =>
   Number((baseRate * (1 + upliftPercent / 100)).toFixed(4))
 
-async function main() {
-  const { courierId, serviceProvider, planId, apply, sheetPath } = parseArgs()
+const resolvePlan = async (params: { planId?: string; planName?: string }) => {
+  if (params.planId) {
+    const [plan] = await db.select().from(plans).where(eq(plans.id, params.planId)).limit(1)
+    if (!plan) {
+      throw new Error(`Plan not found for id=${params.planId}`)
+    }
+    return plan
+  }
 
-  if (!courierId || !serviceProvider || !planId) {
+  if (params.planName) {
+    const [plan] = await db.select().from(plans).where(eq(plans.name, params.planName)).limit(1)
+    if (!plan) {
+      throw new Error(`Plan not found for name=${params.planName}`)
+    }
+    return plan
+  }
+
+  throw new Error('Provide either --plan-id <uuid> or --plan-name <name>.')
+}
+
+const resolveCourierTargets = async (params: {
+  courierId?: number
+  serviceProvider?: string
+  allCouriers?: boolean
+}): Promise<CourierTarget[]> => {
+  if (params.allCouriers) {
+    if (!params.serviceProvider) {
+      throw new Error('When using --all-couriers, --service-provider is required.')
+    }
+
+    const providerCouriers = await db
+      .select({
+        id: couriers.id,
+        name: couriers.name,
+        serviceProvider: couriers.serviceProvider,
+      })
+      .from(couriers)
+      .where(eq(couriers.serviceProvider, params.serviceProvider))
+
+    if (!providerCouriers.length) {
+      throw new Error(`No couriers found for serviceProvider=${params.serviceProvider}`)
+    }
+
+    return providerCouriers
+  }
+
+  if (!params.courierId || !params.serviceProvider) {
     throw new Error(
-      'Usage: ts-node src/scripts/importBlueDartLtlForwardSheet.ts --courier-id <id> --service-provider <provider> --plan-id <uuid> [--apply] [--sheet <path>]',
+      'Usage: ts-node src/scripts/importBlueDartLtlForwardSheet.ts --courier-id <id> --service-provider <provider> (--plan-id <uuid> | --plan-name <name>) [--apply] [--sheet <path>]',
     )
   }
 
-  const sheet = readSheet(sheetPath)
-
   const [courier] = await db
-    .select()
+    .select({
+      id: couriers.id,
+      name: couriers.name,
+      serviceProvider: couriers.serviceProvider,
+    })
     .from(couriers)
-    .where(and(eq(couriers.id, courierId), eq(couriers.serviceProvider, serviceProvider)))
+    .where(and(eq(couriers.id, params.courierId), eq(couriers.serviceProvider, params.serviceProvider)))
     .limit(1)
 
   if (!courier) {
-    throw new Error(`Courier scope not found for id=${courierId} serviceProvider=${serviceProvider}`)
+    throw new Error(
+      `Courier scope not found for id=${params.courierId} serviceProvider=${params.serviceProvider}`,
+    )
   }
 
-  const [plan] = await db.select().from(plans).where(eq(plans.id, planId)).limit(1)
-  if (!plan) {
-    throw new Error(`Plan not found for id=${planId}`)
+  return [courier]
+}
+
+const applySheetToCourier = async (params: {
+  courier: CourierTarget
+  planId: string
+  matrixPayload: Array<{
+    originZoneCode: string
+    destinationZoneCode: string
+    baseRate: number
+    upliftedRate: number
+  }>
+  sheet: SheetFile
+  zoneMap: Map<string, string>
+}) => {
+  for (const row of params.matrixPayload) {
+    await upsertZoneToZoneRate({
+      originZoneId: params.zoneMap.get(row.originZoneCode.toUpperCase()) as string,
+      destinationZoneId: params.zoneMap.get(row.destinationZoneCode.toUpperCase()) as string,
+      ratePerKg: row.upliftedRate,
+      planId: params.planId,
+      courierScope: {
+        courierId: params.courier.id,
+        serviceProvider: params.courier.serviceProvider,
+      },
+    })
   }
+
+  await upsertAdditionalCharges({
+    ...params.sheet.additionalCharges,
+    planId: params.planId,
+    courierScope: {
+      courierId: params.courier.id,
+      serviceProvider: params.courier.serviceProvider,
+    },
+  })
+
+  if (params.sheet.volumetricRules) {
+    await upsertVolumetricRules({
+      ...params.sheet.volumetricRules,
+      courierScope: {
+        courierId: params.courier.id,
+        serviceProvider: params.courier.serviceProvider,
+      },
+    })
+  }
+
+  for (const rule of params.sheet.overheadRules || []) {
+    await upsertOverheadRule({
+      ...rule,
+      planId: params.planId,
+      courierScope: {
+        courierId: params.courier.id,
+        serviceProvider: params.courier.serviceProvider,
+      },
+    })
+  }
+}
+
+async function main() {
+  const { courierId, serviceProvider, planId, planName, allCouriers, apply, sheetPath } =
+    parseArgs()
+
+  const sheet = readSheet(sheetPath)
+  const plan = await resolvePlan({ planId, planName })
+  const courierTargets = await resolveCourierTargets({
+    courierId,
+    serviceProvider,
+    allCouriers,
+  })
 
   const zoneRows = await db
     .select({ id: zones.id, code: zones.code })
@@ -137,8 +258,12 @@ async function main() {
   )
 
   console.log(`Preparing ${matrixPayload.length} matrix rows for ${sheet.serviceName}`)
+  console.log(`Target scope count: ${courierTargets.length}`)
+  console.log(`Target plan: ${plan.name} (${plan.id})`)
   console.log(
-    `Target scope: courier=${courier.name} (${serviceProvider}) plan=${plan.name} (${planId})`,
+    `Target couriers: ${courierTargets
+      .map((courier) => `${courier.name} [${courier.id}]`)
+      .join(', ')}`,
   )
   console.log(`Matrix uplift: ${sheet.matrixRateIncreasePercent}%`)
   console.log(
@@ -150,50 +275,22 @@ async function main() {
     return
   }
 
-  for (const row of matrixPayload) {
-    await upsertZoneToZoneRate({
-      originZoneId: zoneMap.get(row.originZoneCode.toUpperCase()) as string,
-      destinationZoneId: zoneMap.get(row.destinationZoneCode.toUpperCase()) as string,
-      ratePerKg: row.upliftedRate,
-      planId,
-      courierScope: {
-        courierId,
-        serviceProvider,
-      },
+  for (const courier of courierTargets) {
+    console.log(
+      `Applying sheet to courier=${courier.name} (${courier.id}) provider=${courier.serviceProvider} plan=${plan.name}`,
+    )
+    await applySheetToCourier({
+      courier,
+      planId: plan.id,
+      matrixPayload,
+      sheet,
+      zoneMap,
     })
   }
 
-  await upsertAdditionalCharges({
-    ...sheet.additionalCharges,
-    planId,
-    courierScope: {
-      courierId,
-      serviceProvider,
-    },
-  })
-
-  if (sheet.volumetricRules) {
-    await upsertVolumetricRules({
-      ...sheet.volumetricRules,
-      courierScope: {
-        courierId,
-        serviceProvider,
-      },
-    })
-  }
-
-  for (const rule of sheet.overheadRules || []) {
-    await upsertOverheadRule({
-      ...rule,
-      planId,
-      courierScope: {
-        courierId,
-        serviceProvider,
-      },
-    })
-  }
-
-  console.log('BlueDart LTL B2B sheet imported successfully.')
+  console.log(
+    `BlueDart LTL B2B sheet imported successfully for ${courierTargets.length} courier scope(s).`,
+  )
 }
 
 main().catch((error) => {
