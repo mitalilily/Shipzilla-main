@@ -30,7 +30,7 @@ const providerCopy = {
     note: 'Sync real Shiprocket carrier catalog and control provider availability.',
   },
   icarry: {
-    label: 'icarry Rate Card',
+    label: 'icarry',
     note: 'Sync live icarry courier options and manage their active status.',
   },
 }

@@ -52,7 +52,7 @@ const providerCopy = {
     emptyState: 'No live Shiprocket couriers are synced yet.',
   },
   icarry: {
-    label: 'icarry Rate Card',
+    label: 'icarry',
     emptyState: 'No live icarry couriers are synced yet.',
   },
 }
