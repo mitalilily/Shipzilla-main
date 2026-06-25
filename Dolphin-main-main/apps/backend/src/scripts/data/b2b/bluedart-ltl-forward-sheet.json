@@ -1,0 +1,83 @@
+{
+  "serviceName": "BlueDart LTL B2B FORWARD",
+  "matrixRateIncreasePercent": 30,
+  "zoneCodes": ["N1", "N2", "N3", "N4", "C1", "C2", "W1", "W2", "S1", "S2", "S3", "S4", "E1", "E2", "NE1", "NE2"],
+  "matrix": [
+    { "origin": "N1", "rates": { "N1": 8.06, "N2": 8.06, "N3": 8.06, "N4": 8.06, "C1": 10.26, "C2": 10.26, "W1": 10.26, "W2": 10.26, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "N2", "rates": { "N1": 8.06, "N2": 8.06, "N3": 8.06, "N4": 8.06, "C1": 10.26, "C2": 10.26, "W1": 10.26, "W2": 10.26, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "N3", "rates": { "N1": 8.06, "N2": 8.06, "N3": 8.06, "N4": 8.06, "C1": 10.26, "C2": 10.26, "W1": 10.26, "W2": 10.26, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "N4", "rates": { "N1": 8.06, "N2": 8.06, "N3": 8.06, "N4": 8.06, "C1": 10.26, "C2": 10.26, "W1": 10.26, "W2": 10.26, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "C1", "rates": { "N1": 10.26, "N2": 10.26, "N3": 10.26, "N4": 10.26, "C1": 8.06, "C2": 8.06, "W1": 10.26, "W2": 10.26, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "C2", "rates": { "N1": 10.26, "N2": 10.26, "N3": 10.26, "N4": 10.26, "C1": 8.06, "C2": 8.06, "W1": 10.26, "W2": 10.26, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "W1", "rates": { "N1": 10.26, "N2": 10.26, "N3": 10.26, "N4": 10.26, "C1": 10.26, "C2": 10.26, "W1": 8.06, "W2": 8.06, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "W2", "rates": { "N1": 10.26, "N2": 10.26, "N3": 10.26, "N4": 10.26, "C1": 10.26, "C2": 10.26, "W1": 8.06, "W2": 8.06, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "S1", "rates": { "N1": 11.72, "N2": 11.72, "N3": 11.72, "N4": 11.72, "C1": 11.72, "C2": 11.72, "W1": 11.72, "W2": 11.72, "S1": 8.06, "S2": 8.06, "S3": 8.06, "S4": 8.06, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "S2", "rates": { "N1": 11.72, "N2": 11.72, "N3": 11.72, "N4": 11.72, "C1": 11.72, "C2": 11.72, "W1": 11.72, "W2": 11.72, "S1": 8.06, "S2": 8.06, "S3": 8.06, "S4": 8.06, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "S3", "rates": { "N1": 11.72, "N2": 11.72, "N3": 11.72, "N4": 11.72, "C1": 11.72, "C2": 11.72, "W1": 11.72, "W2": 11.72, "S1": 8.06, "S2": 8.06, "S3": 8.06, "S4": 8.06, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "S4", "rates": { "N1": 11.72, "N2": 11.72, "N3": 11.72, "N4": 11.72, "C1": 11.72, "C2": 11.72, "W1": 11.72, "W2": 11.72, "S1": 8.06, "S2": 8.06, "S3": 8.06, "S4": 8.06, "E1": 11.72, "E2": 11.72, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "E1", "rates": { "N1": 11.72, "N2": 11.72, "N3": 11.72, "N4": 11.72, "C1": 11.72, "C2": 11.72, "W1": 11.72, "W2": 11.72, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 8.06, "E2": 8.06, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "E2", "rates": { "N1": 11.72, "N2": 11.72, "N3": 11.72, "N4": 11.72, "C1": 11.72, "C2": 11.72, "W1": 11.72, "W2": 11.72, "S1": 11.72, "S2": 11.72, "S3": 11.72, "S4": 11.72, "E1": 8.06, "E2": 8.06, "NE1": 20.52, "NE2": 20.52 } },
+    { "origin": "NE1", "rates": { "N1": 20.52, "N2": 20.52, "N3": 20.52, "N4": 20.52, "C1": 20.52, "C2": 20.52, "W1": 20.52, "W2": 20.52, "S1": 20.52, "S2": 20.52, "S3": 20.52, "S4": 20.52, "E1": 20.52, "E2": 20.52, "NE1": 8.06, "NE2": 8.06 } },
+    { "origin": "NE2", "rates": { "N1": 20.52, "N2": 20.52, "N3": 20.52, "N4": 20.52, "C1": 20.52, "C2": 20.52, "W1": 20.52, "W2": 20.52, "S1": 20.52, "S2": 20.52, "S3": 20.52, "S4": 20.52, "E1": 20.52, "E2": 20.52, "NE1": 8.06, "NE2": 8.06 } }
+  ],
+  "additionalCharges": {
+    "awbCharges": 70,
+    "cftFactor": 4500,
+    "minimumChargeableAmount": 220,
+    "minimumChargeableWeight": 0,
+    "minimumChargeableMethod": "whichever_is_higher",
+    "fuelSurchargePercentage": 20,
+    "odaCharges": 1000,
+    "odaPerKgCharge": 10,
+    "odaMethod": "whichever_is_higher",
+    "rovFixedAmount": 70,
+    "rovPercentage": 0,
+    "rovMethod": "whichever_is_higher"
+  },
+  "volumetricRules": {
+    "volumetricDivisor": 4500,
+    "cftFactor": 4500,
+    "minimumVolumetricWeight": 0
+  },
+  "overheadRules": [
+    {
+      "code": "PEAK_SURCHARGE",
+      "name": "Peak Surcharge",
+      "description": "Imported from BlueDart LTL boss sheet: 4% or 0 whichever is higher.",
+      "type": "percent",
+      "percent": 4,
+      "appliesTo": "freight",
+      "priority": 10
+    },
+    {
+      "code": "CPL_SURCHARGE",
+      "name": "CPL Surcharge",
+      "description": "Imported from BlueDart LTL boss sheet: 0 per kg or 60 whichever is higher.",
+      "type": "flat",
+      "amount": 60,
+      "appliesTo": "freight",
+      "priority": 20
+    },
+    {
+      "code": "SDL_SURCHARGE",
+      "name": "Safe Delivery Surcharge",
+      "description": "Imported from BlueDart LTL boss sheet: 2.8 per kg or 0 whichever is higher.",
+      "type": "per_kg",
+      "amount": 2.8,
+      "appliesTo": "freight",
+      "priority": 30
+    },
+    {
+      "code": "GREEN_CHARGES",
+      "name": "Green Charges",
+      "description": "Imported from BlueDart LTL boss sheet: 0.25 per kg or 90 whichever is higher.",
+      "type": "per_kg_or_flat",
+      "amount": 0.25,
+      "appliesTo": "freight",
+      "priority": 40,
+      "condition": {
+        "flatAmount": 90
+      }
+    }
+  ]
+}

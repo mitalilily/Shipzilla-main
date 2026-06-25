@@ -156,6 +156,27 @@ const B2BRateMatrix = ({ planId }) => {
     },
   })
 
+  const deleteRateMutation = useMutation({
+    mutationFn: (id) => b2bAdminService.deleteZoneRate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['b2b-zone-rates'])
+      toast({
+        title: 'Rate deleted successfully',
+        status: 'success',
+        duration: 3000,
+      })
+      onClose()
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to delete rate',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+      })
+    },
+  })
+
   const handleImportCSV = () => {
     if (!importFile) {
       toast({
@@ -290,11 +311,17 @@ const B2BRateMatrix = ({ planId }) => {
       originZoneId: formData.originZoneId || selectedCell?.originZone?.id,
       destinationZoneId: formData.destinationZoneId || selectedCell?.destZone?.id,
       ratePerKg: formData.ratePerKg, // Only rate per kg needed
+      plan_id: planId || undefined,
       courier_id: formData.courier_id || courierId || undefined,
       service_provider: formData.service_provider || serviceProvider || undefined,
     }
 
     updateRateMutation.mutate(payload)
+  }
+
+  const handleDelete = (rateId) => {
+    if (!rateId) return
+    deleteRateMutation.mutate(rateId)
   }
 
   const bgColor = useColorModeValue('gray.50', 'gray.700')
@@ -484,7 +511,9 @@ const B2BRateMatrix = ({ planId }) => {
         onClose={onClose}
         selectedCell={selectedCell}
         onSave={handleSave}
+        onDelete={handleDelete}
         isLoading={updateRateMutation.isPending}
+        isDeleting={deleteRateMutation.isPending}
         courierId={courierId}
         serviceProvider={serviceProvider}
         couriers={couriers}
@@ -615,7 +644,9 @@ const RateCellModal = ({
   onClose,
   selectedCell,
   onSave,
+  onDelete,
   isLoading,
+  isDeleting,
   courierId,
   serviceProvider,
   couriers,
@@ -651,6 +682,11 @@ const RateCellModal = ({
 
   const handleSubmit = () => {
     onSave(formData)
+  }
+
+  const handleDelete = () => {
+    if (!selectedCell?.rate?.id || !onDelete) return
+    onDelete(selectedCell.rate.id)
   }
 
   if (!selectedCell) return null
@@ -711,6 +747,17 @@ const RateCellModal = ({
           </FormControl>
         </ModalBody>
         <ModalFooter>
+          {selectedCell?.rate?.id ? (
+            <Button
+              colorScheme="red"
+              variant="outline"
+              mr="auto"
+              onClick={handleDelete}
+              isLoading={isDeleting}
+            >
+              Delete
+            </Button>
+          ) : null}
           <Button variant="ghost" mr={3} onClick={onClose}>
             Cancel
           </Button>

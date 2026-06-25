@@ -1462,7 +1462,14 @@ export const upsertOverheadRule = async (payload: {
   code?: string
   name: string
   description?: string
-  type: 'flat_awb' | 'flat' | 'percent' | 'per_kg' | 'per_awb_day'
+  type:
+    | 'flat_awb'
+    | 'flat'
+    | 'percent'
+    | 'per_kg'
+    | 'per_awb_day'
+    | 'per_kg_or_flat'
+    | 'percent_or_flat'
   amount?: number
   percent?: number
   appliesTo?: 'freight' | 'final' | 'cod' | 'all'
@@ -2905,6 +2912,19 @@ const computeOverheadAmount = (
   },
 ) => {
   const appliesOn = rule.applies_to?.toLowerCase() ?? 'freight'
+  const parsedCondition =
+    typeof rule.condition === 'object' && rule.condition !== null
+      ? (rule.condition as Record<string, unknown>)
+      : typeof rule.condition === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(rule.condition) as Record<string, unknown>
+          } catch {
+            return null
+          }
+        })()
+      : null
+  const flatAmount = Number(parsedCondition?.flatAmount ?? 0)
 
   switch (rule.type) {
     case 'flat_awb':
@@ -2921,9 +2941,22 @@ const computeOverheadAmount = (
       }
       return (base * percent) / 100
     }
+    case 'percent_or_flat': {
+      const percent = Number(rule.percent ?? 0)
+      let base = context.baseFreight
+      if (appliesOn === 'total') base = context.currentTotal
+      else if (appliesOn === 'cod' && context.invoiceValue > 0) {
+        base = context.invoiceValue
+      }
+      const percentAmount = (base * percent) / 100
+      return Math.max(percentAmount, flatAmount)
+    }
     case 'per_kg':
-      const perKgRate = Number(rule.amount ?? 0)
-      return perKgRate * context.billableWeight
+      return Number(rule.amount ?? 0) * context.billableWeight
+    case 'per_kg_or_flat': {
+      const perKgAmount = Number(rule.amount ?? 0) * context.billableWeight
+      return Math.max(perKgAmount, flatAmount)
+    }
     case 'per_awb_day':
       // This would need additional context (days in storage)
       return Number(rule.amount ?? 0)
