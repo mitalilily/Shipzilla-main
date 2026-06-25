@@ -23,6 +23,12 @@ import {
   normalizeCourierId,
 } from '../../utils/delhiveryCourier'
 import { getBucketName } from '../../utils/functions'
+import {
+  clampOrdersFromDate,
+  formatDateInputValue,
+  getOrderVisibleAt,
+  getOrdersToDate,
+} from '../../utils/orderVisibilityWindow'
 import { db } from '../client'
 import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
@@ -5008,6 +5014,8 @@ export const getB2COrdersByUserService = async (
 
   // Build conditions array (explicit type)
   const conditions: SQL<unknown>[] = [eq(b2c_orders.user_id, userId)]
+  const visibleFromDate = clampOrdersFromDate(filters.fromDate)
+  const visibleToDate = getOrdersToDate(filters.toDate)
 
   // 🔹 Status filter (single or multiple)
   if (filters.status) {
@@ -5052,17 +5060,9 @@ export const getB2COrdersByUserService = async (
   }
 
   // 🔹 Date filters
-  if (filters.fromDate) {
-    // Start of day for fromDate
-    const fromDate = new Date(filters.fromDate)
-    fromDate.setHours(0, 0, 0, 0)
-    conditions.push(gte(b2c_orders.created_at, fromDate))
-  }
-  if (filters.toDate) {
-    // End of day for toDate to include the entire day
-    const toDate = new Date(filters.toDate)
-    toDate.setHours(23, 59, 59, 999)
-    conditions.push(lte(b2c_orders.created_at, toDate))
+  conditions.push(gte(b2c_orders.created_at, visibleFromDate))
+  if (visibleToDate) {
+    conditions.push(lte(b2c_orders.created_at, visibleToDate))
   }
 
   if (filters.search && filters.search.trim()) {
@@ -5161,14 +5161,14 @@ export const getB2BOrdersByUserService = async (
   const offset = (page - 1) * limit
 
   const conditions: any[] = [sql`${b2b_orders.user_id} = ${userId}::uuid`]
+  const visibleFromDate = formatDateInputValue(clampOrdersFromDate(filters.fromDate))
+  const visibleToDate = getOrdersToDate(filters.toDate)
 
   // if (filters.status) conditions.push(eq(b2b_orders.order_status, filters.status))
-  if (filters.fromDate)
-    conditions.push(
-      gte(b2b_orders.order_date, new Date(filters.fromDate).toISOString().slice(0, 10)),
-    )
-  if (filters.toDate)
-    conditions.push(lte(b2b_orders.order_date, new Date(filters.toDate).toISOString().slice(0, 10)))
+  conditions.push(gte(b2b_orders.order_date, visibleFromDate))
+  if (visibleToDate) {
+    conditions.push(lte(b2b_orders.order_date, formatDateInputValue(visibleToDate)))
+  }
 
   if (filters.search) {
     conditions.push(
@@ -7178,6 +7178,8 @@ export const getAllOrdersService = async (
   }: PaginationParams & { filters?: IOrderFilters },
 ) => {
   const offset = (page - 1) * limit
+  const visibleFromDate = clampOrdersFromDate(filters.fromDate)
+  const visibleToDate = getOrdersToDate(filters.toDate)
 
   // Fetch B2C orders
   const b2cOrdersRaw = await db.select().from(b2c_orders).where(eq(b2c_orders.user_id, userId))
@@ -7197,17 +7199,13 @@ export const getAllOrdersService = async (
     combinedOrders = combinedOrders.filter((o) => o.order_status === filters.status)
   }
 
-  if (filters.fromDate) {
-    combinedOrders = combinedOrders.filter((o) =>
-      o.created_at ? new Date(o.created_at) >= new Date(filters.fromDate!) : false,
-    )
-  }
-
-  if (filters.toDate) {
-    combinedOrders = combinedOrders.filter((o) =>
-      o.created_at ? new Date(o.created_at) <= new Date(filters.toDate!) : false,
-    )
-  }
+  combinedOrders = combinedOrders.filter((o) => {
+    const visibleAt = getOrderVisibleAt(o)
+    if (!visibleAt) return false
+    if (visibleAt < visibleFromDate) return false
+    if (visibleToDate && visibleAt > visibleToDate) return false
+    return true
+  })
 
   if (filters.search) {
     const keyword = filters.search.toLowerCase()
@@ -7223,8 +7221,8 @@ export const getAllOrdersService = async (
 
   // ✅ Sort safely
   combinedOrders.sort((a, b) => {
-    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
-    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+    const timeA = getOrderVisibleAt(a)?.getTime() ?? 0
+    const timeB = getOrderVisibleAt(b)?.getTime() ?? 0
     return timeB - timeA
   })
 

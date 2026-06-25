@@ -7,6 +7,11 @@ import { invoicePreferences } from '../schema/invoicePreferences'
 import { userProfiles } from '../schema/userProfile'
 import { users } from '../schema/users'
 import { sanitizeOrdersForCustomer } from '../../utils/orderSanitizer'
+import {
+  clampOrdersFromDate,
+  getOrderVisibleAt,
+  getOrdersToDate,
+} from '../../utils/orderVisibilityWindow'
 import { IOrderFilters, PaginationParams } from './shiprocket.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
 import dayjs from 'dayjs'
@@ -50,6 +55,8 @@ export const getAllOrdersServiceAdmin = async ({
   filters = {} as IOrderFilters,
 }: PaginationParams & { filters?: IOrderFilters }) => {
   const offset = (page - 1) * limit
+  const visibleFromDate = clampOrdersFromDate(filters.fromDate)
+  const visibleToDate = getOrdersToDate(filters.toDate)
 
   // Fetch B2C orders
   const b2cOrdersRaw = await db.select().from(b2c_orders)
@@ -112,17 +119,13 @@ export const getAllOrdersServiceAdmin = async ({
     combinedOrders = combinedOrders.filter((o) => o.order_status === filters.status)
   }
 
-  if (filters.fromDate) {
-    combinedOrders = combinedOrders.filter((o) =>
-      o.created_at ? new Date(o.created_at) >= new Date(filters.fromDate!) : false,
-    )
-  }
-
-  if (filters.toDate) {
-    combinedOrders = combinedOrders.filter((o) =>
-      o.created_at ? new Date(o.created_at) <= new Date(filters.toDate!) : false,
-    )
-  }
+  combinedOrders = combinedOrders.filter((o) => {
+    const visibleAt = getOrderVisibleAt(o)
+    if (!visibleAt) return false
+    if (visibleAt < visibleFromDate) return false
+    if (visibleToDate && visibleAt > visibleToDate) return false
+    return true
+  })
 
   if (filters.search) {
     const keyword = filters.search.toLowerCase()
@@ -143,8 +146,8 @@ export const getAllOrdersServiceAdmin = async ({
   const sortOrder = filters.sortOrder === 'asc' ? 'asc' : 'desc'
   combinedOrders.sort((a, b) => {
     if (sortBy !== 'created_at') return 0
-    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
-    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+    const timeA = getOrderVisibleAt(a)?.getTime() ?? 0
+    const timeB = getOrderVisibleAt(b)?.getTime() ?? 0
     return sortOrder === 'asc' ? timeA - timeB : timeB - timeA
   })
 

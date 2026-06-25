@@ -6,6 +6,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { generateManifestService } from '../../api/order.service'
 import { useAllOrders, useB2BOrdersByUser, useB2COrdersByUser } from '../../hooks/Orders/useOrders'
 import { usePresignedDownloadMutation } from '../../hooks/Uploads/usePresignedDownloadUrls'
+import { getTodayDateInputValue } from '../../utils/date'
 import { FilterBar, type FilterField } from '../FilterBar'
 import { toast } from '../UI/Toast'
 import StatusChip from '../UI/chip/StatusChip'
@@ -74,6 +75,7 @@ const AllOrders = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const todayDate = getTodayDateInputValue()
   const [page, setPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [selectedOrderIds, setSelectedOrderIds] = useState<Array<Order['id']>>([])
@@ -85,7 +87,7 @@ const AllOrders = () => {
   const [bulkFeedback, setBulkFeedback] = useState<BulkFeedback | null>(null)
   const [filters, setFilters] = useState<OrdersFilters>({
     status: undefined,
-    fromDate: undefined,
+    fromDate: todayDate,
     toDate: undefined,
     search: undefined,
   })
@@ -551,7 +553,10 @@ const AllOrders = () => {
             fields={filterFields}
             defaultValues={filters}
             onApply={(appliedFilters) => {
-              setFilters(appliedFilters)
+              setFilters({
+                ...appliedFilters,
+                fromDate: appliedFilters.fromDate || todayDate,
+              })
               setPage(1)
               clearSelection()
               setBulkFeedback(null)

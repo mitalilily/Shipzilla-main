@@ -6,8 +6,10 @@ import B2BOrderForm from '../../components/orders/b2b/B2BOrderForm'
 import B2BOrdersList from '../../components/orders/b2b/B2bOrdersList'
 import { statusColorMap } from '../../components/orders/b2c/B2COrdersList'
 import { useKycVerification } from '../../hooks/User/useKycVerification'
+import { getTodayDateInputValue } from '../../utils/date'
 
 const B2bOrders = () => {
+  const todayDate = getTodayDateInputValue()
   const [page, setPage] = useState(1)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -16,7 +18,7 @@ const B2bOrders = () => {
     fromDate?: string
     toDate?: string
     search?: string
-  }>({})
+  }>({ fromDate: todayDate })
 
   const filterFields: FilterField[] = [
     {
@@ -48,7 +50,10 @@ const B2bOrders = () => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleApplyFilters = (appliedFilters: any) => {
-    setFilters(appliedFilters)
+    setFilters({
+      ...appliedFilters,
+      fromDate: appliedFilters.fromDate || todayDate,
+    })
     setPage(1)
   }
 
@@ -84,7 +89,7 @@ const B2bOrders = () => {
       <FilterBar
         fields={filterFields}
         onApply={handleApplyFilters}
-        defaultValues={{ status: '', fromDate: '', toDate: '', search: '' }}
+        defaultValues={{ status: '', fromDate: todayDate, toDate: '', search: '' }}
         appliedCount={Object.values(filters).filter(Boolean).length}
       />
 

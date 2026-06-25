@@ -30,9 +30,18 @@ import {
 import { useLocation } from 'react-router-dom'
 import { exportOrdersToCSV } from 'services/order.service'
 
+const getTodayDateInputValue = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const Orders = () => {
   const location = useLocation()
   const initialSearch = new URLSearchParams(location.search).get('search') || ''
+  const todayDate = getTodayDateInputValue()
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
   const [filters, setFilters] = useState({
@@ -40,7 +49,7 @@ const Orders = () => {
     sortBy: 'created_at',
     sortOrder: 'desc',
     search: initialSearch,
-    fromDate: '',
+    fromDate: todayDate,
     toDate: '',
   })
   const [isExporting, setIsExporting] = useState(false)
@@ -393,6 +402,7 @@ const Orders = () => {
             onApply={(appliedFilters) => {
               setFilters((prev) => ({
                 ...appliedFilters,
+                fromDate: appliedFilters.fromDate || todayDate,
                 sortBy: prev.sortBy || 'created_at',
                 sortOrder: prev.sortOrder || 'desc',
               }))
