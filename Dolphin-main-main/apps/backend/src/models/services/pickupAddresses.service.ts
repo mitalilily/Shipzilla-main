@@ -207,7 +207,6 @@ export async function getPickupAddressesService(
   const data = await db
     .select({
       pickupId: pickupAddresses.id,
-      icarryWarehouseId: pickupAddresses.icarryWarehouseId,
       isPrimary: pickupAddresses.isPrimary,
       isPickupEnabled: pickupAddresses.isPickupEnabled,
       isRTOSame: pickupAddresses.isRTOSame,
