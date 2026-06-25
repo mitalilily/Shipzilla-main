@@ -113,7 +113,7 @@ export const syncIcarryShipmentChargesForUser = async (
 
   const localShipmentIds = [...ordersByShipmentId.keys()]
   if (!localShipmentIds.length) {
-    throw new HttpError(404, 'No iCarry B2C orders were found for the provided shipment_ids')
+    throw new HttpError(404, 'No icarry B2C orders were found for the provided shipment_ids')
   }
 
   const missingLocalShipmentIds = normalizedShipmentIds.filter((id) => !ordersByShipmentId.has(id))

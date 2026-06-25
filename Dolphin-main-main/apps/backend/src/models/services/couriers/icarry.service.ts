@@ -477,7 +477,7 @@ export class IcarryService {
 
     const zoneId = zoneIdValue || zoneIdForState(stateValue)
     if (!zoneId) {
-      throw new HttpError(400, `iCarry pickup address requires a supported Indian state. Got "${stateValue}"`)
+      throw new HttpError(400, `icarry pickup address requires a supported Indian state. Got "${stateValue}"`)
     }
 
     const email =
@@ -493,7 +493,7 @@ export class IcarryService {
       extractFirstString(payload?.phone, pickup?.phone, pickup?.mobile, payload?.mobile),
     )
     if (!phone) {
-      throw new HttpError(400, 'iCarry pickup address requires a 10 digit phone number.')
+      throw new HttpError(400, 'icarry pickup address requires a 10 digit phone number.')
     }
 
     const nickname = sanitizeNickname(
@@ -545,12 +545,12 @@ export class IcarryService {
     if (!body.street1 || !body.city || !body.pincode) {
       throw new HttpError(
         400,
-        'iCarry pickup address requires pickup street1, city, and pincode before booking.',
+        'icarry pickup address requires pickup street1, city, and pincode before booking.',
       )
     }
 
     if (String(body.country_id) !== '99') {
-      throw new HttpError(400, "iCarry pickup address only supports country_id '99'.")
+      throw new HttpError(400, "icarry pickup address only supports country_id '99'.")
     }
 
     return body
@@ -574,7 +574,7 @@ export class IcarryService {
     if (!this.username || !this.apiKey) {
       throw new HttpError(
         400,
-        'iCarry credentials are missing. Provide username and API key before booking shipments.',
+        'icarry credentials are missing. Provide username and API key before booking shipments.',
       )
     }
 
@@ -590,7 +590,7 @@ export class IcarryService {
       const parsedResponse = tryParseJson(response.data) as IcarryResponse
       const token = this.pickApiToken(parsedResponse)
       if (!token) {
-        throw new HttpError(502, 'iCarry login succeeded but no api_token was returned.')
+        throw new HttpError(502, 'icarry login succeeded but no api_token was returned.')
       }
 
       IcarryService.cachedToken = {
@@ -603,7 +603,7 @@ export class IcarryService {
       if (error instanceof HttpError) throw error
       throw new HttpError(
         Number(error?.response?.status || 502),
-        this.extractErrorMessage(error, 'iCarry authentication failed'),
+        this.extractErrorMessage(error, 'icarry authentication failed'),
       )
     }
   }
@@ -651,7 +651,7 @@ export class IcarryService {
     ) {
       throw new HttpError(
         400,
-        'iCarry hyperlocal estimates require sender_address, sender_city, consignee_address, and consignee_city.',
+        'icarry hyperlocal estimates require sender_address, sender_city, consignee_address, and consignee_city.',
       )
     }
 
@@ -798,13 +798,13 @@ export class IcarryService {
     if (!warehouseId || response?.error) {
       throw new HttpError(
         502,
-        this.extractErrorMessage({ response: { data: response } }, 'iCarry pickup address creation failed'),
+        this.extractErrorMessage({ response: { data: response } }, 'icarry pickup address creation failed'),
       )
     }
 
     return {
       status: true,
-      message: trim(response?.success || response?.message || 'iCarry pickup address created successfully'),
+      message: trim(response?.success || response?.message || 'icarry pickup address created successfully'),
       warehouse_id: warehouseId,
       raw: response,
     }
@@ -836,7 +836,7 @@ export class IcarryService {
   ) {
     const warehouseId = trim((payload as AnyRecord)?.warehouse_id || (payload as AnyRecord)?.warehouseId)
     if (!warehouseId) {
-      throw new HttpError(400, 'iCarry pickup address update requires a warehouse_id.')
+      throw new HttpError(400, 'icarry pickup address update requires a warehouse_id.')
     }
 
     const body = this.buildPickupAddressBody(payload as AnyRecord, { includeNickname: false })
@@ -848,13 +848,13 @@ export class IcarryService {
     if (!updatedWarehouseId || response?.error) {
       throw new HttpError(
         502,
-        this.extractErrorMessage({ response: { data: response } }, 'iCarry pickup address update failed'),
+        this.extractErrorMessage({ response: { data: response } }, 'icarry pickup address update failed'),
       )
     }
 
     return {
       status: true,
-      message: trim(response?.success || response?.message || 'iCarry pickup address updated successfully'),
+      message: trim(response?.success || response?.message || 'icarry pickup address updated successfully'),
       warehouse_id: updatedWarehouseId,
       raw: response,
     }
@@ -875,7 +875,7 @@ export class IcarryService {
         : trim(payload)
 
     if (!warehouseId) {
-      throw new HttpError(400, 'iCarry pickup address delete requires a warehouse_id.')
+      throw new HttpError(400, 'icarry pickup address delete requires a warehouse_id.')
     }
 
     const response = await this.request<IcarryResponse>('/api_delete_pickup_address', {
@@ -887,13 +887,13 @@ export class IcarryService {
     if (!deletedWarehouseId || response?.error) {
       throw new HttpError(
         502,
-        this.extractErrorMessage({ response: { data: response } }, 'iCarry pickup address delete failed'),
+        this.extractErrorMessage({ response: { data: response } }, 'icarry pickup address delete failed'),
       )
     }
 
     return {
       status: true,
-      message: trim(response?.success || response?.message || 'iCarry pickup address deleted successfully'),
+      message: trim(response?.success || response?.message || 'icarry pickup address deleted successfully'),
       warehouse_id: deletedWarehouseId,
       raw: response,
     }
@@ -1051,7 +1051,7 @@ export class IcarryService {
       : trim(payload)
 
     if (!shipmentId) {
-      throw new HttpError(400, 'iCarry reverse shipment requires a shipment_id.')
+      throw new HttpError(400, 'icarry reverse shipment requires a shipment_id.')
     }
 
     const response = await this.request<IcarryResponse>('/api_add_reverse_shipment', {
@@ -1064,7 +1064,7 @@ export class IcarryService {
       {
         courier_id: objectPayload?.courier_id || objectPayload?.courierId,
       },
-      'iCarry reverse shipment created successfully',
+      'icarry reverse shipment created successfully',
     )
   }
 
@@ -1072,19 +1072,19 @@ export class IcarryService {
     response: IcarryResponse,
     pickupAddressId: string,
     body: AnyRecord,
-    fallbackMessage = 'iCarry shipment created successfully',
+    fallbackMessage = 'icarry shipment created successfully',
   ) {
     const shipmentId = trim(response?.shipment_id)
     const pickupId = trim(response?.pickup_id || pickupAddressId)
     const awb = trim(response?.awb)
     const courierId = trim(response?.courier_id || body?.courier_id)
-    const courierName = trim(response?.courier_name || 'iCarry')
+    const courierName = trim(response?.courier_name || 'icarry')
     const successMessage = trim(response?.success || response?.message || fallbackMessage)
 
     if (response?.error || (!shipmentId && !awb)) {
       throw new HttpError(
         502,
-        this.extractErrorMessage({ response: { data: response } }, 'iCarry shipment creation failed'),
+        this.extractErrorMessage({ response: { data: response } }, 'icarry shipment creation failed'),
       )
     }
 
@@ -1109,7 +1109,7 @@ export class IcarryService {
   async trackOrder(shipmentIdOrAwb: string | number) {
     const shipmentId = trim(shipmentIdOrAwb)
     if (!shipmentId) {
-      throw new HttpError(400, 'iCarry tracking requires a shipment_id.')
+      throw new HttpError(400, 'icarry tracking requires a shipment_id.')
     }
     return this.request<IcarryResponse>('/api_track_shipment', { shipment_id: shipmentId })
   }
@@ -1117,7 +1117,7 @@ export class IcarryService {
   async cancelShipment(shipmentIdOrAwb: string | number) {
     const shipmentId = trim(shipmentIdOrAwb)
     if (!shipmentId) {
-      throw new HttpError(400, 'iCarry cancellation requires a shipment_id.')
+      throw new HttpError(400, 'icarry cancellation requires a shipment_id.')
     }
     return this.request<IcarryResponse>('/api_cancel_shipment', { shipment_id: shipmentId })
   }
@@ -1125,7 +1125,7 @@ export class IcarryService {
   async getPackagingSlip(shipmentIdOrAwb: string | number) {
     const shipmentId = trim(shipmentIdOrAwb)
     if (!shipmentId) {
-      throw new HttpError(400, 'iCarry label generation requires a shipment_id.')
+      throw new HttpError(400, 'icarry label generation requires a shipment_id.')
     }
     return this.request<IcarryResponse>('/api_print_shipment_label', { shipment_id: shipmentId })
   }
@@ -1133,7 +1133,7 @@ export class IcarryService {
   async checkPincode(pincode: string | number) {
     const value = trim(pincode)
     if (!value) {
-      throw new HttpError(400, 'iCarry pincode lookup requires a pincode.')
+      throw new HttpError(400, 'icarry pincode lookup requires a pincode.')
     }
     return this.request<IcarryResponse>('/api_check_pincode', { pincode: value })
   }
@@ -1144,7 +1144,7 @@ export class IcarryService {
       .filter(Boolean)
 
     if (!normalizedShipmentIds.length) {
-      throw new HttpError(400, 'iCarry shipment billing sync requires at least one shipment_id.')
+      throw new HttpError(400, 'icarry shipment billing sync requires at least one shipment_id.')
     }
 
     const response = await this.request<IcarryBillingSyncResponse>(
@@ -1163,7 +1163,7 @@ export class IcarryService {
     if (response?.error) {
       throw new HttpError(
         502,
-        this.extractErrorMessage({ response: { data: response } }, 'iCarry shipment billing sync failed'),
+        this.extractErrorMessage({ response: { data: response } }, 'icarry shipment billing sync failed'),
       )
     }
 
@@ -1181,7 +1181,7 @@ export class IcarryService {
       .filter(Boolean)
 
     if (!normalizedShipmentIds.length) {
-      throw new HttpError(400, 'iCarry shipment status sync requires at least one shipment_id.')
+      throw new HttpError(400, 'icarry shipment status sync requires at least one shipment_id.')
     }
 
     const response = await this.request<IcarryShipmentStatusSyncResponse>(
@@ -1200,7 +1200,7 @@ export class IcarryService {
     if (response?.error) {
       throw new HttpError(
         502,
-        this.extractErrorMessage({ response: { data: response } }, 'iCarry shipment status sync failed'),
+        this.extractErrorMessage({ response: { data: response } }, 'icarry shipment status sync failed'),
       )
     }
 

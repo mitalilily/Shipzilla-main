@@ -210,7 +210,7 @@ export const checkServiceabilityController = async (req: any, res: Response) => 
 }
 
 /**
- * Check iCarry pincode serviceability directly
+ * Check icarry pincode serviceability directly
  * GET /api/v1/serviceability/icarry/pincode
  * POST /api/v1/serviceability/icarry/pincode
  */
@@ -224,10 +224,10 @@ export const checkIcarryPincodeServiceabilityController = async (req: any, res: 
       data: result,
     })
   } catch (error: any) {
-    console.error('Error checking iCarry pincode serviceability via API:', error)
+    console.error('Error checking icarry pincode serviceability via API:', error)
     res.status(typeof error?.statusCode === 'number' ? error.statusCode : 500).json({
       success: false,
-      error: 'Failed to check iCarry pincode serviceability',
+      error: 'Failed to check icarry pincode serviceability',
       message: error?.message || 'Internal server error',
     })
   }

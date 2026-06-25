@@ -32,7 +32,7 @@ const getConfiguredIcarryWebhookTokens = async () => {
       if (token) tokens.add(token)
     })
   } catch (err: any) {
-    console.error('Failed to load iCarry webhook token:', err?.message || err)
+    console.error('Failed to load icarry webhook token:', err?.message || err)
   }
 
   ;[
@@ -90,7 +90,7 @@ export const icarryWebhookHandler = async (req: Request, res: Response) => {
   const token = trim(payload?.token)
 
   console.log('='.repeat(80))
-  console.log(`[${timestamp}] iCarry Webhook Received`)
+  console.log(`[${timestamp}] icarry Webhook Received`)
   console.log(`   Client: ${clientName || 'N/A'}`)
   console.log(`   Callback Type: ${callbackType || 'N/A'}`)
   console.log(`   AWB: ${awb || 'N/A'}`)
@@ -138,7 +138,7 @@ export const icarryWebhookHandler = async (req: Request, res: Response) => {
     if (!configuredTokens.length) {
       return res.status(503).json({
         success: false,
-        message: 'iCarry webhook token is not configured',
+        message: 'icarry webhook token is not configured',
       })
     }
 
@@ -167,9 +167,9 @@ export const icarryWebhookHandler = async (req: Request, res: Response) => {
         })
         if (queued) {
           queuedCount++
-          console.warn(`Stored iCarry NDR webhook for AWB ${entryAwb} (order not yet created).`)
+          console.warn(`Stored icarry NDR webhook for AWB ${entryAwb} (order not yet created).`)
         } else {
-          console.warn(`Duplicate pending iCarry NDR webhook skipped for AWB ${entryAwb}.`)
+          console.warn(`Duplicate pending icarry NDR webhook skipped for AWB ${entryAwb}.`)
         }
       }
 
@@ -180,9 +180,9 @@ export const icarryWebhookHandler = async (req: Request, res: Response) => {
       const pendingStatus = `icarry:${status || 'unknown'}`
       const queued = await queuePendingIcarryWebhook(awb, pendingStatus, payload)
       if (queued) {
-        console.warn(`Stored iCarry webhook for AWB ${awb} (order not yet created).`)
+        console.warn(`Stored icarry webhook for AWB ${awb} (order not yet created).`)
       } else {
-        console.warn(`Duplicate pending iCarry webhook skipped for AWB ${awb}.`)
+        console.warn(`Duplicate pending icarry webhook skipped for AWB ${awb}.`)
       }
       return res.status(202).json({ success: true, queued: true })
     }
@@ -239,7 +239,7 @@ export const icarryWebhookHandler = async (req: Request, res: Response) => {
     const statusResult = result as typeof result & { changed?: boolean }
     return res.status(200).json({ success: true, changed: statusResult.changed === true })
   } catch (err: any) {
-    console.error('iCarry webhook processing failed:', err?.message || err)
+    console.error('icarry webhook processing failed:', err?.message || err)
     return res.status(500).json({ success: false, message: 'Internal Server Error' })
   }
 }

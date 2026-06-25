@@ -1503,18 +1503,18 @@ export const fetchAvailableCouriersWithRates = async (
             consignee_city: serviceabilityParams.consignee?.city ?? '',
           })
 
-          const iCarryEstimates = Array.isArray(icarryResp?.estimate)
+          const icarryEstimates = Array.isArray(icarryResp?.estimate)
             ? icarryResp.estimate
             : Array.isArray(icarryResp?.msg)
               ? icarryResp.msg
               : []
-          icarryAvailable = iCarryEstimates.length > 0
-          console.log('[Serviceability] iCarry response', {
+          icarryAvailable = icarryEstimates.length > 0
+          console.log('[Serviceability] icarry response', {
             success: icarryResp?.success,
-            records: iCarryEstimates.length,
+            records: icarryEstimates.length,
           })
         } catch (err: any) {
-          console.error('iCarry serviceability error:', err?.response?.data || err?.message || err)
+          console.error('icarry serviceability error:', err?.response?.data || err?.message || err)
         }
       }
     }
@@ -1522,14 +1522,14 @@ export const fetchAvailableCouriersWithRates = async (
     if (icarryAvailable) {
       registerServiceableProvider('icarry', {
         providerId: 'icarry',
-        providerName: 'iCarry',
+        providerName: 'icarry',
         codAvailable: normalizedPaymentType === 'cod',
         prepaidAvailable: normalizedPaymentType !== 'cod',
         edd: '3-5 Days',
         raw: icarryResp,
       })
 
-      console.log('[Serviceability] iCarry candidate couriers prepared', {
+      console.log('[Serviceability] icarry candidate couriers prepared', {
         mode: isCalculator ? 'calculator' : 'standard',
         destination: params.destination?.toString(),
         available: icarryAvailable,
@@ -3384,7 +3384,7 @@ export const createB2CShipmentService = async (
           : integrationType === 'xpressbees'
             ? 'Xpressbees'
             : integrationType === 'icarry'
-              ? 'iCarry'
+              ? 'icarry'
               : 'Shipmozo'
 
     let manifestFailure: DelhiveryManifestError | null = null
@@ -3734,7 +3734,7 @@ export const createB2CShipmentService = async (
         sort_code: providerSortCode,
       }
     } else if (integrationType === 'icarry') {
-      console.log('Using iCarry API...')
+      console.log('Using icarry API...')
       const icarry = new IcarryService()
 
       if (isReverseShipment) {
@@ -3742,7 +3742,7 @@ export const createB2CShipmentService = async (
 
         if (!reverseShipmentId) {
           if (!originalOrderId) {
-            throw new Error('Original order ID or shipment_id is required for iCarry reverse shipment')
+            throw new Error('Original order ID or shipment_id is required for icarry reverse shipment')
           }
 
           const [originalOrder] = await db
@@ -3752,13 +3752,13 @@ export const createB2CShipmentService = async (
             .limit(1)
 
           if (!originalOrder) {
-            throw new Error('Original order not found for iCarry reverse shipment')
+            throw new Error('Original order not found for icarry reverse shipment')
           }
 
           reverseShipmentId = String(originalOrder.shipment_id ?? '').trim()
           if (!reverseShipmentId) {
             throw new Error(
-              'Original iCarry order is missing shipment_id required for reverse shipment',
+              'Original icarry order is missing shipment_id required for reverse shipment',
             )
           }
         }
@@ -3778,12 +3778,12 @@ export const createB2CShipmentService = async (
         icarryPackage?.shipment_id || icarryPackage?.pickup_id || icarryReference || null
 
       if (!shipmentData?.status || !icarryReference) {
-        console.error('Invalid iCarry shipment:', shipmentData)
+        console.error('Invalid icarry shipment:', shipmentData)
         throw new HttpError(
           500,
           isReverseShipment
-            ? 'iCarry reverse shipment creation failed'
-            : 'iCarry shipment creation failed',
+            ? 'icarry reverse shipment creation failed'
+            : 'icarry shipment creation failed',
         )
       }
 
@@ -3791,7 +3791,7 @@ export const createB2CShipmentService = async (
         icarryPackage?.courier_company_service ||
         icarryPackage?.courier_company ||
         icarryPackage?.courier ||
-        'iCarry'
+        'icarry'
 
       shipmentSuccessPackage = {
         waybill: String(icarryReference),
@@ -4919,7 +4919,7 @@ export const createB2BShipmentService = async (
     shipmentRecord?.courier_name ||
     shipmentRecord?.courier ||
     params.courier_partner ||
-    (rateScopeProvider === 'shiprocket' ? 'Shiprocket' : 'iCarry')
+    (rateScopeProvider === 'shiprocket' ? 'Shiprocket' : 'icarry')
   const courierCost =
     shipmentRecord?.freight_charges ??
     shipmentRecord?.charge ??
@@ -7537,8 +7537,8 @@ const mapIcarryTracking = (raw: any, order: OrderSummary): ProviderNormalizedTra
       data?.carrier_name ??
       data?.carrier ??
       data?.MethodDescription ??
-      'iCarry',
-    'iCarry',
+      'icarry',
+    'icarry',
   )
 
   const edd = sanitizeString(

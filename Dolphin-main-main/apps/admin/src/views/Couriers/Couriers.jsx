@@ -52,8 +52,8 @@ const providerCopy = {
     emptyState: 'No live Shiprocket couriers are synced yet.',
   },
   icarry: {
-    label: 'iCarry Rate Card',
-    emptyState: 'No live iCarry couriers are synced yet.',
+    label: 'icarry Rate Card',
+    emptyState: 'No live icarry couriers are synced yet.',
   },
 }
 
@@ -85,7 +85,7 @@ const Couriers = () => {
       provider.serviceProvider === 'shiprocket'
         ? 'Shiprocket'
         : provider.serviceProvider === 'icarry'
-          ? 'iCarry'
+          ? 'icarry'
           : provider.serviceProvider,
   }))
 

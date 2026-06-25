@@ -102,7 +102,7 @@ export const processIcarryStatusWebhook = async (payload: any, tx = db) => {
     .limit(1)
 
   if (!order) {
-    console.warn(`No local iCarry order found for AWB ${awb}`)
+    console.warn(`No local icarry order found for AWB ${awb}`)
     return { success: false as const, reason: 'order_not_found' as const }
   }
 
@@ -131,7 +131,7 @@ export const processIcarryStatusWebhook = async (payload: any, tx = db) => {
       orderId: order.id,
       userId: order.user_id,
       awbNumber: order.awb_number || awb,
-      courier: order.courier_partner || 'iCarry',
+      courier: order.courier_partner || 'icarry',
       statusCode,
       statusText: statusLabel,
       raw: payload,
@@ -146,7 +146,7 @@ export const processIcarryStatusWebhook = async (payload: any, tx = db) => {
       pickup_status: mappedStatus.pickupStatus,
       raw_status_code: statusCode,
       raw_status_label: statusLabel,
-      courier_partner: order.courier_partner || 'iCarry',
+      courier_partner: order.courier_partner || 'icarry',
     })
 
     await sendWebhookEvent(order.user_id, resolveIcarryWebhookEvent(mappedStatus.orderStatus), {
@@ -158,7 +158,7 @@ export const processIcarryStatusWebhook = async (payload: any, tx = db) => {
       pickup_status: mappedStatus.pickupStatus,
       raw_status_code: statusCode,
       raw_status_label: statusLabel,
-      courier_partner: order.courier_partner || 'iCarry',
+      courier_partner: order.courier_partner || 'icarry',
     })
   }
 
@@ -191,7 +191,7 @@ export const processIcarryNdrWebhook = async (payload: any, tx = db) => {
     const shipmentId = trim(item?.shipment_id || item?.shipmentId)
     const ndrType = trim(item?.type) || 'MANUAL-VERIFY'
     const dateAdded = trim(item?.date_added)
-    const remarks = dateAdded ? `iCarry NDR detected on ${dateAdded}` : 'iCarry NDR detected'
+    const remarks = dateAdded ? `icarry NDR detected on ${dateAdded}` : 'icarry NDR detected'
 
     if (!awb && !shipmentId) {
       invalidEntries.push({
@@ -277,7 +277,7 @@ export const processIcarryNdrWebhook = async (payload: any, tx = db) => {
       orderId: order.id,
       userId: order.user_id,
       awbNumber: finalAwb || null,
-      courier: order.courier_partner || 'iCarry',
+      courier: order.courier_partner || 'icarry',
       statusCode: 'ndr',
       statusText: ndrType,
       raw: item,
@@ -291,7 +291,7 @@ export const processIcarryNdrWebhook = async (payload: any, tx = db) => {
       status: shouldUpdateOrderStatus ? 'ndr' : order.order_status,
       raw_status_code: 'ndr',
       raw_status_label: ndrType,
-      courier_partner: order.courier_partner || 'iCarry',
+      courier_partner: order.courier_partner || 'icarry',
       date_added: dateAdded || null,
     })
 
@@ -308,12 +308,12 @@ export const processIcarryNdrWebhook = async (payload: any, tx = db) => {
     await createNotificationService({
       targetRole: 'user',
       userId: order.user_id,
-      title: 'Delivery attempt issue (iCarry)',
+      title: 'Delivery attempt issue (icarry)',
       message: `Order ${order.order_number} marked as ndr.`,
     })
     await createNotificationService({
       targetRole: 'admin',
-      title: 'NDR captured (iCarry)',
+      title: 'NDR captured (icarry)',
       message: `User ${order.user_id} order ${order.order_number} status ndr`,
     })
 
@@ -402,7 +402,7 @@ export const processIcarryWeightDiscrepancyWebhook = async (payload: any, tx = d
     .limit(1)
 
   if (!order) {
-    console.warn(`No local iCarry order found for weight discrepancy AWB ${awb || 'N/A'} shipment ${shipmentId || 'N/A'}`)
+    console.warn(`No local icarry order found for weight discrepancy AWB ${awb || 'N/A'} shipment ${shipmentId || 'N/A'}`)
     return { success: false as const, reason: 'order_not_found' as const }
   }
 
@@ -415,10 +415,10 @@ export const processIcarryWeightDiscrepancyWebhook = async (payload: any, tx = d
   const actualDimensions = parseDimensionString(payload?.new_dimensions) || undefined
   const volumetricWeight =
     actualDimensions && actualDimensions.length && actualDimensions.breadth && actualDimensions.height
-      ? calculateVolumetricWeight(actualDimensions, order.courier_partner || 'iCarry')
+      ? calculateVolumetricWeight(actualDimensions, order.courier_partner || 'icarry')
       : undefined
   const chargedWeight = volumetricWeight
-    ? calculateChargedWeight(newWeightKg, volumetricWeight, order.courier_partner || 'iCarry')
+    ? calculateChargedWeight(newWeightKg, volumetricWeight, order.courier_partner || 'icarry')
     : newWeightKg
 
   const discrepancy = await createWeightDiscrepancy({
@@ -427,7 +427,7 @@ export const processIcarryWeightDiscrepancyWebhook = async (payload: any, tx = d
     userId: order.user_id,
     orderNumber: order.order_number,
     awbNumber: order.awb_number || awb || undefined,
-    courierPartner: order.courier_partner || 'iCarry',
+    courierPartner: order.courier_partner || 'icarry',
     declaredWeight: oldWeightKg || toNumber(order.weight),
     actualWeight: newWeightKg,
     volumetricWeight,
@@ -435,7 +435,7 @@ export const processIcarryWeightDiscrepancyWebhook = async (payload: any, tx = d
     declaredDimensions,
     actualDimensions,
     originalShippingCharge: order.freight_charges ? Number(order.freight_charges) : undefined,
-    courierRemarks: trim(payload?.courier_products || 'iCarry weight discrepancy detected'),
+    courierRemarks: trim(payload?.courier_products || 'icarry weight discrepancy detected'),
     weighingMetadata: {
       source: 'icarry_webhook',
       timestamp: new Date().toISOString(),
@@ -446,7 +446,7 @@ export const processIcarryWeightDiscrepancyWebhook = async (payload: any, tx = d
     orderId: order.id,
     userId: order.user_id,
     awbNumber: order.awb_number || awb,
-    courier: order.courier_partner || 'iCarry',
+    courier: order.courier_partner || 'icarry',
     statusCode: 'weight_discrepancy',
     statusText: 'Weight discrepancy detected',
     raw: payload,
@@ -460,7 +460,7 @@ export const processIcarryWeightDiscrepancyWebhook = async (payload: any, tx = d
     status: order.order_status || 'weight_discrepancy',
     raw_status_code: 'weight_discrepancy',
     raw_status_label: 'Weight discrepancy detected',
-    courier_partner: order.courier_partner || 'iCarry',
+    courier_partner: order.courier_partner || 'icarry',
     old_weight_kg: oldWeightKg,
     new_weight_kg: newWeightKg,
     charged_weight_kg: chargedWeight,

@@ -67,7 +67,10 @@ export const createB2BShipmentController = async (req: any, res: Response) => {
     const params: ShipmentParams = req.body
 
     // Basic validation (you can enhance this with Zod/Yup)
-    if (!params.order_number || !params.consignee || !params?.order_items?.length) {
+    const hasOrderItems = Array.isArray(params?.order_items) && params.order_items.length > 0
+    const hasBoxes = Array.isArray((params as any)?.boxes) && (params as any).boxes.length > 0
+
+    if (!params.order_number || !params.consignee || (!hasOrderItems && !hasBoxes)) {
       return res.status(400).json({ message: 'Invalid shipment payload' })
     }
 
@@ -397,7 +400,7 @@ export const syncIcarryShipmentChargesController = async (req: any, res: Respons
     const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500
     return res.status(statusCode).json({
       success: false,
-      message: error?.message || 'Failed to sync iCarry shipment charges.',
+      message: error?.message || 'Failed to sync icarry shipment charges.',
     })
   }
 }
@@ -416,14 +419,14 @@ export const printIcarryShipmentLabelController = async (req: any, res: Response
 
     return res.status(200).json({
       success: true,
-      message: 'iCarry shipment label fetched successfully',
+      message: 'icarry shipment label fetched successfully',
       data: result,
     })
   } catch (error: any) {
     const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500
     return res.status(statusCode).json({
       success: false,
-      message: error?.message || 'Failed to print iCarry shipment label.',
+      message: error?.message || 'Failed to print icarry shipment label.',
     })
   }
 }
@@ -449,7 +452,7 @@ export const syncIcarryShipmentStatusesController = async (req: any, res: Respon
     const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500
     return res.status(statusCode).json({
       success: false,
-      message: error?.message || 'Failed to sync iCarry shipment statuses.',
+      message: error?.message || 'Failed to sync icarry shipment statuses.',
     })
   }
 }

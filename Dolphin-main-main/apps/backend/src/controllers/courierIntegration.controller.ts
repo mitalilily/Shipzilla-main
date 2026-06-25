@@ -425,14 +425,14 @@ export const checkIcarryPincodeServiceabilityController = async (req: Request, r
 
     return res.status(200).json({
       success: true,
-      message: 'iCarry pincode serviceability fetched successfully',
+      message: 'icarry pincode serviceability fetched successfully',
       data: result,
     })
   } catch (error: any) {
     const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500
     return res.status(statusCode).json({
       success: false,
-      error: error?.message || 'Failed to check iCarry pincode serviceability',
+      error: error?.message || 'Failed to check icarry pincode serviceability',
     })
   }
 }

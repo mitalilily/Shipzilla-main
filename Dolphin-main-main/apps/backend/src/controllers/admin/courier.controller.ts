@@ -293,7 +293,7 @@ const syncIcarryCourierCatalog = async (
 
   if (!records.length) {
     if (lastError) throw lastError
-    throw new Error('iCarry courier sync returned no live courier records.')
+    throw new Error('icarry courier sync returned no live courier records.')
   }
 
   return upsertProviderCouriers('icarry', records)
@@ -1054,7 +1054,7 @@ export const syncProviderCouriersController = async (req: Request, res: Response
     if (normalizedProvider !== 'shiprocket' && normalizedProvider !== 'icarry') {
       return res.status(400).json({
         success: false,
-        message: 'Only Shiprocket and iCarry courier sync are supported here.',
+        message: 'Only Shiprocket and icarry courier sync are supported here.',
       })
     }
 
@@ -1077,7 +1077,7 @@ export const syncProviderCouriersController = async (req: Request, res: Response
       success: false,
       message:
         err?.message ||
-        `Failed to sync ${normalizedProvider === 'shiprocket' ? 'Shiprocket' : 'iCarry'} couriers`,
+        `Failed to sync ${normalizedProvider === 'shiprocket' ? 'Shiprocket' : 'icarry'} couriers`,
     })
   }
 }
@@ -1248,7 +1248,7 @@ export const updateIcarryCredentialsController = async (req: Request, res: Respo
 
     res.json({
       success: true,
-      message: 'iCarry credentials updated successfully',
+      message: 'icarry credentials updated successfully',
       data: {
         provider: 'icarry',
         apiBase: saved?.apiBase || DEFAULT_ICARRY_BASE_URL,
@@ -1263,7 +1263,7 @@ export const updateIcarryCredentialsController = async (req: Request, res: Respo
     IcarryService.clearCachedConfig()
   } catch (err) {
     console.error(err)
-    res.status(500).json({ success: false, message: 'Failed to update iCarry credentials' })
+    res.status(500).json({ success: false, message: 'Failed to update icarry credentials' })
   }
 }
 

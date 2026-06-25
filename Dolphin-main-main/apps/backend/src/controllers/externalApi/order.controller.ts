@@ -309,7 +309,7 @@ export const cancelOrderController = async (req: any, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Unsupported provider',
-        message: `Only Shipmozo and iCarry are currently supported for cancellation. Found: ${order.integration_type}`,
+        message: `Only Shipmozo and icarry are currently supported for cancellation. Found: ${order.integration_type}`,
       })
     }
 
@@ -481,7 +481,7 @@ export const getOrderLabelController = async (req: any, res: Response) => {
 }
 
 /**
- * Sync iCarry shipment billing charges for existing B2C orders
+ * Sync icarry shipment billing charges for existing B2C orders
  * POST /api/v1/orders/shipment-charges/sync
  */
 export const syncShipmentChargesController = async (req: any, res: Response) => {
@@ -508,7 +508,7 @@ export const syncShipmentChargesController = async (req: any, res: Response) => 
 }
 
 /**
- * Print iCarry shipment label for an existing B2C order
+ * Print icarry shipment label for an existing B2C order
  * POST /api/v1/orders/shipment-label/print
  */
 export const printShipmentLabelController = async (req: any, res: Response) => {
@@ -535,7 +535,7 @@ export const printShipmentLabelController = async (req: any, res: Response) => {
 }
 
 /**
- * Sync iCarry shipment statuses for existing B2C orders
+ * Sync icarry shipment statuses for existing B2C orders
  * POST /api/v1/orders/shipment-status/sync
  */
 export const syncShipmentStatusesController = async (req: any, res: Response) => {

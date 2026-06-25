@@ -92,7 +92,7 @@ export const printIcarryShipmentLabelForUser = async (
     .limit(1)
 
   if (!order) {
-    throw new HttpError(404, `No iCarry B2C order was found for shipment_id ${shipmentId}`)
+    throw new HttpError(404, `No icarry B2C order was found for shipment_id ${shipmentId}`)
   }
 
   const icarry = new IcarryService()

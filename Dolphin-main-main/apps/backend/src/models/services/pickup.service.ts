@@ -27,7 +27,7 @@ export async function cancelOrderShipment(orderId: string) {
   const integration = (order.integration_type || '').toLowerCase()
   if (!['shipmozo', 'icarry'].includes(integration)) {
     console.error('❌ Unsupported integration type:', { orderId, integration })
-    throw new Error('Only Shipmozo and iCarry are supported for cancellation')
+    throw new Error('Only Shipmozo and icarry are supported for cancellation')
   }
 
   if (!order.awb_number) {

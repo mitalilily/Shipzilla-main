@@ -39,7 +39,7 @@ const providerLabel = (provider: string) =>
     : provider === 'shipmozo'
       ? 'Shipmozo'
       : provider === 'icarry'
-        ? 'iCarry'
+        ? 'icarry'
         : 'Delhivery'
 
 export async function processPendingWebhooks() {

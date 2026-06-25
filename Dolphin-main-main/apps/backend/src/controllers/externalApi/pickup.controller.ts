@@ -154,7 +154,7 @@ export const createPickupAddressController = async (req: any, res: Response) => 
 }
 
 /**
- * Create/Register iCarry pickup address directly
+ * Create/Register icarry pickup address directly
  * POST /api/v1/pickup-addresses/icarry
  */
 export const createIcarryPickupAddressController = async (req: any, res: Response) => {
@@ -164,21 +164,21 @@ export const createIcarryPickupAddressController = async (req: any, res: Respons
 
     return res.status(201).json({
       success: true,
-      message: 'iCarry pickup address registered successfully',
+      message: 'icarry pickup address registered successfully',
       data: result,
     })
   } catch (error: any) {
-    console.error('Error creating iCarry pickup address via API:', error)
+    console.error('Error creating icarry pickup address via API:', error)
     return res.status(typeof error?.statusCode === 'number' ? error.statusCode : 500).json({
       success: false,
-      error: 'Failed to register iCarry pickup address',
+      error: 'Failed to register icarry pickup address',
       message: error?.message || 'Internal server error',
     })
   }
 }
 
 /**
- * Update iCarry pickup address directly
+ * Update icarry pickup address directly
  * PUT /api/v1/pickup-addresses/icarry/:id
  */
 export const updateIcarryPickupAddressController = async (req: any, res: Response) => {
@@ -188,21 +188,21 @@ export const updateIcarryPickupAddressController = async (req: any, res: Respons
 
     return res.status(200).json({
       success: true,
-      message: 'iCarry pickup address updated successfully',
+      message: 'icarry pickup address updated successfully',
       data: result,
     })
   } catch (error: any) {
-    console.error('Error updating iCarry pickup address via API:', error)
+    console.error('Error updating icarry pickup address via API:', error)
     return res.status(typeof error?.statusCode === 'number' ? error.statusCode : 500).json({
       success: false,
-      error: 'Failed to update iCarry pickup address',
+      error: 'Failed to update icarry pickup address',
       message: error?.message || 'Internal server error',
     })
   }
 }
 
 /**
- * Delete iCarry pickup address directly
+ * Delete icarry pickup address directly
  * DELETE /api/v1/pickup-addresses/icarry/:id
  */
 export const deleteIcarryPickupAddressController = async (req: any, res: Response) => {
@@ -216,14 +216,14 @@ export const deleteIcarryPickupAddressController = async (req: any, res: Respons
 
     return res.status(200).json({
       success: true,
-      message: 'iCarry pickup address deleted successfully',
+      message: 'icarry pickup address deleted successfully',
       data: result,
     })
   } catch (error: any) {
-    console.error('Error deleting iCarry pickup address via API:', error)
+    console.error('Error deleting icarry pickup address via API:', error)
     return res.status(typeof error?.statusCode === 'number' ? error.statusCode : 500).json({
       success: false,
-      error: 'Failed to delete iCarry pickup address',
+      error: 'Failed to delete icarry pickup address',
       message: error?.message || 'Internal server error',
     })
   }

@@ -147,7 +147,7 @@ export const updateIcarryPickupAddressForUser = async (
     .limit(1)
 
   if (!existing) {
-    throw new HttpError(404, 'iCarry pickup address not found')
+    throw new HttpError(404, 'icarry pickup address not found')
   }
 
   const warehouseId =
@@ -155,7 +155,7 @@ export const updateIcarryPickupAddressForUser = async (
   if (!warehouseId) {
     throw new HttpError(
       400,
-      'warehouse_id is required because this pickup address does not have a stored iCarry warehouse identifier',
+      'warehouse_id is required because this pickup address does not have a stored icarry warehouse identifier',
     )
   }
 
@@ -204,7 +204,7 @@ export const updateIcarryPickupAddressForUser = async (
   })
 
   if (!localPickup) {
-    throw new HttpError(404, 'Local pickup address not found after iCarry update')
+    throw new HttpError(404, 'Local pickup address not found after icarry update')
   }
 
   return {
@@ -244,7 +244,7 @@ export const deleteIcarryPickupAddressForUser = async (
     .limit(1)
 
   if (!existing) {
-    throw new HttpError(404, 'iCarry pickup address not found')
+    throw new HttpError(404, 'icarry pickup address not found')
   }
 
   const warehouseId =
@@ -252,7 +252,7 @@ export const deleteIcarryPickupAddressForUser = async (
   if (!warehouseId) {
     throw new HttpError(
       400,
-      'warehouse_id is required because this pickup address does not have a stored iCarry warehouse identifier',
+      'warehouse_id is required because this pickup address does not have a stored icarry warehouse identifier',
     )
   }
 
@@ -261,7 +261,7 @@ export const deleteIcarryPickupAddressForUser = async (
 
   const localPickup = await softDeletePickupAddressService(normalizedPickupAddressId, userId)
   if (!localPickup) {
-    throw new HttpError(404, 'Local pickup address not found after iCarry delete')
+    throw new HttpError(404, 'Local pickup address not found after icarry delete')
   }
 
   return {

@@ -105,7 +105,7 @@ const CourierCredentials = () => {
       },
       {
         onSuccess: () => {
-          toast({ title: 'iCarry credentials updated', status: 'success' })
+          toast({ title: 'icarry credentials updated', status: 'success' })
           setIcarryForm((prev) => ({
             ...prev,
             password: '',
@@ -115,7 +115,7 @@ const CourierCredentials = () => {
         },
         onError: (err) => {
           toast({
-            title: 'Failed to update iCarry credentials',
+            title: 'Failed to update icarry credentials',
             description: err?.message,
             status: 'error',
           })
@@ -234,7 +234,7 @@ const CourierCredentials = () => {
         <Box borderWidth="1px" borderRadius="lg" p={5}>
           <VStack spacing={4} align="stretch">
             <Flex justify="space-between" align="center" gap={3}>
-              <Text fontWeight="semibold">iCarry</Text>
+              <Text fontWeight="semibold">icarry</Text>
               <Badge
                 colorScheme={
                   data?.icarry?.hasApiKey || data?.icarry?.hasPassword ? 'green' : 'orange'
@@ -251,7 +251,7 @@ const CourierCredentials = () => {
               <Input
                 value={icarryForm.apiBase}
                 onChange={(e) => setIcarryForm((prev) => ({ ...prev, apiBase: e.target.value }))}
-                placeholder="Enter iCarry API base URL"
+                placeholder="Enter icarry API base URL"
               />
             </FormControl>
 
@@ -262,7 +262,7 @@ const CourierCredentials = () => {
                 onChange={(e) =>
                   setIcarryForm((prev) => ({ ...prev, username: e.target.value }))
                 }
-                placeholder="iCarry username or email"
+                placeholder="icarry username or email"
               />
             </FormControl>
 
@@ -273,7 +273,7 @@ const CourierCredentials = () => {
                 onChange={(e) =>
                   setIcarryForm((prev) => ({ ...prev, clientId: e.target.value }))
                 }
-                placeholder="iCarry client or warehouse identifier"
+                placeholder="icarry client or warehouse identifier"
               />
             </FormControl>
 
@@ -293,7 +293,7 @@ const CourierCredentials = () => {
                 type="password"
                 value={icarryForm.apiKey}
                 onChange={(e) => setIcarryForm((prev) => ({ ...prev, apiKey: e.target.value }))}
-                placeholder={data?.icarry?.apiKeyMasked || 'iCarry API token'}
+                placeholder={data?.icarry?.apiKeyMasked || 'icarry API token'}
               />
               {!!data?.icarry?.apiKeyMasked && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
@@ -320,7 +320,7 @@ const CourierCredentials = () => {
               isLoading={updateIcarry.isPending}
               alignSelf="flex-start"
             >
-              Save iCarry Rate Card Credentials
+              Save icarry Rate Card Credentials
             </Button>
           </VStack>
         </Box>

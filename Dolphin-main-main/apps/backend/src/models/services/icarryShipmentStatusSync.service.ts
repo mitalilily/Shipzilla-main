@@ -104,7 +104,7 @@ export const syncIcarryShipmentStatusesForUser = async (
 
   const localShipmentIds = [...ordersByShipmentId.keys()]
   if (!localShipmentIds.length) {
-    throw new HttpError(404, 'No iCarry B2C orders were found for the provided shipment_ids')
+    throw new HttpError(404, 'No icarry B2C orders were found for the provided shipment_ids')
   }
 
   const missingLocalShipmentIds = normalizedShipmentIds.filter((id) => !ordersByShipmentId.has(id))
@@ -160,7 +160,7 @@ export const syncIcarryShipmentStatusesForUser = async (
         orderId: order.id,
         userId: order.user_id,
         awbNumber: order.awb_number,
-        courier: order.courier_partner || 'iCarry',
+        courier: order.courier_partner || 'icarry',
         statusCode,
         statusText: statusLabel,
         raw: {
@@ -180,7 +180,7 @@ export const syncIcarryShipmentStatusesForUser = async (
         raw_status_label: statusLabel,
         date_picked: datePicked,
         date_delivered: dateDelivered,
-        courier_partner: order.courier_partner || 'iCarry',
+        courier_partner: order.courier_partner || 'icarry',
       })
 
       await sendWebhookEvent(order.user_id, resolveIcarryWebhookEvent(mapped.orderStatus), {
