@@ -1,5 +1,13 @@
 {
   "serviceName": "BlueDart LTL B2B FORWARD",
+  "planName": "Basic",
+  "serviceProvider": "shiprocket",
+  "businessType": "b2b",
+  "notes": [
+    "Source: b2b.pdf shared by boss.",
+    "Matrix values are base rates per 1 kg.",
+    "matrixRateIncreasePercent applies a 30% uplift to base matrix charges during import."
+  ],
   "matrixRateIncreasePercent": 30,
   "zoneCodes": ["N1", "N2", "N3", "N4", "C1", "C2", "W1", "W2", "S1", "S2", "S3", "S4", "E1", "E2", "NE1", "NE2"],
   "matrix": [

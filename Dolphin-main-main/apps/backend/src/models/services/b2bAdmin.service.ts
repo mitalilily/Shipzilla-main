@@ -1533,50 +1533,74 @@ export const upsertOverheadRule = async (payload: {
   }
 
   const insertData: any = {
-    name: payload.name,
-    description: payload.description,
-    type: payload.type,
-    applies_to: payload.appliesTo ?? 'freight',
-    condition: conditionValue,
-    is_active: payload.isActive ?? true,
-    courier_id: courierId,
-    service_provider: serviceProvider,
+      name: payload.name,
+      description: payload.description,
+      type: payload.type,
+      applies_to: payload.appliesTo ?? 'freight',
+      condition: conditionValue,
+      is_active: payload.isActive ?? true,
+      courier_id: courierId,
+      service_provider: serviceProvider,
+      business_type: 'B2B',
+    }
+
+    if (payload.code) insertData.code = payload.code
+    if (payload.amount !== undefined) insertData.amount = payload.amount.toString()
+    if (payload.percent !== undefined) insertData.percent = payload.percent.toString()
+    if (payload.priority !== undefined) insertData.priority = payload.priority
+    if (payload.effectiveFrom) insertData.effective_from = payload.effectiveFrom
+    if (payload.effectiveTo) insertData.effective_to = payload.effectiveTo
+
+    if (payload.planId) insertData.plan_id = payload.planId
+
+    if (payload.code) {
+      const existingFilters: SQLWrapper[] = [
+        eq(b2bOverheadRules.code, payload.code),
+        eq(b2bOverheadRules.business_type, 'B2B'),
+      ]
+
+      if (courierId != null) {
+        existingFilters.push(eq(b2bOverheadRules.courier_id, courierId))
+      } else {
+        existingFilters.push(isNull(b2bOverheadRules.courier_id))
+      }
+
+      if (serviceProvider != null) {
+        existingFilters.push(eq(b2bOverheadRules.service_provider, serviceProvider))
+      } else {
+        existingFilters.push(isNull(b2bOverheadRules.service_provider))
+      }
+
+      if (payload.planId) {
+        existingFilters.push(eq(b2bOverheadRules.plan_id, payload.planId))
+      } else {
+        existingFilters.push(isNull(b2bOverheadRules.plan_id))
+      }
+
+      const [existing] = await db
+        .select({ id: b2bOverheadRules.id })
+        .from(b2bOverheadRules)
+        .where(and(...existingFilters))
+        .limit(1)
+
+      if (existing?.id) {
+        const [record] = await db
+          .update(b2bOverheadRules)
+          .set({
+            ...insertData,
+            updated_at: new Date(),
+          })
+          .where(eq(b2bOverheadRules.id, existing.id))
+          .returning()
+
+        return record
+      }
+    }
+
+    const [record] = await db.insert(b2bOverheadRules).values(insertData).returning()
+
+    return record
   }
-
-  if (payload.code) insertData.code = payload.code
-  if (payload.amount !== undefined) insertData.amount = payload.amount.toString()
-  if (payload.percent !== undefined) insertData.percent = payload.percent.toString()
-  if (payload.priority !== undefined) insertData.priority = payload.priority
-  if (payload.effectiveFrom) insertData.effective_from = payload.effectiveFrom
-  if (payload.effectiveTo) insertData.effective_to = payload.effectiveTo
-
-  const [record] = await db
-    .insert(b2bOverheadRules)
-    .values(insertData)
-    .onConflictDoUpdate({
-      target: [
-        b2bOverheadRules.code,
-        b2bOverheadRules.courier_id,
-        b2bOverheadRules.service_provider,
-      ],
-      set: {
-        name: payload.name,
-        description: payload.description,
-        type: payload.type,
-        amount: payload.amount !== undefined ? payload.amount.toString() : undefined,
-        percent: payload.percent !== undefined ? payload.percent.toString() : undefined,
-        applies_to: payload.appliesTo ?? 'freight',
-        condition: conditionValue,
-        priority: payload.priority,
-        is_active: payload.isActive ?? true,
-        updated_at: new Date(),
-        plan_id: payload.planId ?? undefined,
-      },
-    })
-    .returning()
-
-  return record
-}
 
 export const deleteOverheadRule = async (id: string) => {
   await db.delete(b2bOverheadRules).where(eq(b2bOverheadRules.id, id))

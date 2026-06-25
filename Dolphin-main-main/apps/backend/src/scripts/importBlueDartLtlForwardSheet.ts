@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import * as dotenv from 'dotenv'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db } from '../models/client'
 import { upsertZoneToZoneRate, upsertOverheadRule } from '../models/services/b2bAdmin.service'
 import {
@@ -36,6 +36,10 @@ type SheetRule = {
 
 type SheetFile = {
   serviceName: string
+  planName?: string
+  serviceProvider?: string
+  businessType?: 'b2b' | 'b2c'
+  notes?: string[]
   matrixRateIncreasePercent: number
   zoneCodes: string[]
   matrix: Array<{
@@ -80,6 +84,7 @@ const parseArgs = () => {
   return {
     courierId: Number(getArg('--courier-id') || ''),
     serviceProvider: getArg('--service-provider') || '',
+    businessType: getArg('--business-type') || '',
     planId: getArg('--plan-id') || '',
     planName: getArg('--plan-name') || '',
     allCouriers: args.includes('--all-couriers'),
@@ -97,6 +102,23 @@ const readSheet = (sheetPath: string): SheetFile => {
 
 const toRatePerKg = (baseRate: number, upliftPercent: number) =>
   Number((baseRate * (1 + upliftPercent / 100)).toFixed(4))
+
+const normalizeBusinessType = (value?: string) => {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+
+  if (normalized === 'b2b' || normalized === 'b2c') {
+    return normalized as 'b2b' | 'b2c'
+  }
+
+  throw new Error(`Invalid business type: ${value}. Expected "b2b" or "b2c".`)
+}
+
+const buildBusinessTypeFilter = (businessType: 'b2b' | 'b2c') =>
+  businessType === 'b2b'
+    ? sql`${couriers.businessType} @> '["b2b"]'::jsonb`
+    : sql`${couriers.businessType} @> '["b2c"]'::jsonb`
 
 const resolvePlan = async (params: { planId?: string; planName?: string }) => {
   if (params.planId) {
@@ -121,6 +143,7 @@ const resolvePlan = async (params: { planId?: string; planName?: string }) => {
 const resolveCourierTargets = async (params: {
   courierId?: number
   serviceProvider?: string
+  businessType: 'b2b' | 'b2c'
   allCouriers?: boolean
 }): Promise<CourierTarget[]> => {
   if (params.allCouriers) {
@@ -135,10 +158,18 @@ const resolveCourierTargets = async (params: {
         serviceProvider: couriers.serviceProvider,
       })
       .from(couriers)
-      .where(eq(couriers.serviceProvider, params.serviceProvider))
+      .where(
+        and(
+          eq(couriers.serviceProvider, params.serviceProvider),
+          eq(couriers.isEnabled, true),
+          buildBusinessTypeFilter(params.businessType),
+        ),
+      )
 
     if (!providerCouriers.length) {
-      throw new Error(`No couriers found for serviceProvider=${params.serviceProvider}`)
+      throw new Error(
+        `No enabled ${params.businessType.toUpperCase()} couriers found for serviceProvider=${params.serviceProvider}`,
+      )
     }
 
     return providerCouriers
@@ -157,12 +188,19 @@ const resolveCourierTargets = async (params: {
       serviceProvider: couriers.serviceProvider,
     })
     .from(couriers)
-    .where(and(eq(couriers.id, params.courierId), eq(couriers.serviceProvider, params.serviceProvider)))
+    .where(
+      and(
+        eq(couriers.id, params.courierId),
+        eq(couriers.serviceProvider, params.serviceProvider),
+        eq(couriers.isEnabled, true),
+        buildBusinessTypeFilter(params.businessType),
+      ),
+    )
     .limit(1)
 
   if (!courier) {
     throw new Error(
-      `Courier scope not found for id=${params.courierId} serviceProvider=${params.serviceProvider}`,
+      `Courier scope not found for id=${params.courierId} serviceProvider=${params.serviceProvider} businessType=${params.businessType}`,
     )
   }
 
@@ -226,26 +264,38 @@ const applySheetToCourier = async (params: {
 }
 
 async function main() {
-  const { courierId, serviceProvider, planId, planName, allCouriers, apply, sheetPath } =
-    parseArgs()
-
-  const sheet = readSheet(sheetPath)
-  const plan = await resolvePlan({ planId, planName })
-  const courierTargets = await resolveCourierTargets({
+  const {
     courierId,
     serviceProvider,
+    businessType,
+    planId,
+    planName,
+    allCouriers,
+    apply,
+    sheetPath,
+  } = parseArgs()
+
+  const sheet = readSheet(sheetPath)
+  const targetPlanName = planName || sheet.planName || ''
+  const targetServiceProvider = serviceProvider || sheet.serviceProvider || ''
+  const targetBusinessType = normalizeBusinessType(businessType || sheet.businessType || 'b2b')
+
+  const plan = await resolvePlan({ planId, planName: targetPlanName })
+  const courierTargets = await resolveCourierTargets({
+    courierId,
+    serviceProvider: targetServiceProvider,
+    businessType: targetBusinessType,
     allCouriers,
   })
 
-  const zoneRows = await db
-    .select({ id: zones.id, code: zones.code })
-    .from(zones)
-    .where(eq(zones.business_type, 'B2B'))
+  const zoneRows = await db.select({ id: zones.id, code: zones.code }).from(zones).where(
+    eq(zones.business_type, targetBusinessType === 'b2b' ? 'B2B' : 'B2C'),
+  )
 
   const zoneMap = new Map(zoneRows.map((zone) => [String(zone.code).toUpperCase(), zone.id]))
   const missingZones = sheet.zoneCodes.filter((code) => !zoneMap.has(code.toUpperCase()))
   if (missingZones.length > 0) {
-    throw new Error(`Missing B2B zones: ${missingZones.join(', ')}`)
+    throw new Error(`Missing ${targetBusinessType.toUpperCase()} zones: ${missingZones.join(', ')}`)
   }
 
   const matrixPayload = sheet.matrix.flatMap((row) =>
@@ -260,6 +310,7 @@ async function main() {
   console.log(`Preparing ${matrixPayload.length} matrix rows for ${sheet.serviceName}`)
   console.log(`Target scope count: ${courierTargets.length}`)
   console.log(`Target plan: ${plan.name} (${plan.id})`)
+  console.log(`Target business type: ${targetBusinessType}`)
   console.log(
     `Target couriers: ${courierTargets
       .map((courier) => `${courier.name} [${courier.id}]`)
