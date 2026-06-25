@@ -47,33 +47,25 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   // COMPUTE TOTAL WEIGHT AND PRICE
   let totalWeight = 0
   let totalProductPrice = 0
+  let totalVolumeCm3 = 0
 
   if (shipment_type === 'b2b') {
-    // B2B uses flat boxes array, not nested in products
+    // B2B uses flat boxes array. Send actual total weight and aggregated
+    // volume so backend rate-card logic can apply the latest volumetric rules.
     const boxes = watch('boxes') as B2BBox[] | undefined
     if (boxes && Array.isArray(boxes)) {
       boxes.forEach((box: B2BBox) => {
-        // Calculate chargeable weight per box (max of actual and volumetric)
         const actualWeightKg = Number(box.weightKg ?? 0) // in kg
         const length = Number(box.lengthCm ?? 0) // in cm
         const breadth = Number(box.breadthCm ?? 0) // in cm
         const height = Number(box.heightCm ?? 0) // in cm
 
-        const VOLUMETRIC_DIVISOR = 5000
-        const volumetricWeightKg =
-          length > 0 && breadth > 0 && height > 0
-            ? (length * breadth * height) / VOLUMETRIC_DIVISOR
-            : 0
-
-        // Chargeable weight per box = max(actual, volumetric) in kg, convert to grams
-        const chargeableWeightKg = Math.max(actualWeightKg, volumetricWeightKg)
-        const chargeableWeightGrams = chargeableWeightKg * 1000
-
-        totalWeight += chargeableWeightGrams // Sum chargeable weights in grams
+        totalWeight += actualWeightKg * 1000 // sum actual weight in grams
+        if (length > 0 && breadth > 0 && height > 0) {
+          totalVolumeCm3 += length * breadth * height
+        }
       })
     }
-    // For B2B, product price is not stored in boxes, it's in invoices
-    // totalProductPrice remains 0 or can be calculated from invoices if needed
   } else if (shipment_type === 'b2c') {
     totalWeight = watch('weight') ?? 0
     totalProductPrice = products?.reduce(
@@ -116,6 +108,12 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
     courierPayload.length = length
     courierPayload.breadth = breadth
     courierPayload.height = height
+  } else if (shipment_type === 'b2b' && totalVolumeCm3 > 0) {
+    // Preserve total volume through the existing API shape. Backend only
+    // uses the product L*B*H, so (totalVolume * 1 * 1) is sufficient.
+    courierPayload.length = totalVolumeCm3
+    courierPayload.breadth = 1
+    courierPayload.height = 1
   }
 
   const { data: couriers, isLoading, isError, isFetching } = useAvailableCouriers(courierPayload)
@@ -434,7 +432,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
               const forwardCharge =
                 courier?.rate !== undefined && courier?.rate !== null
                   ? Number(courier.rate)
-                  : local?.forward?.rate
+                  : local?.forward?.rate ?? local?.forward?.ratePerKg
 
               return (
                 <Paper

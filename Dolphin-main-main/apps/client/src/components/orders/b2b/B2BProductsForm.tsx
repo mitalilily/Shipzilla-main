@@ -81,27 +81,23 @@ const ProductBoxesForm = () => {
           // Calculate total actual weight for API call
           const totalActualWeight = boxes.reduce((sum, box) => sum + Number(box.weightKg || 0), 0)
 
-          // For rate calculation, we need to send dimensions
-          // We'll use the largest box dimensions as representative
-          let maxLength = 0
-          let maxBreadth = 0
-          let maxHeight = 0
+          // Preserve the total consignment volume through the current API shape.
+          // Backend uses L*B*H for volumetric weight, so sending
+          // (totalVolumeCm3 * 1 * 1) keeps the calculation accurate.
+          let totalVolumeCm3 = 0
 
           boxes.forEach((box) => {
             const length = Number(box.lengthCm || 0)
             const breadth = Number(box.breadthCm || 0)
             const height = Number(box.heightCm || 0)
             if (length > 0 && breadth > 0 && height > 0) {
-              maxLength = Math.max(maxLength, length)
-              maxBreadth = Math.max(maxBreadth, breadth)
-              maxHeight = Math.max(maxHeight, height)
+              totalVolumeCm3 += length * breadth * height
             }
           })
 
-          // Use largest dimensions
-          const length = maxLength > 0 ? maxLength : undefined
-          const width = maxBreadth > 0 ? maxBreadth : undefined
-          const height = maxHeight > 0 ? maxHeight : undefined
+          const length = totalVolumeCm3 > 0 ? totalVolumeCm3 : undefined
+          const width = totalVolumeCm3 > 0 ? 1 : undefined
+          const height = totalVolumeCm3 > 0 ? 1 : undefined
 
           // Call backend to get chargeable weight
           // Use default pincodes if not available (for weight calculation only)
