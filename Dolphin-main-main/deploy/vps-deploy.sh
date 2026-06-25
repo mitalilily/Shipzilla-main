@@ -165,6 +165,14 @@ server {
         proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
+    location /assets/ {
+        root ${PUBLIC_ROOT}/app;
+        try_files \$uri =404;
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
     location / {
         root ${PUBLIC_ROOT}/app;
         try_files \$uri \$uri/ /index.html;
@@ -205,6 +213,22 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /assets/ {
+        root ${PUBLIC_ROOT}/admin;
+        try_files \$uri =404;
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /static/ {
+        root ${PUBLIC_ROOT}/admin;
+        try_files \$uri =404;
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
     }
 
     location / {
@@ -263,6 +287,14 @@ server {
 
     location /admin/ {
         return 301 https://${ADMIN_DOMAIN}/;
+    }
+
+    location /assets/ {
+        root ${PUBLIC_ROOT}/landing;
+        try_files \$uri =404;
+        access_log off;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
     }
 
     location / {

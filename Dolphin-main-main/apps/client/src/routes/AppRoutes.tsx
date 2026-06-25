@@ -1,5 +1,5 @@
 // AppRoutes.tsx
-import { lazy, Suspense } from 'react'
+import { type ComponentType, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import RequireAuth from '../components/auth/wrapper/RequireAuth'
 import RequireMerchantReady from '../components/auth/wrapper/RequireMerchantReady'
@@ -11,93 +11,148 @@ import Login from '../pages/auth/Login'
 import Signup from '../pages/auth/Signup'
 import ClientPreview from '../pages/preview/ClientPreview'
 import { APP_BASE_PATH } from '../utils/basePath'
+import { lazyWithRetry } from '../utils/lazyWithRetry'
 import AppEntry from './AppEntry'
 import GlobalRedirectHandler from './WalletRedirectHandler'
 
+const lazyRoute = <T extends ComponentType<any>>(
+  importFunc: () => Promise<{ default: T }>,
+  cacheKey: string,
+) => lazyWithRetry(importFunc, cacheKey)
+
 /* ---------- Lazy-loaded components ---------- */
 // Onboarding & Dashboard
-const UserOnboarding = lazy(() => import('../pages/onboarding/UserOnboarding'))
-const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'))
+const UserOnboarding = lazyRoute(() => import('../pages/onboarding/UserOnboarding'), 'user-onboarding')
+const Dashboard = lazyRoute(() => import('../pages/dashboard/Dashboard'), 'dashboard')
 
 // Orders
-const Orders = lazy(() => import('../pages/orders/Orders'))
-const B2COrdersList = lazy(() => import('../components/orders/b2c/B2COrdersList'))
-const B2bOrders = lazy(() => import('../pages/orders/B2bOrders'))
-const CreateOrderWrapper = lazy(() => import('../components/orders/CreateOrderWrapper'))
-const OrderTracking = lazy(() => import('../pages/orders/OrderTracking'))
+const Orders = lazyRoute(() => import('../pages/orders/Orders'), 'orders')
+const B2COrdersList = lazyRoute(() => import('../components/orders/b2c/B2COrdersList'), 'b2c-orders-list')
+const B2bOrders = lazyRoute(() => import('../pages/orders/B2bOrders'), 'b2b-orders')
+const CreateOrderWrapper = lazyRoute(
+  () => import('../components/orders/CreateOrderWrapper'),
+  'create-order-wrapper',
+)
+const OrderTracking = lazyRoute(() => import('../pages/orders/OrderTracking'), 'order-tracking')
 
 // Settings
-const Settings = lazy(() => import('../pages/settings/Settings'))
-const PickupAddresses = lazy(() => import('../pages/pickup-addresses/PickupAddresses'))
-const InvoicePreferences = lazy(() => import('../components/settings/InvoicePreference'))
-const LabelSettingsPage = lazy(() => import('../components/settings/Label/LabelSettings'))
-const UsersManagement = lazy(() => import('../pages/users-management/UsersManagement'))
-const CourierPriorityPage = lazy(
+const Settings = lazyRoute(() => import('../pages/settings/Settings'), 'settings')
+const PickupAddresses = lazyRoute(
+  () => import('../pages/pickup-addresses/PickupAddresses'),
+  'pickup-addresses',
+)
+const InvoicePreferences = lazyRoute(
+  () => import('../components/settings/InvoicePreference'),
+  'invoice-preferences',
+)
+const LabelSettingsPage = lazyRoute(
+  () => import('../components/settings/Label/LabelSettings'),
+  'label-settings',
+)
+const UsersManagement = lazyRoute(
+  () => import('../pages/users-management/UsersManagement'),
+  'users-management',
+)
+const CourierPriorityPage = lazyRoute(
   () => import('../components/settings/CourierPriority/CourierPriorityPage'),
+  'courier-priority',
 )
 
 // Billing
-const WalletTransactions = lazy(() => import('../pages/billings/WalletTransactions'))
-const Invoices = lazy(() => import('../pages/billings/Invoices'))
+const WalletTransactions = lazyRoute(
+  () => import('../pages/billings/WalletTransactions'),
+  'wallet-transactions',
+)
+const Invoices = lazyRoute(() => import('../pages/billings/Invoices'), 'invoices')
 
 // Channels
-const Channels = lazy(() => import('../pages/channels/Channels'))
-const ChannelList = lazy(() => import('../pages/channels/ChannelList'))
+const Channels = lazyRoute(() => import('../pages/channels/Channels'), 'channels')
+const ChannelList = lazyRoute(() => import('../pages/channels/ChannelList'), 'channel-list')
 
 // Policies
-const PoliciesLayout = lazy(() => import('../pages/policy/PoliciesLayout'))
-const AboutUs = lazy(() => import('../pages/policy/AboutUs'))
-const CancellationPolicy = lazy(() => import('../pages/policy/CancellationPolicy'))
-const CompanyDetails = lazy(() => import('../pages/policy/CompanyDetails'))
-const PrivacyPolicy = lazy(() => import('../pages/policy/PrivacyPolicy'))
-const TermsOfService = lazy(() => import('../pages/policy/TermsOfService'))
+const PoliciesLayout = lazyRoute(() => import('../pages/policy/PoliciesLayout'), 'policies-layout')
+const AboutUs = lazyRoute(() => import('../pages/policy/AboutUs'), 'about-us')
+const CancellationPolicy = lazyRoute(
+  () => import('../pages/policy/CancellationPolicy'),
+  'cancellation-policy',
+)
+const CompanyDetails = lazyRoute(() => import('../pages/policy/CompanyDetails'), 'company-details')
+const PrivacyPolicy = lazyRoute(() => import('../pages/policy/PrivacyPolicy'), 'privacy-policy')
+const TermsOfService = lazyRoute(() => import('../pages/policy/TermsOfService'), 'terms-of-service')
 
 // Profile
-const ProfileLayout = lazy(() => import('../pages/profile/Profile'))
-const UserProfileSettings = lazy(() => import('../components/user/UserProfileSettings'))
-const CompanyInfoForm = lazy(() => import('../components/user/profile/CompanyInfoForm'))
-const BankAccountsSection = lazy(() =>
+const ProfileLayout = lazyRoute(() => import('../pages/profile/Profile'), 'profile-layout')
+const UserProfileSettings = lazyRoute(
+  () => import('../components/user/UserProfileSettings'),
+  'user-profile-settings',
+)
+const CompanyInfoForm = lazyRoute(
+  () => import('../components/user/profile/CompanyInfoForm'),
+  'company-info-form',
+)
+const BankAccountsSection = lazyRoute(() =>
   import('../components/user/profile/bankAccounts/BankAccountsSection').then((m) => ({
     default: m.BankAccountsSection,
   })),
+  'bank-accounts-section',
 )
-const KycSection = lazy(() => import('../components/user/profile/Kyc/KycSection'))
+const KycSection = lazyRoute(() => import('../components/user/profile/Kyc/KycSection'), 'kyc-section')
 
 // Tools
-const RateCard = lazy(() => import('../pages/tools/RateCard'))
-const RateCalculator = lazy(() =>
+const RateCard = lazyRoute(() => import('../pages/tools/RateCard'), 'rate-card')
+const RateCalculator = lazyRoute(() =>
   import('../pages/tools/RateCalculator').then((m) => ({ default: m.RateCalculator })),
+  'rate-calculator',
 )
-const OrderTrackingForm = lazy(() => import('../pages/tools/OrderTrackingForm'))
+const OrderTrackingForm = lazyRoute(
+  () => import('../pages/tools/OrderTrackingForm'),
+  'order-tracking-form',
+)
 
 // Support
-const SupportTicketsPage = lazy(() =>
+const SupportTicketsPage = lazyRoute(() =>
   import('../pages/support/SupportTicketsPage').then((m) => ({ default: m.SupportTicketsPage })),
+  'support-tickets',
 )
-const TicketDetailsPage = lazy(
+const TicketDetailsPage = lazyRoute(
   () => import('../pages/support/TicketDetailsPage').then((m) => ({ default: m.TicketDetailsPage })),
+  'ticket-details',
 )
 
 // Other
-const Home = lazy(() => import('../pages/home/Home'))
-const Couriers = lazy(() => import('../pages/couriers/Couriers'))
-const CodRemittancesList = lazy(() => import('../pages/cod-remittance/CodRemittancesList'))
-const KeyboardShortcutsPage = lazy(() => import('../pages/KeyboardShortcutsPage'))
-const Reports = lazy(() => import('../pages/reports/Reports'))
+const Home = lazyRoute(() => import('../pages/home/Home'), 'home')
+const Couriers = lazyRoute(() => import('../pages/couriers/Couriers'), 'couriers')
+const CodRemittancesList = lazyRoute(
+  () => import('../pages/cod-remittance/CodRemittancesList'),
+  'cod-remittances',
+)
+const KeyboardShortcutsPage = lazyRoute(
+  () => import('../pages/KeyboardShortcutsPage'),
+  'keyboard-shortcuts',
+)
+const Reports = lazyRoute(() => import('../pages/reports/Reports'), 'reports')
 
 // Weight Reconciliation
-const WeightReconciliation = lazy(
+const WeightReconciliation = lazyRoute(
   () => import('../pages/weight-reconciliation/WeightReconciliation'),
+  'weight-reconciliation',
 )
-const DiscrepancyDetails = lazy(() => import('../pages/weight-reconciliation/DiscrepancyDetails'))
-const WeightReconciliationSettings = lazy(
+const DiscrepancyDetails = lazyRoute(
+  () => import('../pages/weight-reconciliation/DiscrepancyDetails'),
+  'discrepancy-details',
+)
+const WeightReconciliationSettings = lazyRoute(
   () => import('../pages/weight-reconciliation/WeightReconciliationSettings'),
+  'weight-reconciliation-settings',
 )
 // Ops (NDR/RTO)
-const NdrList = lazy(() => import('../pages/ops/NdrList'))
-const RtoList = lazy(() => import('../pages/ops/RtoList'))
+const NdrList = lazyRoute(() => import('../pages/ops/NdrList'), 'ndr-list')
+const RtoList = lazyRoute(() => import('../pages/ops/RtoList'), 'rto-list')
 // API Integration
-const ApiIntegration = lazy(() => import('../pages/settings/ApiIntegration'))
+const ApiIntegration = lazyRoute(
+  () => import('../pages/settings/ApiIntegration'),
+  'api-integration',
+)
 
 export default function AppRoutes() {
   return (
