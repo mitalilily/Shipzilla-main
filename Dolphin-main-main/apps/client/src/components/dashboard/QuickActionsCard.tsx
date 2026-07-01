@@ -10,14 +10,14 @@ import {
 } from 'react-icons/md'
 import { TbTruckDelivery } from 'react-icons/tb'
 import { useNavigate } from 'react-router-dom'
-import { useMerchantReadiness } from '../../hooks/useMerchantReadiness'
+import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
 
 const SHIPZILLA_PRIMARY = '#5D2394'
 const SHIPZILLA_ACCENT = '#56E813'
 
 export default function QuickActionsCard() {
   const navigate = useNavigate()
-  const { isReady, firstIncompleteStep } = useMerchantReadiness()
+  const { guardOrderCreation, isReady } = useOrderCreationGuard()
 
   const actions = [
     { label: 'Create Order', icon: <MdAdd size={18} />, path: '/orders/create' },
@@ -62,7 +62,14 @@ export default function QuickActionsCard() {
             return (
               <Grid size={{ xs: 6 }} key={action.label}>
                 <Box
-                  onClick={() => navigate(locked ? firstIncompleteStep?.path || '/home' : action.path)}
+                  onClick={() => {
+                    if (action.path === '/orders/create') {
+                      guardOrderCreation(() => navigate(action.path))
+                      return
+                    }
+
+                    navigate(action.path)
+                  }}
                   sx={{
                     p: 1.4,
                     borderRadius: 1,

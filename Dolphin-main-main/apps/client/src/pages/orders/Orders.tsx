@@ -1,19 +1,19 @@
 import { alpha, Alert, Box, Button, Container, Fade, Popover, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { MdAdd } from 'react-icons/md'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import AllOrders from '../../components/orders/AllOrders'
 import B2COrderFormSteps from '../../components/orders/b2c/B2COrderForm'
 import CustomDrawer from '../../components/UI/drawer/CustomDrawer'
-import { useMerchantReadiness } from '../../hooks/useMerchantReadiness'
+import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
 
 export default function Orders() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [orderType, setOrderType] = useState<'b2c' | 'b2b' | null>(null)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const navigate = useNavigate()
   const location = useLocation()
-  const { isReady, progress, firstIncompleteStep } = useMerchantReadiness()
+  const { guardOrderCreation, redirectToSetup, isReady, isLoading: readinessLoading, progress } =
+    useOrderCreationGuard()
 
   const openPopover = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget)
@@ -25,7 +25,7 @@ export default function Orders() {
 
   const handleSelectOrderType = (type: 'b2c' | 'b2b') => {
     if (!isReady) {
-      navigate(firstIncompleteStep?.path || '/home')
+      redirectToSetup()
       closePopover()
       return
     }
@@ -59,8 +59,8 @@ export default function Orders() {
         <Alert
           severity="warning"
           action={
-            <Button color="inherit" size="small" onClick={() => navigate(firstIncompleteStep?.path || '/home')}>
-              Continue Setup
+            <Button color="inherit" size="small" onClick={() => redirectToSetup({ showToast: false })}>
+              View Checklist
             </Button>
           }
           sx={{ mb: 3 }}
@@ -115,10 +115,10 @@ export default function Orders() {
             </Button>
             <Button
               startIcon={<MdAdd />}
-              onClick={openPopover}
+              onClick={(event) => guardOrderCreation(() => openPopover(event))}
               variant="contained"
               size="medium"
-              disabled={!isReady}
+              disabled={readinessLoading}
               sx={{
                 bgcolor: '#1D2842',
                 color: '#FFFFFF',

@@ -16,7 +16,7 @@ import { FaTicket } from 'react-icons/fa6'
 import { MdLockOutline } from 'react-icons/md'
 import { TbTruckDelivery } from 'react-icons/tb'
 import { useNavigate } from 'react-router-dom'
-import { useMerchantReadiness } from '../../hooks/useMerchantReadiness'
+import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
 
 const INK = '#172033'
 const TEXT = '#243146'
@@ -29,7 +29,7 @@ const QuickActions = () => {
   const [open, setOpen] = useState(false)
   const anchorRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
-  const { isReady, firstIncompleteStep } = useMerchantReadiness()
+  const { guardOrderCreation, isReady } = useOrderCreationGuard()
 
   const actions = [
     {
@@ -149,7 +149,13 @@ const QuickActions = () => {
                         <Box
                           key={action.name}
                           onClick={() => {
-                            navigate(locked ? firstIncompleteStep?.path || '/home' : action.path)
+                            if (action.path === '/orders/create') {
+                              guardOrderCreation(() => navigate(action.path))
+                              setOpen(false)
+                              return
+                            }
+
+                            navigate(action.path)
                             setOpen(false)
                           }}
                           sx={{

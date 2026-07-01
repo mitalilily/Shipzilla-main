@@ -7,6 +7,8 @@ type GuardOptions = {
   showToast?: boolean
 }
 
+export const ORDER_READINESS_CHECKLIST_PATH = '/orders/create'
+
 const defaultGuardMessage = (stepTitle?: string, progress?: number) => {
   const readinessText = typeof progress === 'number' ? ` Panel readiness: ${progress}%.` : ''
 
@@ -22,7 +24,10 @@ export const useOrderCreationGuard = () => {
   const location = useLocation()
   const { isReady, isLoading, firstIncompleteStep, progress } = useMerchantReadiness()
 
-  const redirectToSetup = ({ fallbackPath = '/home', showToast = true }: GuardOptions = {}) => {
+  const redirectToSetup = ({
+    fallbackPath = ORDER_READINESS_CHECKLIST_PATH,
+    showToast = true,
+  }: GuardOptions = {}) => {
     if (showToast) {
       toast.open({
         message: defaultGuardMessage(firstIncompleteStep?.title, progress),
@@ -30,8 +35,14 @@ export const useOrderCreationGuard = () => {
       })
     }
 
-    navigate(firstIncompleteStep?.path || fallbackPath, {
-      state: { from: location },
+    navigate(fallbackPath, {
+      state: {
+        from: location,
+        openReadinessChecklist: true,
+        blockedOrderAttempt: true,
+        firstIncompleteStepKey: firstIncompleteStep?.key,
+        requestedAt: Date.now(),
+      },
     })
   }
 
