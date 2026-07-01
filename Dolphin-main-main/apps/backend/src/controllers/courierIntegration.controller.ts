@@ -412,7 +412,10 @@ export const fetchAvailableCouriersToUser = async (req: Request, res: Response) 
     if (shipment_type === 'b2b') {
       couriers = await fetchAvailableCouriersWithRatesB2B(serviceParams, userId)
     } else {
-      couriers = await fetchAvailableCouriersWithRates(serviceParams, userId)
+      couriers = await fetchAvailableCouriersWithRates(serviceParams, {
+        userId,
+        planFallbackName: 'Basic',
+      })
     }
 
     return res.json({ success: true, data: couriers ?? [] })

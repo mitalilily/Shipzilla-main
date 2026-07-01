@@ -11,6 +11,7 @@
     "check:start": "node scripts/start-or-build.mjs --check",
     "check:rate-apis": "node -r ts-node/register src/scripts/checkRateCalculatorApis.ts",
     "check:external-api-smoke": "ts-node src/scripts/checkExternalApiSmoke.ts",
+    "check:shiprocket-apis": "ts-node src/scripts/checkShiprocketApis.ts",
     "check:shiprocket-cargo-auth": "ts-node src/scripts/checkShiprocketCargoAuth.ts",
     "check:b2b-zone-overrides": "ts-node src/scripts/checkB2BZoneManualOverrides.ts",
     "check:shiprocket-cargo-add-appointment": "ts-node src/scripts/checkShiprocketCargoAddAppointment.ts",

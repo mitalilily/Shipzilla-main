@@ -184,6 +184,7 @@ const resolveShiprocketCredentials = async (overrides?: ShiprocketAuthCredential
   let password = overrides?.password || process.env.SHIPROCKET_PASSWORD
   let apiToken =
     overrides?.apiToken?.trim() ||
+    process.env.SHIPROCKET_AUTH_TOKEN ||
     process.env.SHIPROCKET_API_TOKEN ||
     process.env.SHIPROCKET_API_KEY
   let apiBase = process.env.SHIPROCKET_API_BASE || 'https://apiv2.shiprocket.in/v1/external'

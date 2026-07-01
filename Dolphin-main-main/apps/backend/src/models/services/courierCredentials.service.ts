@@ -134,6 +134,9 @@ const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessTy
   }
   if (provider === 'shipmozo') {
     return !!(
+      process.env.SHIPMOZO_PUBLIC_KEY ||
+      process.env.SHIPMOZO_PRIVATE_KEY ||
+      process.env.SHIPMOZO_CLIENT_ID ||
       process.env.SHIPMOZO_API_TOKEN ||
       process.env.SHIPMOZO_API_KEY ||
       process.env.SHIPMOZO_USERNAME ||
@@ -144,6 +147,7 @@ const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessTy
   }
   if (provider === 'shiprocket') {
     return !!(
+      process.env.SHIPROCKET_AUTH_TOKEN ||
       process.env.SHIPROCKET_API_TOKEN ||
       process.env.SHIPROCKET_API_KEY ||
       process.env.SHIPROCKET_EMAIL ||
