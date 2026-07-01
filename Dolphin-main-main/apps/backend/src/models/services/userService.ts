@@ -380,11 +380,10 @@ export const handleEmailVerificationRequest = async (
   password: string | null,
   googleId: string | null,
 ): Promise<{ status: number; data: any }> => {
-  return await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const normalizedEmail = email.trim().toLowerCase()
     const token = generate8DigitsVerificationToken()
     const expiresAt = new Date(Date.now() + OTP_EXPIRY)
-    let shouldSendEmail = false
 
     const user = await findUserByEmail(normalizedEmail, tx)
 
@@ -468,18 +467,16 @@ export const handleEmailVerificationRequest = async (
       }
 
       await updateUserVerificationToken(normalizedEmail, token, expiresAt, tx)
-      shouldSendEmail = true
-
-      console.log('[Auth Email Verification] Sending verification email', {
-        email: maskEmailForLog(normalizedEmail),
-        existingUser: true,
-      })
-      await sendVerificationEmail(normalizedEmail, token)
 
       return {
         status: 200,
         data: {
           message: 'Verification email sent',
+        },
+        verificationEmail: {
+          to: normalizedEmail,
+          token,
+          existingUser: true,
         },
       }
     }
@@ -494,7 +491,7 @@ export const handleEmailVerificationRequest = async (
         googleId,
         emailVerified: true,
         onboardingStep: 0,
-      })
+      }, tx)
       return { status: 201, data: { message: 'Account created via Google' } }
     }
 
@@ -511,23 +508,33 @@ export const handleEmailVerificationRequest = async (
       emailVerificationTokenExpiresAt: expiresAt,
       emailVerified: false,
       onboardingStep: 0,
-    })
-
-    shouldSendEmail = true
-
-    console.log('[Auth Email Verification] Sending verification email', {
-      email: maskEmailForLog(normalizedEmail),
-      existingUser: false,
-    })
-    await sendVerificationEmail(normalizedEmail, token)
+    }, tx)
 
     return {
       status: 201,
       data: {
         message: 'Verification email sent',
       },
+      verificationEmail: {
+        to: normalizedEmail,
+        token,
+        existingUser: false,
+      },
     }
   })
+
+  if (result.verificationEmail) {
+    console.log('[Auth Email Verification] Sending verification email', {
+      email: maskEmailForLog(result.verificationEmail.to),
+      existingUser: result.verificationEmail.existingUser,
+    })
+    await sendVerificationEmail(result.verificationEmail.to, result.verificationEmail.token)
+  }
+
+  return {
+    status: result.status,
+    data: result.data,
+  }
 }
 
 export const saveRefreshToken = async (

@@ -8,12 +8,27 @@ import path from 'path'
 const env = process.env.NODE_ENV || 'development'
 dotenv.config({ path: path.resolve(__dirname, `../../.env.${env}`) })
 
-const EMAIL_FROM = process.env.EMAIL_FROM || process.env.GOOGLE_SMTP_USER || ''
-const GOOGLE_SMTP_USER = process.env.GOOGLE_SMTP_USER || EMAIL_FROM
-const GOOGLE_SMTP_PASSWORD = process.env.GOOGLE_SMTP_PASSWORD!
+const SMTP_FROM_NAME = (process.env.SMTP_FROM_NAME || 'Shipzilla').trim() || 'Shipzilla'
+const EMAIL_FROM =
+  process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.GOOGLE_SMTP_USER || ''
+const SMTP_USER = process.env.SMTP_USER || process.env.GOOGLE_SMTP_USER || EMAIL_FROM
+const SMTP_PASSWORD = process.env.SMTP_PASSWORD || process.env.GOOGLE_SMTP_PASSWORD || ''
 const SMTP_HOST = process.env.SMTP_HOST
 const SMTP_PORT = Number(process.env.SMTP_PORT || 587)
 const SMTP_SECURE = process.env.SMTP_SECURE === 'true'
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const normalizeEmailAddress = (email: string) => email.trim().toLowerCase()
+
+const ensureEmailAddress = (email: string, label: string) => {
+  const normalizedEmail = normalizeEmailAddress(email)
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
+    throw new Error(`Invalid ${label} email address: ${email}`)
+  }
+
+  return normalizedEmail
+}
 
 const maskEmailForLog = (email: string) => {
   const [localPart = '', domain = ''] = email.split('@')
@@ -35,12 +50,14 @@ type AttachmentInput = {
 
 // Create SMTP transporter (Hostinger/custom SMTP if provided, else Gmail service)
 const createTransporter = () => {
-  if (!EMAIL_FROM || !GOOGLE_SMTP_USER) {
-    throw new Error('Email service is not configured. Missing EMAIL_FROM or GOOGLE_SMTP_USER.')
+  const senderAddress = ensureEmailAddress(EMAIL_FROM, 'sender')
+
+  if (!SMTP_USER) {
+    throw new Error('Email service is not configured. Missing SMTP_USER or GOOGLE_SMTP_USER.')
   }
 
-  if (!GOOGLE_SMTP_PASSWORD) {
-    throw new Error('Email service is not configured. Missing GOOGLE_SMTP_PASSWORD.')
+  if (!SMTP_PASSWORD) {
+    throw new Error('Email service is not configured. Missing SMTP_PASSWORD or GOOGLE_SMTP_PASSWORD.')
   }
 
   console.log('[Email] Creating transporter', {
@@ -48,7 +65,8 @@ const createTransporter = () => {
     host: SMTP_HOST || 'gmail',
     port: SMTP_PORT,
     secure: SMTP_SECURE,
-    from: EMAIL_FROM,
+    from: senderAddress,
+    authUser: maskEmailForLog(senderAddress),
   })
 
   if (SMTP_HOST) {
@@ -57,8 +75,8 @@ const createTransporter = () => {
       port: SMTP_PORT,
       secure: SMTP_SECURE,
       auth: {
-        user: GOOGLE_SMTP_USER,
-        pass: GOOGLE_SMTP_PASSWORD,
+        user: SMTP_USER,
+        pass: SMTP_PASSWORD,
       },
     })
   }
@@ -66,8 +84,8 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: GOOGLE_SMTP_USER,
-      pass: GOOGLE_SMTP_PASSWORD, // Use App Password for Gmail
+      user: SMTP_USER,
+      pass: SMTP_PASSWORD, // Use App Password for Gmail
     },
   })
 }
@@ -81,12 +99,19 @@ const sendEmail = async (
   htmlContent: string,
   attachments?: AttachmentInput[],
 ) => {
+  const normalizedRecipient = ensureEmailAddress(to, 'recipient')
+  const senderAddress = ensureEmailAddress(EMAIL_FROM, 'sender')
   const transporter = createTransporter()
-  const maskedRecipient = maskEmailForLog(to)
+  const maskedRecipient = maskEmailForLog(normalizedRecipient)
 
   const mailOptions: any = {
-    from: `"Shipzilla" <${EMAIL_FROM}>`,
-    to,
+    from: `"${SMTP_FROM_NAME}" <${senderAddress}>`,
+    to: normalizedRecipient,
+    replyTo: senderAddress,
+    envelope: {
+      from: senderAddress,
+      to: [normalizedRecipient],
+    },
     subject,
     html: htmlContent,
   }
@@ -113,14 +138,25 @@ const sendEmail = async (
       to: maskedRecipient,
       subject,
       attachments: attachments?.length ?? 0,
+      from: senderAddress,
     })
     const info = await transporter.sendMail(mailOptions)
+    const accepted = (info.accepted || []).map((address) => normalizeEmailAddress(String(address)))
+    const rejected = (info.rejected || []).map((address) => normalizeEmailAddress(String(address)))
+
+    if (accepted.length === 0 || !accepted.includes(normalizedRecipient)) {
+      throw new Error(
+        `SMTP provider did not accept recipient ${normalizedRecipient}. Accepted: ${accepted.join(', ') || '[none]'}. Rejected: ${rejected.join(', ') || '[none]'}.`,
+      )
+    }
+
     console.log('[Email] Email sent successfully', {
       to: maskedRecipient,
       messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected,
+      accepted,
+      rejected,
       response: info.response,
+      envelope: info.envelope,
     })
   } catch (error) {
     console.error('[Email] Error sending email', {
