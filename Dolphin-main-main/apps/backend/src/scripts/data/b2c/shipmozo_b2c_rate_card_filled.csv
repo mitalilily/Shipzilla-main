@@ -1,0 +1,30 @@
+Courier ID,Courier Name,Service Provider,Mode,Business Type,Metro to Metro (Forward),Metro to Metro (RTO),Metro to Metro (Forward Slabs),Metro to Metro (RTO Slabs),Rest of India (Forward),Rest of India (RTO),Rest of India (Forward Slabs),Rest of India (RTO Slabs),Special Zone (Forward),Special Zone (RTO),Special Zone (Forward Slabs),Special Zone (RTO Slabs),Within City (Forward),Within City (RTO),Within City (Forward Slabs),Within City (RTO Slabs),Within Region (Forward),Within Region (RTO),Within Region (Forward Slabs),Within Region (RTO Slabs),Within State (Forward),Within State (RTO),Within State (Forward Slabs),Within State (RTO Slabs),COD Charges,COD Percent,Other Charges
+,Delhivery Air,Delhivery,Air,B2C,63,63,56,56,70,70,56.0,56.0,83,83,74.0,74.0,37,37,34.0,34.0,70,70,56.0,56.0,51,51,40,40,39,1.8,NA
+,Delhivery Surface 0.5Kg,Delhivery,Surface,B2C,47,47,43,43,53,53,43.0,43.0,65,65,63.0,63.0,30,30,28.0,28.0,53,53,43.0,43.0,41,41,36,36,39,1.8,NA
+,Delhivery Surface 10Kg,Delhivery,Surface,B2C,278,278,22,22,290,290,24.0,24.0,410,410,30.5,30.5,166,166,16.0,16.0,290,290,24.0,24.0,231,231,19,19,35,1.5,NA
+,Delhivery Surface 5KG,Delhivery,Surface,B2C,174,174,33,33,197,197,39.0,39.0,231,231,45.0,45.0,150,150,29.0,29.0,197,197,39.0,39.0,161,161,31,31,38,1.8,NA
+,Delhivery Heavy MPS,Delhivery,Surface,B2C,462,462,21,21,525,525,23.0,23.0,694,694,31.5,31.5,296,296,15.0,15.0,525,525,23.0,23.0,421,421,19,19,35,1.5,NA
+,Delhivery 2Kg,Delhivery,Surface,B2C,95,95,34,34,99,99,35.0,35.0,126,126,51.0,51.0,78,78,30.0,30.0,99,99,35.0,35.0,87,87,32,32,30,1.5,NA
+,Delhivery 1Kg,Delhivery,Surface,B2C,68,68,35,35,74,74,35.0,35.0,100,100,44.0,44.0,52,52,33.0,33.0,74,74,35.0,35.0,61,61,34,34,34,1.7,NA
+,XpressBees 0.5 Kg,XpressBees,Surface,B2C,40,40,26,26,43,43,31.0,31.0,59,59,38.0,38.0,33,33,18.0,18.0,43,43,31.0,31.0,37,37,21,21,27,1.5,NA
+,XpressBees 5Kg,XpressBees,Surface,B2C,163,163,30,30,173,173,37.0,37.0,226,226,40.0,40.0,128,128,21.0,21.0,173,173,37.0,37.0,153,153,25,25,32,1.8,NA
+,XpressBees 10Kg,XpressBees,Surface,B2C,266,266,26,26,275,275,29.0,29.0,360,360,36.0,36.0,159,159,16.0,16.0,275,275,29.0,29.0,198,198,20,20,30,1.5,NA
+,XpressBees 1KG,XpressBees,Surface,B2C,54,54,28,28,64,64,32.0,32.0,83,83,39.0,39.0,37,37,19.0,19.0,64,64,32.0,32.0,46,46,23,23,28,1.5,NA
+,XpressBees 2KG,XpressBees,Surface,B2C,73,73,36,36,75,75,38.0,38.0,88,88,44.0,44.0,50,50,25.0,25.0,75,75,38.0,38.0,60,60,30,30,31,1.6,NA
+,Amazon ATS,Amazon ATS,Surface,B2C,41,41,31,31,43,43,35.0,35.0,56,56,40.0,40.0,30,30,22.0,22.0,43,43,35.0,35.0,34,34,26,26,28,1.5,NA
+,Amazon ATS 2KG,Amazon ATS,Surface,B2C,63,63,21,21,68,68,25.0,25.0,94,94,31.0,31.0,44,44,18.0,18.0,68,68,25.0,25.0,53,53,20,20,25,1.5,NA
+,Amazon ATS 10KG,Amazon ATS,Surface,B2C,220,220,14,14,249,249,16.0,16.0,338,338,21.0,21.0,178,178,12.0,12.0,249,249,16.0,16.0,200,200,13,13,25,1.5,NA
+,Amazon ATS 1 KG,Amazon ATS,Surface,B2C,42,42,18,18,46,46,19.0,19.0,62,62,25.0,25.0,31,31,14.0,14.0,46,46,19.0,19.0,37,37,16,16,26,1.5,NA
+,TCI Express 5kg+,TCI Express,Surface,B2C,138,138,25,25,144,144,26.5,26.5,216,216,36.0,36.0,108,108,20.5,20.5,144,144,26.5,26.5,126,126,24,24,29,1.6,NA
+,Shadowfax 0.5KG,Shadowfax,Surface,B2C,37,37,31,31,44,44,33.0,33.0,54,54,43.0,43.0,28,28,23.0,23.0,44,44,33.0,33.0,35,35,28,28,27,1.65,NA
+,Shadowfax 2Kg,Shadowfax,Surface,B2C,60,60,35,35,60,60,35.0,35.0,98,98,36.0,36.0,50,50,21.0,21.0,60,60,35.0,35.0,50,50,24,24,25,1.5,NA
+,Ekart 0.5KG,Ekart,Surface,B2C,40,40,31,31,44,44,32.0,32.0,59,59,43.0,43.0,33,33,22.0,22.0,44,44,32.0,32.0,37,37,31,31,29.5,1.8,NA
+,Ekart 1KG,Ekart,Surface,B2C,61,61,21,21,66,66,23.0,23.0,87,87,30.0,30.0,47,47,17.0,17.0,66,66,23.0,23.0,54,54,17,17,29.5,1.8,NA
+,Ekart 5Kg,Ekart,Surface,B2C,140,140,24,24,140,140,28.0,28.0,210,210,40.0,40.0,100,100,18.0,18.0,140,140,28.0,28.0,130,130,24,24,30,1.5,NA
+,Ekart SPCL 1 KG,Ekart,Surface,B2C,64,64,28,28,66,66,32.0,32.0,78,78,39.0,39.0,55,55,25.0,25.0,66,66,32.0,32.0,60,60,27,27,27,1.6,NA
+,Ekart Air,Ekart,Air,B2C,55,55,35,35,60,60,38.0,38.0,68,68,50.0,50.0,28,28,12.0,12.0,60,60,38.0,38.0,34,34,16,16,32,1.6,NA
+,Ekart 2Kg,Ekart,Surface,B2C,94,94,28,28,99,99,32.0,32.0,115,115,39.0,39.0,80,80,25.0,25.0,99,99,32.0,32.0,85,85,27,27,27,1.6,NA
+,Ekart Flat Price,Ekart,Surface,B2C,62,62,10,10,62,62,10.0,10.0,62,62,10.0,10.0,62,62,10.0,10.0,62,62,10.0,10.0,62,62,10,10,0,1,NA
+,Movin Air 5 Kg,Movin,Air,B2C,418,418,79,79,451,451,84.0,84.0,528,528,105.0,105.0,363,363,72.0,72.0,451,451,84.0,84.0,396,396,75,75,NA,NA,NA
+,Indiapost SpeedPost,IndiaPost,Surface,B2C,70,70,30,30,80,80,40.0,40.0,90,90,50.0,50.0,30,30,10.0,10.0,80,80,40.0,40.0,60,60,30,30,28,2,NA
+,IndiaPost Business Parcel,IndiaPost,Surface,B2C,105,105,28,28,115,115,34.0,34.0,115,115,38.0,38.0,45,45,12.0,12.0,115,115,34.0,34.0,88,88,24,24,70,2.1,NA

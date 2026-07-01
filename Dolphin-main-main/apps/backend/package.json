@@ -37,6 +37,7 @@
     "seed:b2b-zones-sheet": "ts-node src/scripts/seedB2BZonesFromSheet.ts",
     "import:b2b:bluedart-ltl-forward": "ts-node src/scripts/importBlueDartLtlForwardSheet.ts",
     "import:b2b:bluedart-ltl-forward:shiprocket-basic": "ts-node src/scripts/importBlueDartLtlForwardSheet.ts --all-couriers --service-provider shiprocket --plan-name Basic",
+    "import:b2c:shipmozo-basic-rate-card": "ts-node src/scripts/importShipmozoB2CBasicRateCard.ts",
     "rate-card:create-b2c": "ts-node src/scripts/createB2CRateCards.ts",
     "seed:holidays": "ts-node src/scripts/seedHolidays.ts",
     "seed:holidays:year": "ts-node src/scripts/seedHolidays.ts",

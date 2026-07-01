@@ -1,6 +1,5 @@
 import { and, desc, eq, ilike, inArray, notInArray, or, sql } from 'drizzle-orm'
 import { Request, Response } from 'express'
-import Papa from 'papaparse'
 import { db } from '../../models/client'
 import {
   deleteCourierService,
@@ -8,7 +7,6 @@ import {
   getShippingRates,
   ShippingRateUpdatePayload,
   updateShippingRate,
-  upsertShippingRate,
 } from '../../models/services/courierIntegration.service'
 import {
   DEFAULT_EKART_BASE_URL,
@@ -23,7 +21,7 @@ import { fetchAvailableCouriersWithRatesAdmin } from '../../models/services/ship
 import { listCouriersWithCounts } from '../../models/services/shiprocketExtended.service'
 import { courier_credentials } from '../../models/schema/courierCredentials'
 import { couriers } from '../../models/schema/couriers'
-import { getAllZones } from '../../models/services/zone.service'
+import { importShippingRatesFromCsv } from '../../models/services/shippingRateImport.service'
 import {
   getIntegratedCourierProviders,
   integratedCourierProvidersLabel,
@@ -1141,18 +1139,6 @@ export const updateShippingRateController = async (req: Request, res: Response) 
   }
 }
 
-type CSVRow = Record<string, string | undefined>
-
-const parseSlabJsonCell = (value?: string) => {
-  if (!value) return []
-  try {
-    const parsed = JSON.parse(value)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
 const isSlabValidationError = (err: unknown) =>
   /slab|overlap|extra_rate|extra_weight_unit/i.test(String((err as any)?.message || err || ''))
 
@@ -1168,99 +1154,25 @@ export const importShippingRatesController = async (req: any, res: Response) => 
     }
 
     const csvContent = req.file.buffer.toString('utf8')
-
-    const { data, errors } = Papa.parse<CSVRow>(csvContent, {
-      header: true,
-      skipEmptyLines: true,
+    const result = await importShippingRatesFromCsv({
+      planId: String(plan_id),
+      businessType: business_type as 'b2b' | 'b2c',
+      csvContent,
     })
 
-    if (errors.length) {
-      console.error('CSV parse errors:', errors)
-      return res.status(400).json({ success: false, message: 'Invalid CSV format', errors: errors })
-    }
-
-    const zonesList = await getAllZones()
-
-    for (const row of data as CSVRow[]) {
-      const courierId = row['Courier ID']
-      const courierName = row['Courier Name']
-      const serviceProvider = row['Service Provider']
-      const minWeight = row['Min Weight']
-      const mode = row['Mode'] || ''
-
-      if (!courierId || !courierName) continue
-
-      // Parse rates for each zone
-      type RateItem = { zone_id: string; type: 'forward' | 'rto'; rate: number }
-
-      const rates: RateItem[] = Object.entries(row)
-        .filter(([key]) =>
-          business_type === 'b2b'
-            ? key.toLowerCase().includes('forward') || key.toLowerCase().includes('rto')
-            : key.includes('(Forward)') || key.includes('(RTO)'),
-        )
-        .flatMap(([zoneKey, value]): RateItem[] => {
-          if (!value) return []
-
-          const zone = zonesList.find((z) => zoneKey.includes(z.name))
-          if (!zone) return []
-
-          if (zoneKey.toLowerCase().includes('forward')) {
-            return [{ zone_id: zone.id, type: 'forward', rate: Number(value) }]
-          }
-
-          if (zoneKey.toLowerCase().includes('rto')) {
-            return [{ zone_id: zone.id, type: 'rto', rate: Number(value) }]
-          }
-
-          return []
-        })
-
-      const zoneSlabs: Record<string, { forward?: any[]; rto?: any[] }> = {}
-      if (business_type === 'b2c') {
-        for (const zone of zonesList) {
-          const forwardSlabs = parseSlabJsonCell(row[`${zone.name} (Forward Slabs)`])
-          const rtoSlabs = parseSlabJsonCell(row[`${zone.name} (RTO Slabs)`])
-          if (forwardSlabs.length || rtoSlabs.length) {
-            zoneSlabs[zone.id] = {}
-            if (forwardSlabs.length) zoneSlabs[zone.id].forward = forwardSlabs
-            if (rtoSlabs.length) zoneSlabs[zone.id].rto = rtoSlabs
-          }
-        }
-      }
-
-      const codCharges = row['COD Charges'] ? Number(row['COD Charges']) : null
-      const codPercent = row['COD Percent'] ? Number(row['COD Percent']) : null
-      const otherCharges = row['Other Charges'] ? Number(row['Other Charges']) : null
-
-      // ✅ skip rows without mode, courier info, or any charges/rates
-      const hasData =
-        mode ||
-        codCharges !== null ||
-        codPercent !== null ||
-        otherCharges !== null ||
-        rates.length > 0 ||
-        Object.keys(zoneSlabs).length > 0
-
-      if (!hasData) continue
-
-      await upsertShippingRate({
-        courier_id: courierId,
-        courier_name: courierName,
-        service_provider: serviceProvider,
-        plan_id: plan_id as string,
-        min_weight: minWeight,
-        business_type: business_type as 'b2b' | 'b2c',
-        mode,
-        cod_charges: codCharges,
-        cod_percent: codPercent,
-        other_charges: otherCharges,
-        rates,
-        zone_slabs: business_type === 'b2c' ? zoneSlabs : undefined,
+    if (result.imported === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No shipping rates were imported',
+        data: result,
       })
     }
 
-    res.json({ success: true, message: 'Shipping rates imported successfully' })
+    res.json({
+      success: true,
+      message: 'Shipping rates imported successfully',
+      data: result,
+    })
   } catch (err) {
     console.error('Error importing shipping rates:', err)
     const statusCode = isSlabValidationError(err) ? 400 : 500
@@ -1323,3 +1235,4 @@ export const deleteCourierController = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Failed to delete courier' })
   }
 }
+
