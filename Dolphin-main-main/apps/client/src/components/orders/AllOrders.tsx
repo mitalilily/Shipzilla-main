@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { TbFilter, TbPlus, TbRefresh } from 'react-icons/tb'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { generateManifestService } from '../../api/order.service'
+import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
 import { useAllOrders, useB2BOrdersByUser, useB2COrdersByUser } from '../../hooks/Orders/useOrders'
 import { usePresignedDownloadMutation } from '../../hooks/Uploads/usePresignedDownloadUrls'
 import { getTodayDateInputValue } from '../../utils/date'
@@ -91,6 +92,7 @@ const AllOrders = () => {
     toDate: undefined,
     search: undefined,
   })
+  const { guardOrderCreation, isLoading: readinessLoading } = useOrderCreationGuard()
   const queryClient = useQueryClient()
   const { mutateAsync: presignDownloads } = usePresignedDownloadMutation()
   const isB2CView = location.pathname.startsWith('/orders/b2c')
@@ -534,7 +536,8 @@ const AllOrders = () => {
             <Button
               variant="contained"
               startIcon={<TbPlus size={16} />}
-              onClick={() => navigate('/orders/create')}
+              onClick={() => guardOrderCreation(() => navigate('/orders/create'))}
+              disabled={readinessLoading}
               sx={{
                 borderRadius: 1.2,
                 bgcolor: '#1D2842',

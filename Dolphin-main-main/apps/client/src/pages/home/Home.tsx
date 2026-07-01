@@ -21,6 +21,7 @@ import UpcomingPickupsHome from '../../components/home/UpcomingPickupsHome'
 import SectionHeading from '../../components/UI/SectionHeading'
 import { useAuth } from '../../context/auth/AuthContext'
 import { useRealtimeHomeDashboard } from '../../hooks/home/useRealtimeHomeDashboard'
+import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
 import { useMerchantReadiness } from '../../hooks/useMerchantReadiness'
 import { brand, brandGradients } from '../../theme/brand'
 
@@ -40,6 +41,7 @@ export default function Home() {
   const navigate = useNavigate()
   const { walletBalance, user } = useAuth()
   const { progress, completedCount, totalCount, isReady } = useMerchantReadiness()
+  const { guardOrderCreation, isLoading: readinessLoading } = useOrderCreationGuard()
   const { incomingPickupsState, courierDistributionState, topDestinationsState } =
     useRealtimeHomeDashboard()
 
@@ -197,7 +199,8 @@ export default function Home() {
                   variant="contained"
                   size="large"
                   endIcon={<TbArrowRight size={18} />}
-                  onClick={() => navigate('/orders/create')}
+                  onClick={() => guardOrderCreation(() => navigate('/orders/create'))}
+                  disabled={readinessLoading}
                   sx={{
                     background: brandGradients.button,
                     color: '#FFFFFF',
@@ -317,7 +320,14 @@ export default function Home() {
           {quickActions.map((action) => (
             <Box
               key={action.title}
-              onClick={() => navigate(action.path)}
+              onClick={() => {
+                if (action.path === '/orders/create') {
+                  guardOrderCreation(() => navigate(action.path))
+                  return
+                }
+
+                navigate(action.path)
+              }}
               sx={{
                 ...shellCard,
                 p: 2.3,

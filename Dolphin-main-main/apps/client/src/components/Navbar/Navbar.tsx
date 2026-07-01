@@ -7,6 +7,7 @@ import {
   TbLayoutSidebarRightCollapseFilled,
 } from 'react-icons/tb'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
 import BrandTopBar from '../brand/BrandTopBar'
 import { brand, brandGradients } from '../../theme/brand'
 import GlobalSearch from './GlobalSearch'
@@ -45,6 +46,7 @@ export default function Navbar({ handleDrawerToggle, pinned }: NavbarProps) {
   const isTablet = useMediaQuery(theme.breakpoints.down('lg'))
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const activeSection = getSectionLabel(location.pathname)
+  const { guardOrderCreation, isLoading } = useOrderCreationGuard()
 
   return (
     <BrandTopBar sx={{ zIndex: (muiTheme) => muiTheme.zIndex.appBar }}>
@@ -132,7 +134,8 @@ export default function Navbar({ handleDrawerToggle, pinned }: NavbarProps) {
             {!isMobile && (
               <Button
                 variant="contained"
-                onClick={() => navigate('/orders/create')}
+                onClick={() => guardOrderCreation(() => navigate('/orders/create'))}
+                disabled={isLoading}
                 sx={{
                   minWidth: 'fit-content',
                   px: 1.7,

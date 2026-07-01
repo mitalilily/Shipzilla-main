@@ -20,9 +20,9 @@ import {
   useCreateReverseShipment,
   useRetryFailedManifest,
 } from '../../../hooks/Orders/useOrders'
+import { useOrderCreationGuard } from '../../../hooks/useOrderCreationGuard'
 import { usePickupAddresses } from '../../../hooks/Pickup/usePickupAddresses'
 import { usePresignedDownloadMutation } from '../../../hooks/Uploads/usePresignedDownloadUrls'
-import { useKycVerification } from '../../../hooks/User/useKycVerification'
 import type { B2COrder } from '../../../types/generic.types'
 import { getTodayDateInputValue } from '../../../utils/date'
 import { FilterBar, type FilterField } from '../../FilterBar'
@@ -249,10 +249,10 @@ const B2COrdersList = () => {
     setBulkFeedback(null)
   }
 
-  const { checkKycBeforeAction } = useKycVerification()
+  const { guardOrderCreation, isLoading: readinessLoading } = useOrderCreationGuard()
 
   const handleCreateB2COrder = () => {
-    checkKycBeforeAction(() => {
+    guardOrderCreation(() => {
       setDrawerOpen(true)
     })
   }
@@ -829,7 +829,12 @@ const B2COrdersList = () => {
             ]}
           />
         </Box>
-        <Button variant="contained" color="primary" onClick={handleCreateB2COrder}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleCreateB2COrder}
+          disabled={readinessLoading}
+        >
           Create B2C Order
         </Button>
       </Stack>

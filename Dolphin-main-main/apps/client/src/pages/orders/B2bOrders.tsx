@@ -5,7 +5,7 @@ import CustomDrawer from '../../components/UI/drawer/CustomDrawer'
 import B2BOrderForm from '../../components/orders/b2b/B2BOrderForm'
 import B2BOrdersList from '../../components/orders/b2b/B2bOrdersList'
 import { statusColorMap } from '../../components/orders/b2c/B2COrdersList'
-import { useKycVerification } from '../../hooks/User/useKycVerification'
+import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
 import { getTodayDateInputValue } from '../../utils/date'
 
 const B2bOrders = () => {
@@ -59,10 +59,10 @@ const B2bOrders = () => {
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const { checkKycBeforeAction } = useKycVerification()
+  const { guardOrderCreation, isLoading } = useOrderCreationGuard()
 
   const handleCreateB2BOrder = () => {
-    checkKycBeforeAction(() => {
+    guardOrderCreation(() => {
       setDrawerOpen(true)
     })
   }
@@ -80,6 +80,7 @@ const B2bOrders = () => {
           variant="contained"
           color="primary"
           onClick={handleCreateB2BOrder}
+          disabled={isLoading}
           fullWidth={isMobile}
         >
           Create B2B Order
