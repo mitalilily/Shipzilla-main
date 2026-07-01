@@ -38,12 +38,8 @@ export const uploadFileWithFallback = async ({
   }
 
   if (preferServerUpload) {
-    try {
-      await uploadViaServer()
-      return
-    } catch (serverUploadError) {
-      console.warn('Backend-first upload failed, retrying direct R2 upload:', serverUploadError)
-    }
+    await uploadViaServer()
+    return
   }
 
   try {
