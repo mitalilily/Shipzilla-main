@@ -61,7 +61,8 @@ export default function Layout() {
             width: pinned ? DRAWER_WIDTH : COLLAPSED_WIDTH,
             minWidth: pinned ? DRAWER_WIDTH : COLLAPSED_WIDTH,
             flexShrink: 0,
-            transition: 'width 240ms ease',
+            transition: 'width 200ms ease',
+            willChange: 'width',
             position: 'relative',
           }}
         >

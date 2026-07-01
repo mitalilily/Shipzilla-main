@@ -8,7 +8,6 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import ActionItemsCard from '../../components/dashboard/ActionItemsCard'
 import CourierComparisonChart from '../../components/dashboard/CourierComparisonChart'
@@ -404,15 +403,9 @@ export default function Dashboard() {
 
               return (
                 <Grid size={gridSize} key={widgetId} sx={{ display: 'flex' }}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-50px' }}
-                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                    style={{ width: '100%', height: '100%' }}
-                  >
+                  <Box sx={{ width: '100%', height: '100%' }}>
                     <WidgetComponent {...(widgetProps[widgetId] || {})} />
-                  </motion.div>
+                  </Box>
                 </Grid>
               )
             })}

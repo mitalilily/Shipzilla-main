@@ -391,9 +391,9 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
       sx={{
         width: isSidebarExpanded ? DRAWER_WIDTH : COLLAPSED_WIDTH,
         height: '100vh',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,243,251,0.96) 100%)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(247,243,251,0.99) 100%)',
         borderRight: `1px solid ${alpha(brand.primary, 0.1)}`,
-        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'width 0.2s ease',
         display: 'flex',
         flexDirection: 'column',
         zIndex: theme.zIndex.drawer,
@@ -402,7 +402,11 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
         top: 0,
         overflowX: 'hidden',
         boxShadow: '16px 0 40px rgba(67,22,109,0.08)',
-        backdropFilter: 'blur(18px)',
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        contain: 'layout paint',
+        willChange: 'width',
+        transform: 'translateZ(0)',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
