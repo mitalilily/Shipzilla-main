@@ -23,11 +23,15 @@ import {
   useUpdateServiceProviderStatus,
 } from 'hooks/useCouriers'
 
-const allowedProviders = new Set(['shiprocket'])
+const allowedProviders = new Set(['shiprocket', 'shipmozo'])
 const providerCopy = {
   shiprocket: {
     label: 'Shiprocket Cargo',
     note: 'Sync real Shiprocket carrier catalog and control provider availability.',
+  },
+  shipmozo: {
+    label: 'Shipmozo',
+    note: 'Fetch the live Shipmozo courier catalog and control which couriers stay visible.',
   },
 }
 

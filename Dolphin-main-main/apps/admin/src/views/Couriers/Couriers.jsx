@@ -44,12 +44,16 @@ import { useState } from 'react'
 
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 
-const allowedProviders = new Set(['shiprocket'])
+const allowedProviders = new Set(['shiprocket', 'shipmozo'])
 const defaultFormData = { businessType: ['b2c', 'b2b'] }
 const providerCopy = {
   shiprocket: {
     label: 'Shiprocket Cargo',
     emptyState: 'No live Shiprocket couriers are synced yet.',
+  },
+  shipmozo: {
+    label: 'Shipmozo',
+    emptyState: 'No live Shipmozo couriers are synced yet.',
   },
 }
 
@@ -77,7 +81,7 @@ const Couriers = () => {
   )
   const providerOptions = serviceProviders.map((provider) => ({
     value: provider.serviceProvider,
-    label: provider.serviceProvider === 'shiprocket' ? 'Shiprocket' : provider.serviceProvider,
+    label: providerCopy[provider.serviceProvider]?.label || provider.serviceProvider,
   }))
 
   const {

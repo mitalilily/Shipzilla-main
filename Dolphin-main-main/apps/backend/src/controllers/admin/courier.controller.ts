@@ -131,7 +131,7 @@ const dedupeCourierCatalog = (records: SyncedCourierRecord[]) => {
 }
 
 const upsertProviderCouriers = async (
-  serviceProvider: 'shiprocket',
+  serviceProvider: 'shiprocket' | 'shipmozo',
   records: SyncedCourierRecord[],
 ) => {
   const normalizedRecords = dedupeCourierCatalog(records)
@@ -205,6 +205,17 @@ const syncShiprocketCourierCatalog = async () => {
     .filter((record): record is SyncedCourierRecord => Boolean(record))
 
   return upsertProviderCouriers('shiprocket', records)
+}
+
+const syncShipmozoCourierCatalog = async () => {
+  const service = new ShipmozoService()
+  const records = (await service.getCourierCatalog()).map((record) => ({
+    id: record.id,
+    name: record.name,
+    businessType: record.businessType,
+  }))
+
+  return upsertProviderCouriers('shipmozo', records)
 }
 
 export interface ShippingRateFilters {
@@ -959,14 +970,17 @@ export const syncProviderCouriersController = async (req: Request, res: Response
   const normalizedProvider = normalizeCourierProvider(req.params.serviceProvider)
 
   try {
-    if (normalizedProvider !== 'shiprocket') {
+    if (normalizedProvider !== 'shiprocket' && normalizedProvider !== 'shipmozo') {
       return res.status(400).json({
         success: false,
-        message: 'Only Shiprocket courier sync is supported here.',
+        message: 'Only Shiprocket and Shipmozo courier sync are supported here.',
       })
     }
 
-    const result = await syncShiprocketCourierCatalog()
+    const result =
+      normalizedProvider === 'shipmozo'
+        ? await syncShipmozoCourierCatalog()
+        : await syncShiprocketCourierCatalog()
 
     return res.json({
       success: true,
@@ -980,7 +994,7 @@ export const syncProviderCouriersController = async (req: Request, res: Response
     console.error(`[syncProviderCouriersController] ${normalizedProvider} sync failed`, err)
     return res.status(500).json({
       success: false,
-      message: err?.message || 'Failed to sync Shiprocket couriers',
+      message: err?.message || `Failed to sync ${normalizedProvider} couriers`,
     })
   }
 }

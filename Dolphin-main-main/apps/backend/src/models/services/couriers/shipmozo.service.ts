@@ -37,6 +37,13 @@ export type ShipmozoServiceabilityResponse = {
   raw: any
 }
 
+export type ShipmozoCourierCatalogRecord = {
+  id: number
+  name: string
+  businessType: ('b2c' | 'b2b')[]
+  raw: ShipmozoRateRecord
+}
+
 export type ShipmozoShipmentResponse = {
   status: boolean
   data?: {
@@ -58,6 +65,63 @@ type ShipmozoKeys = {
   publicKey: string
   privateKey: string
 }
+
+type ShipmozoCourierCatalogScenario = {
+  pickupPincode: number
+  deliveryPincode: number
+  paymentType: 'PREPAID' | 'COD'
+  orderAmount: number
+  weightGrams: number
+  dimensions: Array<{
+    no_of_box: string
+    length: string
+    width: string
+    height: string
+  }>
+}
+
+const SHIPMOZO_COURIER_CATALOG_SCENARIOS: ShipmozoCourierCatalogScenario[] = [
+  {
+    pickupPincode: 122001,
+    deliveryPincode: 110001,
+    paymentType: 'PREPAID',
+    orderAmount: 1000,
+    weightGrams: 500,
+    dimensions: [{ no_of_box: '1', length: '22', width: '10', height: '10' }],
+  },
+  {
+    pickupPincode: 400001,
+    deliveryPincode: 560001,
+    paymentType: 'PREPAID',
+    orderAmount: 1000,
+    weightGrams: 500,
+    dimensions: [{ no_of_box: '1', length: '22', width: '10', height: '10' }],
+  },
+  {
+    pickupPincode: 700001,
+    deliveryPincode: 600001,
+    paymentType: 'PREPAID',
+    orderAmount: 1000,
+    weightGrams: 500,
+    dimensions: [{ no_of_box: '1', length: '22', width: '10', height: '10' }],
+  },
+  {
+    pickupPincode: 122001,
+    deliveryPincode: 110001,
+    paymentType: 'COD',
+    orderAmount: 1000,
+    weightGrams: 500,
+    dimensions: [{ no_of_box: '1', length: '22', width: '10', height: '10' }],
+  },
+  {
+    pickupPincode: 122001,
+    deliveryPincode: 110001,
+    paymentType: 'PREPAID',
+    orderAmount: 1000,
+    weightGrams: 10000,
+    dimensions: [{ no_of_box: '1', length: '40', width: '30', height: '20' }],
+  },
+]
 
 const trim = (value: unknown) => String(value ?? '').trim()
 
@@ -188,6 +252,31 @@ export class ShipmozoService {
       trim(err?.message) ||
       fallback
     )
+  }
+
+  private extractRateRecords(data: any): ShipmozoRateRecord[] {
+    if (Array.isArray(data)) return data
+    if (Array.isArray(data?.rates)) return data.rates
+    if (Array.isArray(data?.couriers)) return data.couriers
+    if (Array.isArray(data?.available_couriers)) return data.available_couriers
+    if (data && typeof data === 'object') return [data]
+    return []
+  }
+
+  private normalizeCourierCatalogRecord(row: ShipmozoRateRecord): ShipmozoCourierCatalogRecord | null {
+    const id = Number(row?.courier_id ?? row?.id ?? row?.carrier_id ?? row?.courierId)
+    const name = trim(row?.name || row?.courier_name || row?.courier_company || row?.courier)
+
+    if (!Number.isFinite(id) || id <= 0 || !name) {
+      return null
+    }
+
+    return {
+      id,
+      name,
+      businessType: ['b2c'],
+      raw: row,
+    }
   }
 
   private authHeaders(keys: ShipmozoKeys) {
@@ -395,6 +484,50 @@ export class ShipmozoService {
       tat: null,
       raw: { pincode: pinRaw, rates: rateRaw },
     }
+  }
+
+  async getCourierCatalog(
+    scenarios: ShipmozoCourierCatalogScenario[] = SHIPMOZO_COURIER_CATALOG_SCENARIOS,
+  ): Promise<ShipmozoCourierCatalogRecord[]> {
+    const byId = new Map<number, ShipmozoCourierCatalogRecord>()
+
+    for (const scenario of scenarios) {
+      const rateResponse = await this.rateCalculator({
+        pickup_pincode: scenario.pickupPincode,
+        delivery_pincode: scenario.deliveryPincode,
+        payment_type: scenario.paymentType,
+        shipment_type: 'FORWARD',
+        order_amount: scenario.orderAmount,
+        type_of_package: 'SPS',
+        rov_type: 'ROV_OWNER',
+        cod_amount: scenario.paymentType === 'COD' ? String(scenario.orderAmount) : '',
+        weight: scenario.weightGrams,
+        dimensions: scenario.dimensions,
+      })
+
+      for (const row of this.extractRateRecords(rateResponse.data)) {
+        const normalized = this.normalizeCourierCatalogRecord(row)
+        if (!normalized) continue
+
+        const existing = byId.get(normalized.id)
+        if (!existing || existing.name.length < normalized.name.length) {
+          byId.set(normalized.id, normalized)
+        }
+      }
+    }
+
+    const catalog = [...byId.values()].sort((left, right) => left.name.localeCompare(right.name))
+
+    if (!catalog.length) {
+      throw new HttpError(502, 'Shipmozo courier catalog is empty for the configured account.')
+    }
+
+    this.log('Courier catalog fetched', {
+      scenarios: scenarios.length,
+      totalCouriers: catalog.length,
+    })
+
+    return catalog
   }
 
   async getWarehouses() {
