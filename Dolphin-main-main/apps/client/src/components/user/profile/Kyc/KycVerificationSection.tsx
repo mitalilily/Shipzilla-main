@@ -112,6 +112,7 @@ const KYCVerificationStep: React.FC<{
             descriptor: presign,
             file,
             contentType: file.type,
+            preferServerUpload: true,
           })
 
           selfieUrl = presign?.key

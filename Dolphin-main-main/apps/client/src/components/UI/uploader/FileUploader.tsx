@@ -241,6 +241,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             descriptor: data,
             file,
             contentType,
+            preferServerUpload: folderKey === 'kyc',
             onUploadProgress: (e) =>
               e.total && setProgress(Math.round((e.loaded * 100) / e.total)),
           })

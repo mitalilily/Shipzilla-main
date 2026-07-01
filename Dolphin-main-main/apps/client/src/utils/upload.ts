@@ -12,6 +12,7 @@ type UploadWithFallbackParams = {
   file: Blob
   contentType: string
   onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void
+  preferServerUpload?: boolean
 }
 
 export const uploadFileWithFallback = async ({
@@ -19,6 +20,7 @@ export const uploadFileWithFallback = async ({
   file,
   contentType,
   onUploadProgress,
+  preferServerUpload = false,
 }: UploadWithFallbackParams) => {
   if (descriptor.storageMode === 'local') {
     await axiosInstance.put(descriptor.uploadUrl, file, {
@@ -26,6 +28,22 @@ export const uploadFileWithFallback = async ({
       onUploadProgress,
     })
     return
+  }
+
+  const uploadViaServer = async () => {
+    await axiosInstance.put(`/uploads/server-upload?key=${encodeURIComponent(descriptor.key)}`, file, {
+      headers: { 'Content-Type': contentType },
+      onUploadProgress,
+    })
+  }
+
+  if (preferServerUpload) {
+    try {
+      await uploadViaServer()
+      return
+    } catch (serverUploadError) {
+      console.warn('Backend-first upload failed, retrying direct R2 upload:', serverUploadError)
+    }
   }
 
   try {
@@ -36,9 +54,6 @@ export const uploadFileWithFallback = async ({
     })
   } catch (directUploadError) {
     console.warn('Direct storage upload failed, retrying through backend fallback:', directUploadError)
-    await axiosInstance.put(`/uploads/server-upload?key=${encodeURIComponent(descriptor.key)}`, file, {
-      headers: { 'Content-Type': contentType },
-      onUploadProgress,
-    })
+    await uploadViaServer()
   }
 }
