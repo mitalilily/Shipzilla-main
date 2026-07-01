@@ -1,5 +1,4 @@
 import { Response } from 'express'
-import { checkIcarryPincodeServiceability } from '../../models/services/icarryPincodeServiceability.service'
 import { fetchAvailableCouriersWithRates } from '../../models/services/shiprocket.service'
 import { getOpaqueProviderCode } from '../../utils/externalApiHelpers'
 import { extractOrderAmountFromBody } from '../../utils/orderAmount'
@@ -209,26 +208,3 @@ export const checkServiceabilityController = async (req: any, res: Response) => 
   }
 }
 
-/**
- * Check icarry pincode serviceability directly
- * GET /api/v1/serviceability/icarry/pincode
- * POST /api/v1/serviceability/icarry/pincode
- */
-export const checkIcarryPincodeServiceabilityController = async (req: any, res: Response) => {
-  try {
-    const params = req.method === 'POST' ? req.body : req.query
-    const result = await checkIcarryPincodeServiceability(params?.pincode)
-
-    res.status(200).json({
-      success: true,
-      data: result,
-    })
-  } catch (error: any) {
-    console.error('Error checking icarry pincode serviceability via API:', error)
-    res.status(typeof error?.statusCode === 'number' ? error.statusCode : 500).json({
-      success: false,
-      error: 'Failed to check icarry pincode serviceability',
-      message: error?.message || 'Internal server error',
-    })
-  }
-}

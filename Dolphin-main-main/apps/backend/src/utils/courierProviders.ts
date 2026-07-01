@@ -1,5 +1,4 @@
 export const INTEGRATED_COURIER_PROVIDERS = [
-  'icarry',
   'shiprocket',
 ] as const
 

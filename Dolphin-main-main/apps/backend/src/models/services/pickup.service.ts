@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db } from '../client'
 import { b2c_orders } from '../schema/b2cOrders'
-import { IcarryService } from './couriers/icarry.service'
 import { ShipmozoService } from './couriers/shipmozo.service'
 import { applyCancellationRefundOnce } from './webhookProcessor'
 
@@ -25,9 +24,9 @@ export async function cancelOrderShipment(orderId: string) {
   })
 
   const integration = (order.integration_type || '').toLowerCase()
-  if (!['shipmozo', 'icarry'].includes(integration)) {
+  if (integration !== 'shipmozo') {
     console.error('❌ Unsupported integration type:', { orderId, integration })
-    throw new Error('Only Shipmozo and icarry are supported for cancellation')
+    throw new Error('Only Shipmozo is supported for cancellation')
   }
 
   if (!order.awb_number) {
@@ -41,13 +40,10 @@ export async function cancelOrderShipment(orderId: string) {
     integration,
   })
 
-  const cancellationResult: any =
-    integration === 'icarry'
-      ? await new IcarryService().cancelShipment(order.shipment_id || order.awb_number)
-      : await new ShipmozoService().cancelShipment({
-          orderId: order.order_number || order.id,
-          awbNumber: order.awb_number,
-        })
+  const cancellationResult: any = await new ShipmozoService().cancelShipment({
+    orderId: order.order_number || order.id,
+    awbNumber: order.awb_number,
+  })
 
   // Validate courier response
   // Check for various success indicators: boolean status, string status, success flags, or cancellation remark

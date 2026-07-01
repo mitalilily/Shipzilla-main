@@ -23,15 +23,11 @@ import {
   useUpdateServiceProviderStatus,
 } from 'hooks/useCouriers'
 
-const allowedProviders = new Set(['shiprocket', 'icarry'])
+const allowedProviders = new Set(['shiprocket'])
 const providerCopy = {
   shiprocket: {
     label: 'Shiprocket Cargo',
     note: 'Sync real Shiprocket carrier catalog and control provider availability.',
-  },
-  icarry: {
-    label: 'icarry',
-    note: 'Sync live icarry courier options and manage their active status.',
   },
 }
 
@@ -93,7 +89,7 @@ const ServiceProviders = () => {
         Service Providers
       </Text>
       <Text fontSize="sm" color="gray.500">
-        Keep the two live carrier integrations visible, synced, and ready for courier-level control.
+        Keep the live carrier integration visible, synced, and ready for courier-level control.
       </Text>
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
         {providers.map((provider) => {

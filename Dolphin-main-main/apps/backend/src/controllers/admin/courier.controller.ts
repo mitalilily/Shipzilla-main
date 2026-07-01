@@ -12,13 +12,11 @@ import {
 } from '../../models/services/courierIntegration.service'
 import {
   DEFAULT_EKART_BASE_URL,
-  DEFAULT_ICARRY_BASE_URL,
   DEFAULT_SHIPMOZO_BASE_URL,
   DEFAULT_SHIPROCKET_BASE_URL,
   normalizeEkartBaseUrl,
 } from '../../models/services/courierCredentials.service'
 import { EkartService } from '../../models/services/couriers/ekart.service'
-import { IcarryService } from '../../models/services/couriers/icarry.service'
 import { ShipmozoService } from '../../models/services/couriers/shipmozo.service'
 import { XpressbeesService } from '../../models/services/couriers/xpressbees.service'
 import { fetchAvailableCouriersWithRatesAdmin } from '../../models/services/shiprocket.service'
@@ -109,25 +107,6 @@ const normalizeShiprocketCourier = (row: any): SyncedCourierRecord | null => {
   }
 }
 
-const normalizeIcarryCourier = (row: any): SyncedCourierRecord | null => {
-  const id = normalizeNumericCourierId(row?.courier_id ?? row?.courierId ?? row?.id)
-  const name = normalizeCourierName(
-    row?.courier_name,
-    row?.courierName,
-    row?.courier_group_name,
-    row?.group_name,
-    row?.name,
-  )
-
-  if (!id || !name) return null
-
-  return {
-    id,
-    name,
-    businessType: normalizeBusinessTypes(row?.business_type, ['b2c', 'b2b']),
-  }
-}
-
 const dedupeCourierCatalog = (records: SyncedCourierRecord[]) => {
   const byId = new Map<number, SyncedCourierRecord>()
 
@@ -152,7 +131,7 @@ const dedupeCourierCatalog = (records: SyncedCourierRecord[]) => {
 }
 
 const upsertProviderCouriers = async (
-  serviceProvider: 'shiprocket' | 'icarry',
+  serviceProvider: 'shiprocket',
   records: SyncedCourierRecord[],
 ) => {
   const normalizedRecords = dedupeCourierCatalog(records)
@@ -226,77 +205,6 @@ const syncShiprocketCourierCatalog = async () => {
     .filter((record): record is SyncedCourierRecord => Boolean(record))
 
   return upsertProviderCouriers('shiprocket', records)
-}
-
-const syncIcarryCourierCatalog = async (
-  payload: Record<string, any>,
-): Promise<{ total: number; created: number; updated: number; removed: number }> => {
-  const service = new IcarryService()
-  const probes = [
-    {
-      length: Number(payload?.length ?? 10),
-      breadth: Number(payload?.breadth ?? 10),
-      height: Number(payload?.height ?? 10),
-      weight: Number(payload?.weight ?? 500),
-      origin_pincode: String(payload?.origin ?? payload?.origin_pincode ?? '400001'),
-      destination_pincode: String(
-        payload?.destination ?? payload?.destination_pincode ?? '560001',
-      ),
-      shipment_type: 'P',
-      shipment_mode: 'S',
-      shipment_value: Number(payload?.shipment_value ?? 1000),
-    },
-    {
-      length: Number(payload?.length ?? 10),
-      breadth: Number(payload?.breadth ?? 10),
-      height: Number(payload?.height ?? 10),
-      weight: Number(payload?.weight ?? 500),
-      origin_pincode: String(payload?.origin ?? payload?.origin_pincode ?? '110001'),
-      destination_pincode: String(
-        payload?.destination ?? payload?.destination_pincode ?? '700001',
-      ),
-      shipment_type: 'P',
-      shipment_mode: 'E',
-      shipment_value: Number(payload?.shipment_value ?? 1000),
-    },
-    {
-      length: Number(payload?.length ?? 10),
-      breadth: Number(payload?.breadth ?? 10),
-      height: Number(payload?.height ?? 10),
-      weight: Number(payload?.weight ?? 500),
-      origin_pincode: String(payload?.origin ?? payload?.origin_pincode ?? '500001'),
-      destination_pincode: String(
-        payload?.destination ?? payload?.destination_pincode ?? '560001',
-      ),
-      shipment_type: 'C',
-      shipment_mode: 'S',
-      shipment_value: Number(payload?.shipment_value ?? 1000),
-    },
-  ]
-
-  const records: SyncedCourierRecord[] = []
-  let lastError: any = null
-
-  for (const probe of probes) {
-    try {
-      const response = await service.estimateRates(probe)
-      const estimateRows = extractArrayPayload(response)
-      records.push(
-        ...estimateRows
-          .map(normalizeIcarryCourier)
-          .filter((record): record is SyncedCourierRecord => Boolean(record)),
-      )
-    } catch (error) {
-      lastError = error
-    }
-  }
-
-  if (!records.length) {
-    if (lastError) throw lastError
-    throw new Error('icarry courier sync returned no live courier records.')
-  }
-
-  return upsertProviderCouriers('icarry', records)
 }
 
 export interface ShippingRateFilters {
@@ -640,23 +548,23 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         webhookSecret: courier_credentials.webhookSecret,
       })
       .from(courier_credentials)
-      .where(inArray(courier_credentials.provider, ['shiprocket', 'icarry']))
+      .where(inArray(courier_credentials.provider, ['shiprocket', 'shipmozo']))
 
     const defaults = {
+      shipmozo: {
+        provider: 'shipmozo',
+        apiBase: DEFAULT_SHIPMOZO_BASE_URL,
+        username: '',
+        publicKey: '',
+        hasPassword: false,
+        hasPrivateKey: false,
+        privateKeyMasked: '',
+        hasWebhookSecret: false,
+      },
       shiprocket: {
         provider: 'shiprocket',
         apiBase: DEFAULT_SHIPROCKET_BASE_URL,
         username: '',
-        hasPassword: false,
-        hasApiKey: false,
-        apiKeyMasked: '',
-        hasWebhookSecret: false,
-      },
-      icarry: {
-        provider: 'icarry',
-        apiBase: DEFAULT_ICARRY_BASE_URL,
-        username: '',
-        clientId: '',
         hasPassword: false,
         hasApiKey: false,
         apiKeyMasked: '',
@@ -667,24 +575,24 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
     const data = rows.reduce<Record<string, any>>((acc, row) => {
       const provider = (row.provider || '').toLowerCase()
       if (!provider) return acc
-      if (provider === 'shiprocket') {
+      if (provider === 'shipmozo') {
+        const privateKey = row.apiKey || ''
+        acc.shipmozo = {
+          provider: 'shipmozo',
+          apiBase: row.apiBase || DEFAULT_SHIPMOZO_BASE_URL,
+          username: row.username || '',
+          publicKey: row.clientId || '',
+          hasPassword: Boolean((row.password || '').trim()),
+          hasPrivateKey: Boolean(privateKey.trim()),
+          privateKeyMasked: maskSecret(privateKey),
+          hasWebhookSecret: Boolean((row.webhookSecret || '').trim()),
+        }
+      } else if (provider === 'shiprocket') {
         const apiKey = row.apiKey || ''
         acc.shiprocket = {
           provider: 'shiprocket',
           apiBase: row.apiBase || DEFAULT_SHIPROCKET_BASE_URL,
           username: row.username || '',
-          hasPassword: Boolean((row.password || '').trim()),
-          hasApiKey: Boolean(apiKey.trim()),
-          apiKeyMasked: maskSecret(apiKey),
-          hasWebhookSecret: Boolean((row.webhookSecret || '').trim()),
-        }
-      } else if (provider === 'icarry') {
-        const apiKey = row.apiKey || ''
-        acc.icarry = {
-          provider: 'icarry',
-          apiBase: row.apiBase || DEFAULT_ICARRY_BASE_URL,
-          username: row.username || '',
-          clientId: row.clientId || '',
           hasPassword: Boolean((row.password || '').trim()),
           hasApiKey: Boolean(apiKey.trim()),
           apiKeyMasked: maskSecret(apiKey),
@@ -1051,17 +959,14 @@ export const syncProviderCouriersController = async (req: Request, res: Response
   const normalizedProvider = normalizeCourierProvider(req.params.serviceProvider)
 
   try {
-    if (normalizedProvider !== 'shiprocket' && normalizedProvider !== 'icarry') {
+    if (normalizedProvider !== 'shiprocket') {
       return res.status(400).json({
         success: false,
-        message: 'Only Shiprocket and icarry courier sync are supported here.',
+        message: 'Only Shiprocket courier sync is supported here.',
       })
     }
 
-    const result =
-      normalizedProvider === 'shiprocket'
-        ? await syncShiprocketCourierCatalog()
-        : await syncIcarryCourierCatalog(req.body || {})
+    const result = await syncShiprocketCourierCatalog()
 
     return res.json({
       success: true,
@@ -1075,9 +980,7 @@ export const syncProviderCouriersController = async (req: Request, res: Response
     console.error(`[syncProviderCouriersController] ${normalizedProvider} sync failed`, err)
     return res.status(500).json({
       success: false,
-      message:
-        err?.message ||
-        `Failed to sync ${normalizedProvider === 'shiprocket' ? 'Shiprocket' : 'icarry'} couriers`,
+      message: err?.message || 'Failed to sync Shiprocket couriers',
     })
   }
 }
@@ -1168,102 +1071,6 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
   } catch (err) {
     console.error(err)
     res.status(500).json({ success: false, message: 'Failed to update Shiprocket credentials' })
-  }
-}
-
-export const updateIcarryCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, username, clientId, password, apiKey, webhookSecret } = req.body || {}
-
-  try {
-    const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
-    const nextUsername = typeof username === 'string' ? username.trim() : undefined
-    const nextClientId = typeof clientId === 'string' ? clientId.trim() : undefined
-    const nextPassword = typeof password === 'string' ? password.trim() : undefined
-    const nextApiKey = typeof apiKey === 'string' ? apiKey.trim() : undefined
-    const nextWebhookSecret =
-      typeof webhookSecret === 'string' ? webhookSecret.trim() : undefined
-    const hasPassword = typeof nextPassword === 'string' && nextPassword.length > 0
-    const hasApiKey = typeof nextApiKey === 'string' && nextApiKey.length > 0
-    const hasWebhookSecret =
-      typeof nextWebhookSecret === 'string' && nextWebhookSecret.length > 0
-
-    const [existing] = await db
-      .select({ id: courier_credentials.id })
-      .from(courier_credentials)
-      .where(eq(courier_credentials.provider, 'icarry'))
-      .limit(1)
-
-    if (existing) {
-      const updatePayload: Record<string, any> = {
-        updatedAt: new Date(),
-      }
-      if (nextApiBase !== undefined) {
-        updatePayload.apiBase = nextApiBase || DEFAULT_ICARRY_BASE_URL
-      }
-      if (nextUsername !== undefined) {
-        updatePayload.username = nextUsername
-      }
-      if (nextClientId !== undefined) {
-        updatePayload.clientId = nextClientId
-      }
-      if (hasPassword) {
-        updatePayload.password = nextPassword
-      }
-      if (hasApiKey) {
-        updatePayload.apiKey = nextApiKey
-      }
-      if (hasWebhookSecret) {
-        updatePayload.webhookSecret = nextWebhookSecret
-      }
-
-      await db
-        .update(courier_credentials)
-        .set(updatePayload)
-        .where(eq(courier_credentials.provider, 'icarry'))
-    } else {
-      await db.insert(courier_credentials).values({
-        provider: 'icarry',
-        apiBase: nextApiBase || DEFAULT_ICARRY_BASE_URL,
-        clientName: '',
-        apiKey: hasApiKey ? nextApiKey : '',
-        clientId: nextClientId || '',
-        username: nextUsername || '',
-        password: hasPassword ? nextPassword : '',
-        webhookSecret: hasWebhookSecret ? nextWebhookSecret : '',
-      })
-    }
-
-    const [saved] = await db
-      .select({
-        apiBase: courier_credentials.apiBase,
-        username: courier_credentials.username,
-        clientId: courier_credentials.clientId,
-        password: courier_credentials.password,
-        apiKey: courier_credentials.apiKey,
-        webhookSecret: courier_credentials.webhookSecret,
-      })
-      .from(courier_credentials)
-      .where(eq(courier_credentials.provider, 'icarry'))
-      .limit(1)
-
-    res.json({
-      success: true,
-      message: 'icarry credentials updated successfully',
-      data: {
-        provider: 'icarry',
-        apiBase: saved?.apiBase || DEFAULT_ICARRY_BASE_URL,
-        username: saved?.username || '',
-        clientId: saved?.clientId || '',
-        hasPassword: Boolean((saved?.password || '').trim()),
-        hasApiKey: Boolean((saved?.apiKey || '').trim()),
-        apiKeyMasked: maskSecret(saved?.apiKey),
-        hasWebhookSecret: Boolean((saved?.webhookSecret || '').trim()),
-      },
-    })
-    IcarryService.clearCachedConfig()
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ success: false, message: 'Failed to update icarry credentials' })
   }
 }
 

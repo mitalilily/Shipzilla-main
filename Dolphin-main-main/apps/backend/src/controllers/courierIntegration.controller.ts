@@ -13,7 +13,6 @@ import {
   fetchAvailableCouriersWithRates,
   fetchAvailableCouriersWithRatesB2B,
 } from '../models/services/shiprocket.service'
-import { checkIcarryPincodeServiceability } from '../models/services/icarryPincodeServiceability.service'
 import { extractOrderAmountFromBody } from '../utils/orderAmount'
 
 const parseOptionalBoolean = (value: unknown): boolean | undefined => {
@@ -415,25 +414,6 @@ export const fetchAvailableCouriersToUser = async (req: Request, res: Response) 
   } catch (err: any) {
     console.error('Error fetching couriers:', err.message)
     return res.status(500).json({ success: false, error: err.message })
-  }
-}
-
-export const checkIcarryPincodeServiceabilityController = async (req: Request, res: Response) => {
-  try {
-    const pincode = req.method === 'GET' ? req.query.pincode : req.body?.pincode
-    const result = await checkIcarryPincodeServiceability(pincode)
-
-    return res.status(200).json({
-      success: true,
-      message: 'icarry pincode serviceability fetched successfully',
-      data: result,
-    })
-  } catch (error: any) {
-    const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500
-    return res.status(statusCode).json({
-      success: false,
-      error: error?.message || 'Failed to check icarry pincode serviceability',
-    })
   }
 }
 

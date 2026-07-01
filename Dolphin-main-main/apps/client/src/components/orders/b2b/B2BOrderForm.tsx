@@ -77,7 +77,7 @@ export type B2BFormData = {
   courierCost?: number | null // Estimated courier cost from serviceability (what platform pays courier)
   forwardCharges?: number
   otherCharges?: number
-  integrationType?: 'delhivery'
+  integrationType?: 'shiprocket' | string
 
   // Pickup location (optional)
   pickupLocationId?: string
@@ -229,10 +229,10 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
           warehouse_name: data.pickupLocationName ?? '',
           address: data.pickupAddress ?? '',
           name: data.pickupLocationPOCName ?? '',
-          city: data.city,
-          state: data.state,
+          city: data.pickupCity ?? data.city,
+          state: data.pickupState ?? data.state,
           pincode: data.pickupLocationPincode ?? data.pincode,
-          phone: data.buyerPhone,
+          phone: data.pickupLocationPOCPhone ?? data.buyerPhone,
         },
         pickup_location_id: data.pickupLocationId,
         // Boxes array

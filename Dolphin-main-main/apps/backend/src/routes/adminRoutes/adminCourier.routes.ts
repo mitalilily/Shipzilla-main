@@ -7,7 +7,7 @@ import {
   getAllCouriersController,
   getShippingRatesController,
   importShippingRatesController,
-  updateIcarryCredentialsController,
+  updateShipmozoCredentialsController,
   updateShiprocketCredentialsController,
   updateShippingRateController,
 } from '../../controllers/admin/courier.controller'
@@ -36,16 +36,16 @@ router.post(
 router.post('/available', requireAuth, fetchAvailableCouriersForAdmin)
 router.get('/credentials', requireAuth, isAdminMiddleware, getCourierCredentialsController)
 router.put(
+  '/credentials/shipmozo',
+  requireAuth,
+  isAdminMiddleware,
+  updateShipmozoCredentialsController,
+)
+router.put(
   '/credentials/shiprocket',
   requireAuth,
   isAdminMiddleware,
   updateShiprocketCredentialsController,
-)
-router.put(
-  '/credentials/icarry',
-  requireAuth,
-  isAdminMiddleware,
-  updateIcarryCredentialsController,
 )
 router.delete(
   '/shipping-rates/:planId/:id',

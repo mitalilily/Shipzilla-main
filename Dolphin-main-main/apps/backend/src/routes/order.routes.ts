@@ -7,11 +7,8 @@ import {
   getAllOrdersController,
   getB2BOrdersController,
   getB2COrdersController,
-  printIcarryShipmentLabelController,
   regenerateOrderDocumentsController,
   retryFailedManifestController,
-  syncIcarryShipmentChargesController,
-  syncIcarryShipmentStatusesController,
   trackOrderController,
 } from '../controllers/order.controller'
 import { requireAuth } from '../middlewares/requireAuth'
@@ -25,9 +22,6 @@ router.get('/check-order-number', requireAuth, checkOrderNumberAvailabilityContr
 router.get('/b2c/list', requireAuth, getB2COrdersController)
 router.get('/b2b/list', requireAuth, getB2BOrdersController)
 router.post('/b2c/manifest', requireAuth, generateManifestController)
-router.post('/b2c/shipment-charges/sync', requireAuth, syncIcarryShipmentChargesController)
-router.post('/b2c/shipment-status/sync', requireAuth, syncIcarryShipmentStatusesController)
-router.post('/b2c/shipment-label/print', requireAuth, printIcarryShipmentLabelController)
 router.post('/b2c/:orderId/retry-manifest', requireAuth, retryFailedManifestController)
 router.post('/:orderId/regenerate-documents', requireAuth, regenerateOrderDocumentsController)
 router.get('/all', requireAuth, getAllOrdersController)

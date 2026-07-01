@@ -145,8 +145,8 @@ export const updateShiprocketCredentials = async (payload) => {
   return data.data
 }
 
-export const updateIcarryCredentials = async (payload) => {
-  const { data } = await api.put('/admin/couriers/credentials/icarry', payload)
-  if (!data?.success) throw new Error('Failed to update icarry credentials')
+export const updateShipmozoCredentials = async (payload) => {
+  const { data } = await api.put('/admin/couriers/credentials/shipmozo', payload)
+  if (!data?.success) throw new Error('Failed to update Shipmozo credentials')
   return data.data
 }

@@ -82,7 +82,7 @@ export const purgeUnsupportedCourierData = async () => {
 }
 
 export const purgeUnsupportedCourierCredentials = async () => {
-  const allowedProviders = ['shiprocket', 'icarry', 'shipmozo']
+  const allowedProviders = ['shiprocket', 'shipmozo']
 
   const courierCredentialBefore = await getCourierCredentialProviderSummary()
 

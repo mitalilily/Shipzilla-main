@@ -8,7 +8,6 @@ export type ServiceProviderId =
   | 'shipway'
   | 'xpressbees'
   | 'ekart'
-  | 'icarry'
   | 'shipmozo'
   | 'shiprocket'
 
@@ -45,15 +44,6 @@ export type ShiprocketConfig = {
   webhookSecret?: string
 }
 
-export type IcarryConfig = {
-  apiBase?: string
-  email?: string
-  password?: string
-  apiToken?: string
-  siteUrl?: string
-  pickupAddressId?: string
-}
-
 export type EkartConfig = {
   clientId?: string
   username?: string
@@ -86,7 +76,6 @@ export type CourierConfig =
   | ShipwayConfig
   | XpressbeesConfig
   | EkartConfig
-  | IcarryConfig
   | ShipmozoConfig
   | ShiprocketConfig
 
@@ -116,9 +105,8 @@ export interface CourierCredentialsMeta {
   }
 }
 
-const KNOWN_PROVIDERS: ServiceProviderId[] = ['icarry', 'shipmozo', 'shiprocket']
+const KNOWN_PROVIDERS: ServiceProviderId[] = ['shipmozo', 'shiprocket']
 export const DEFAULT_EKART_BASE_URL = 'https://app.elite.ekartlogistics.in'
-export const DEFAULT_ICARRY_BASE_URL = 'https://www.icarry.in'
 export const DEFAULT_SHIPMOZO_BASE_URL = 'https://shipping-api.com/app/api/v1'
 export const DEFAULT_SHIPROCKET_BASE_URL = 'https://apiv2.shiprocket.in/v1/external'
 
@@ -162,19 +150,6 @@ const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessTy
       process.env.SHIPROCKET_PASSWORD ||
       process.env.SHIPROCKET_API_BASE ||
       process.env.SHIPROCKET_API_BASE_URL
-    )
-  }
-  if (provider === 'icarry') {
-    return !!(
-      process.env.ICARRY_API_TOKEN ||
-      process.env.ICARRY_TOKEN ||
-      process.env.ICARRY_EMAIL ||
-      process.env.ICARRY_USERNAME ||
-      process.env.ICARRY_PASSWORD ||
-      process.env.ICARRY_PICKUP_ADDRESS_ID ||
-      process.env.ICARRY_API_BASE ||
-      process.env.ICARRY_BASE_URL ||
-      process.env.ICARRY_SITE_URL
     )
   }
   return false
@@ -241,18 +216,6 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       password: normalize(row.password),
       apiToken: normalize(row.apiKey),
       webhookSecret: normalize(row.webhookSecret),
-    }
-    return cfg
-  }
-
-  if (provider === 'icarry') {
-    const cfg: IcarryConfig = {
-      apiBase: normalize(row.apiBase),
-      email: normalize(row.username),
-      password: normalize(row.password),
-      apiToken: normalize(row.apiKey),
-      siteUrl: normalize(row.apiBase),
-      pickupAddressId: normalize(row.clientId),
     }
     return cfg
   }

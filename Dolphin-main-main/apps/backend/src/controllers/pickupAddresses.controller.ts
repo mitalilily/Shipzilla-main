@@ -2,11 +2,6 @@ import { Response } from 'express'
 import Papa from 'papaparse'
 import { db } from '../models/client'
 import {
-  createIcarryPickupAddressForUser,
-  deleteIcarryPickupAddressForUser,
-  updateIcarryPickupAddressForUser,
-} from '../models/services/icarryPickupAddress.service'
-import {
   createPickupAddressService,
   getPickupAddressesService,
   updatePickupAddressService,
@@ -55,71 +50,6 @@ export async function createPickupAddressHandler(req: any, res: Response): Promi
     }
 
     return res.status(500).json({ message: 'Internal server error' })
-  }
-}
-
-export async function createIcarryPickupAddressHandler(req: any, res: Response): Promise<any> {
-  try {
-    const userId = req.user?.sub
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' })
-
-    const result = await createIcarryPickupAddressForUser(userId, req.body)
-    return res.status(201).json({
-      success: true,
-      message: 'icarry pickup address created',
-      data: result,
-    })
-  } catch (err: any) {
-    const statusCode = typeof err?.statusCode === 'number' ? err.statusCode : 500
-    return res.status(statusCode).json({
-      success: false,
-      message: err?.message || 'Failed to create icarry pickup address',
-    })
-  }
-}
-
-export async function updateIcarryPickupAddressHandler(req: any, res: Response): Promise<any> {
-  try {
-    const userId = req.user?.sub
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' })
-
-    const result = await updateIcarryPickupAddressForUser(userId, req.params.id, req.body)
-    return res.status(200).json({
-      success: true,
-      message: 'icarry pickup address updated',
-      data: result,
-    })
-  } catch (err: any) {
-    const statusCode = typeof err?.statusCode === 'number' ? err.statusCode : 500
-    return res.status(statusCode).json({
-      success: false,
-      message: err?.message || 'Failed to update icarry pickup address',
-    })
-  }
-}
-
-export async function deleteIcarryPickupAddressHandler(req: any, res: Response): Promise<any> {
-  try {
-    const userId = req.user?.sub
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' })
-
-    const result = await deleteIcarryPickupAddressForUser(
-      userId,
-      req.params.id,
-      req.body?.warehouse_id ?? req.query?.warehouse_id,
-    )
-
-    return res.status(200).json({
-      success: true,
-      message: 'icarry pickup address deleted',
-      data: result,
-    })
-  } catch (err: any) {
-    const statusCode = typeof err?.statusCode === 'number' ? err.statusCode : 500
-    return res.status(statusCode).json({
-      success: false,
-      message: err?.message || 'Failed to delete icarry pickup address',
-    })
   }
 }
 

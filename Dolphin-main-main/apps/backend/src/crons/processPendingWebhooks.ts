@@ -1,7 +1,6 @@
 // scripts/processPendingWebhooks.ts
 import { asc, eq, inArray, isNull } from 'drizzle-orm'
 import { db } from '../models/client'
-import { processIcarryWebhookPayload } from '../models/services/icarryWebhook.service'
 import {
   processDelhiveryWebhook,
   processShipmozoWebhook,
@@ -22,14 +21,11 @@ const resolvePendingProvider = (payload: any, status: unknown) =>
     ? 'xpressbees'
     : String(status || '').startsWith('shipmozo:')
       ? 'shipmozo'
-      : String(status || '').startsWith('icarry:')
-        ? 'icarry'
-        : 'delhivery')
+      : 'delhivery')
 
 const unwrapPendingPayload = (payload: any) =>
   payload?.__provider === 'xpressbees' ||
-  payload?.__provider === 'shipmozo' ||
-  payload?.__provider === 'icarry'
+  payload?.__provider === 'shipmozo'
     ? payload?.body || {}
     : payload
 
@@ -38,9 +34,7 @@ const providerLabel = (provider: string) =>
     ? 'Xpressbees'
     : provider === 'shipmozo'
       ? 'Shipmozo'
-      : provider === 'icarry'
-        ? 'icarry'
-        : 'Delhivery'
+      : 'Delhivery'
 
 export async function processPendingWebhooks() {
   if (isProcessingPendingWebhooks) {
@@ -151,14 +145,8 @@ export async function processPendingWebhooks() {
             typeof rawPayload?.reference_id === 'string' ||
             typeof rawPayload?.order_id === 'string' ||
             typeof awb === 'string')
-        const looksLikeIcarry =
-          provider === 'icarry' &&
-          (typeof rawPayload?.awb === 'string' ||
-            typeof rawPayload?.waybill === 'string' ||
-            typeof rawPayload?.tracking_number === 'string' ||
-            typeof awb === 'string')
 
-        if (!looksLikeDelhivery && !looksLikeXpressbees && !looksLikeShipmozo && !looksLikeIcarry) {
+        if (!looksLikeDelhivery && !looksLikeXpressbees && !looksLikeShipmozo) {
           console.warn(`Skipping unsupported pending webhook ${event.id} (AWB: ${awb || 'N/A'})`)
           skippedCount++
           await db
@@ -173,9 +161,7 @@ export async function processPendingWebhooks() {
             ? await processXpressbeesWebhook(rawPayload)
             : provider === 'shipmozo'
               ? await processShipmozoWebhook(rawPayload)
-              : provider === 'icarry'
-                ? await processIcarryWebhookPayload(rawPayload)
-                : await processDelhiveryWebhook(rawPayload)
+              : await processDelhiveryWebhook(rawPayload)
 
         if (result.success) {
           processedCount++

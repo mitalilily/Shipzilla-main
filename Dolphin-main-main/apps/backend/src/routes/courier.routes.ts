@@ -11,7 +11,6 @@ import {
 } from '../controllers/admin/courier.controller'
 import { getShippingRatesForUserController } from '../controllers/courier.controller'
 import {
-  checkIcarryPincodeServiceabilityController,
   createCourierController,
   fetchAvailableCouriers,
   fetchAvailableCouriersForGuestController,
@@ -36,8 +35,6 @@ router.get(
 router.post('/available-to-guest', fetchAvailableCouriersForGuestController)
 router.post('/available', requireAuth, fetchAvailableCouriers)
 router.post('/available-to-user', requireAuth, fetchAvailableCouriersToUser)
-router.get('/icarry/pincode-serviceability', requireAuth, checkIcarryPincodeServiceabilityController)
-router.post('/icarry/pincode-serviceability', requireAuth, checkIcarryPincodeServiceabilityController)
 router.post('/create', createCourierController)
 router.delete('/delete/:id', deleteCourierController)
 router.patch('/status/:id', requireAuth, isAdminMiddleware, updateCourierStatusController)

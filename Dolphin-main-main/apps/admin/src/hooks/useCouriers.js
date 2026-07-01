@@ -11,7 +11,7 @@ import {
   fetchServiceProviders,
   fetchShippingRates,
   syncCourierProviderCatalog,
-  updateIcarryCredentials,
+  updateShipmozoCredentials,
   updateShiprocketCredentials,
   updateCourierStatus,
   updateServiceProviderStatus,
@@ -126,6 +126,17 @@ export const useUpdateShiprocketCredentials = () => {
   })
 }
 
+export const useUpdateShipmozoCredentials = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: updateShipmozoCredentials,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courierCredentials'])
+    },
+  })
+}
+
 export const useSyncCourierProviderCatalog = () => {
   const queryClient = useQueryClient()
 
@@ -134,17 +145,6 @@ export const useSyncCourierProviderCatalog = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['couriers'])
       queryClient.invalidateQueries(['serviceProviders'])
-    },
-  })
-}
-
-export const useUpdateIcarryCredentials = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: updateIcarryCredentials,
-    onSuccess: () => {
-      queryClient.invalidateQueries(['courierCredentials'])
     },
   })
 }

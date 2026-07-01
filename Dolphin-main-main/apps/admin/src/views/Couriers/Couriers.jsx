@@ -44,16 +44,12 @@ import { useState } from 'react'
 
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 
-const allowedProviders = new Set(['shiprocket', 'icarry'])
+const allowedProviders = new Set(['shiprocket'])
 const defaultFormData = { businessType: ['b2c', 'b2b'] }
 const providerCopy = {
   shiprocket: {
     label: 'Shiprocket Cargo',
     emptyState: 'No live Shiprocket couriers are synced yet.',
-  },
-  icarry: {
-    label: 'icarry',
-    emptyState: 'No live icarry couriers are synced yet.',
   },
 }
 
@@ -81,12 +77,7 @@ const Couriers = () => {
   )
   const providerOptions = serviceProviders.map((provider) => ({
     value: provider.serviceProvider,
-    label:
-      provider.serviceProvider === 'shiprocket'
-        ? 'Shiprocket'
-        : provider.serviceProvider === 'icarry'
-          ? 'icarry'
-          : provider.serviceProvider,
+    label: provider.serviceProvider === 'shiprocket' ? 'Shiprocket' : provider.serviceProvider,
   }))
 
   const {
@@ -132,7 +123,7 @@ const Couriers = () => {
 
   const renderers = {
     serviceProvider: (value) => (
-      <Badge colorScheme={value === 'shiprocket' ? 'purple' : 'blue'} variant="subtle">
+      <Badge colorScheme="purple" variant="subtle">
         {providerCopy[value]?.label || value}
       </Badge>
     ),

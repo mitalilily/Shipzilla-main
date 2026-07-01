@@ -49,7 +49,6 @@ export async function createPickupAddressService(data: CreatePickupDto, userId: 
         userId,
         addressId: pickupAddr.id,
         rtoAddressId,
-        icarryWarehouseId: data.icarryWarehouseId,
         isPrimary: data.isPrimary ?? isPrimary,
         isPickupEnabled: data.isPickupEnabled ?? true,
         isRTOSame,
