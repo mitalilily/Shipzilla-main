@@ -48,6 +48,38 @@ type AttachmentInput = {
   mimeType?: string
 }
 
+const decodeHtmlEntities = (value: string) =>
+  value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#039;/gi, "'")
+    .replace(/&apos;/gi, "'")
+
+const buildPlainTextFromHtml = (html: string) =>
+  decodeHtmlEntities(
+    html
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<\s*br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|section|tr|table|li|h1|h2|h3|h4|h5|h6)>/gi, '\n')
+      .replace(/<li>/gi, '- ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\r/g, '')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim(),
+  )
+
+const buildMessageId = (recipient: string, senderAddress: string) => {
+  const senderDomain = senderAddress.split('@')[1] || 'shipzilla.local'
+  const recipientKey = recipient.replace(/[^a-z0-9]/gi, '.')
+  return `<${Date.now()}.${recipientKey}@${senderDomain}>`
+}
+
 // Create SMTP transporter (Hostinger/custom SMTP if provided, else Gmail service)
 const createTransporter = () => {
   const senderAddress = ensureEmailAddress(EMAIL_FROM, 'sender')
@@ -98,14 +130,17 @@ const sendEmail = async (
   subject: string,
   htmlContent: string,
   attachments?: AttachmentInput[],
+  textContent?: string,
 ) => {
   const normalizedRecipient = ensureEmailAddress(to, 'recipient')
   const senderAddress = ensureEmailAddress(EMAIL_FROM, 'sender')
   const transporter = createTransporter()
   const maskedRecipient = maskEmailForLog(normalizedRecipient)
+  const resolvedTextContent = (textContent || buildPlainTextFromHtml(htmlContent)).trim()
 
   const mailOptions: any = {
     from: `"${SMTP_FROM_NAME}" <${senderAddress}>`,
+    sender: senderAddress,
     to: normalizedRecipient,
     replyTo: senderAddress,
     envelope: {
@@ -114,6 +149,11 @@ const sendEmail = async (
     },
     subject,
     html: htmlContent,
+    text: resolvedTextContent,
+    messageId: buildMessageId(normalizedRecipient, senderAddress),
+    headers: {
+      'X-Mailer': 'Shipzilla Mailer',
+    },
   }
 
   if (attachments && attachments.length) {
@@ -139,6 +179,7 @@ const sendEmail = async (
       subject,
       attachments: attachments?.length ?? 0,
       from: senderAddress,
+      hasTextBody: Boolean(resolvedTextContent),
     })
     const info = await transporter.sendMail(mailOptions)
     const accepted = (info.accepted || []).map((address) => normalizeEmailAddress(String(address)))
@@ -281,7 +322,16 @@ export const sendVerificationEmail = async (to: string, token: string) => {
     </div>
   `
 
-  await sendEmail(to, 'Your Shipzilla verification code', html)
+  const text = [
+    'Shipzilla verification code',
+    '',
+    `Your verification code is: ${token}`,
+    '',
+    'This code expires in 6 minutes.',
+    'If you did not request this, you can ignore this email.',
+  ].join('\n')
+
+  await sendEmail(to, 'Your Shipzilla verification code', html, undefined, text)
 }
 
 // Employee Credentials Email
@@ -326,7 +376,17 @@ export const sendEmployeeCredentials = async (
     </div>
   `
 
-  await sendEmail(to, 'Your Shipzilla Employee Account', html)
+  const text = [
+    'Welcome to Shipzilla',
+    '',
+    `An account has been created for you by ${createdBy}.`,
+    `Email: ${email}`,
+    `Password: ${password}`,
+    '',
+    'You can now log in to your Shipzilla account using these credentials.',
+  ].join('\n')
+
+  await sendEmail(to, 'Your Shipzilla Employee Account', html, undefined, text)
 }
 const escapeHtml = (unsafe: string) =>
   unsafe
@@ -367,7 +427,15 @@ export const sendTempPasswordEmail = async (to: string, tempPassword: string) =>
     </div>
   `
 
-  await sendEmail(to, 'Your Temporary Shipzilla Password', html)
+  const text = [
+    'Shipzilla account password reset',
+    '',
+    `Your temporary password is: ${tempPassword}`,
+    '',
+    'Use this password to log in and change it immediately.',
+  ].join('\n')
+
+  await sendEmail(to, 'Your Temporary Shipzilla Password', html, undefined, text)
 }
 
 export const sendInvoiceReadyEmail = async (opts: {
