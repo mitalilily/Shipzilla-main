@@ -171,7 +171,7 @@ export const validateInvoiceContentController = async (req: Request, res: Respon
       const presignedResult = await presignDownload(fileKey)
       // presignDownload can return string, string[], or null, we need string
       if (Array.isArray(presignedResult) && presignedResult.length > 0) {
-        signedUrl = presignedResult[0]
+        signedUrl = presignedResult[0] || fileUrl
       } else if (typeof presignedResult === 'string') {
         signedUrl = presignedResult
       } else {

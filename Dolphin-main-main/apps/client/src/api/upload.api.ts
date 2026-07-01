@@ -6,7 +6,7 @@ export const getPresignedDownloadUrls = async (keys: string | string[]) => {
   });
 
   if (Array.isArray(keys)) {
-    return response.data.urls as string[];
+    return response.data.urls as Array<string | null>;
   } else {
     return response.data.url as string;
   }

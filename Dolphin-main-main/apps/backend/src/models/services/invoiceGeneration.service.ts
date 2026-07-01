@@ -1091,8 +1091,10 @@ export const generateInvoiceForUser = async (
   let csvSignedUrl: string | undefined = undefined
   try {
     const signedUrls = await presignDownload([pdfKey, csvKey])
-    pdfSignedUrl = Array.isArray(signedUrls) && signedUrls.length > 0 ? signedUrls[0] : undefined
-    csvSignedUrl = Array.isArray(signedUrls) && signedUrls.length > 1 ? signedUrls[1] : undefined
+    pdfSignedUrl =
+      Array.isArray(signedUrls) && signedUrls.length > 0 ? (signedUrls[0] ?? undefined) : undefined
+    csvSignedUrl =
+      Array.isArray(signedUrls) && signedUrls.length > 1 ? (signedUrls[1] ?? undefined) : undefined
   } catch (presignErr: any) {
     console.error(
       `Failed to presign URLs for invoice ${invoiceNo} (email will be sent without download links):`,

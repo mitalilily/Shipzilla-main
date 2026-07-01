@@ -131,26 +131,33 @@ export function RateCalculator() {
       const length = Number(formData.length) || 0
       const breadth = Number(formData.breadth) || 0
       const height = Number(formData.height) || 0
-      const actualWeightKg = Number(formData.weight) || 0 // kg from UI
+      const actualWeightKg =
+        shipmentType === 'b2b'
+          ? Number(formData.totalWeight) || 0
+          : Number(formData.weight) || 0 // kg from UI
+
+      const pieceCountValue =
+        shipmentType === 'b2b' ? Math.max(1, Number(formData.numberOfBoxes) || 0) : undefined
 
       // volumetric weight in grams
       const volumetricWeightGrams = ((length * breadth * height) / 5000) * 1000
       // convert actual weight from kg → grams
       const actualWeightGrams = actualWeightKg * 1000
-      // applicable weight in grams (freeze min 500g)
-      const applicableWeightGrams = Math.max(actualWeightGrams, volumetricWeightGrams, 500)
-
+      const b2cChargeableWeightGrams = Math.max(actualWeightGrams, volumetricWeightGrams, 500)
+      const weightToSendGrams =
+        shipmentType === 'b2b' ? actualWeightGrams : b2cChargeableWeightGrams
       const orderAmountValue = Number(formData.orderAmount || 0)
 
       const payload = {
         pickupPincode: formData.pickupPincode,
         deliveryPincode: formData.deliveryPincode,
         // 👇 send applicable weight (grams) to backend
-        weight: applicableWeightGrams,
+        weight: weightToSendGrams,
         cod: formData.paymentType === 'cod' ? Math.max(orderAmountValue, 1) : 0,
         length,
         breadth,
         height,
+        pieceCount: pieceCountValue,
         orderAmount: orderAmountValue > 0 ? orderAmountValue : undefined,
         shipmentType: shipmentType,
         payment_type: formData?.paymentType,

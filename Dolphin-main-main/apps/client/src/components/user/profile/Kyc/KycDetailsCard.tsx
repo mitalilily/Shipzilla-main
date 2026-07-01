@@ -326,13 +326,19 @@ const KycDetailsCard = ({
   if (presignedUrls && Array.isArray(presignedUrls)) {
     let index = 0
     if (kyc?.selfieUrl) {
-      urlMap['selfieUrl'] = presignedUrls[index]
+      const resolvedSelfieUrl = presignedUrls[index]
+      if (resolvedSelfieUrl) {
+        urlMap['selfieUrl'] = resolvedSelfieUrl
+      }
       mimeMap['selfieUrl'] = kyc.selfieMime || ''
       index++
     }
     for (const key of fileFieldsToShow) {
       if (kyc?.[key]) {
-        urlMap[key] = presignedUrls[index]
+        const resolvedUrl = presignedUrls[index]
+        if (resolvedUrl) {
+          urlMap[key] = resolvedUrl
+        }
         const mimeKey = `${key.replace('Url', '')}Mime` as keyof KycDetails
         mimeMap[key] = (kyc[mimeKey] as string) || ''
         index++

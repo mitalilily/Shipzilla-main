@@ -22,7 +22,11 @@ export const extractTextFromImage = async (
     }
 
     const signedUrl = await presignDownload(fileUrl);
-    const response = await fetch(signedUrl as string);
+    if (!signedUrl || Array.isArray(signedUrl)) {
+      return res.status(404).json({ error: "Unable to access the requested KYC document" });
+    }
+
+    const response = await fetch(signedUrl);
     if (!response?.ok) {
       throw new Error("Failed to download file from R2");
     }

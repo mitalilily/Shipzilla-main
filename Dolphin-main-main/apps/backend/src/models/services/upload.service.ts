@@ -140,6 +140,37 @@ export const presignUpload = async ({
   return { uploadUrl, key, publicUrl, bucket, storageMode: 'r2' as const }
 }
 
+export const uploadBufferToStorage = async ({
+  key,
+  buffer,
+  contentType,
+}: {
+  key: string
+  buffer: Buffer
+  contentType?: string
+}) => {
+  if (!isR2StorageConfigured()) {
+    throw new StorageConfigurationError('R2 storage is not configured')
+  }
+
+  const normalizedKey = String(key || '').trim()
+  if (!normalizedKey) {
+    throw new Error('Storage key is required')
+  }
+
+  const bucket = getBucketName()
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: normalizedKey,
+    Body: buffer,
+    ContentType: contentType || 'application/octet-stream',
+  })
+
+  await r2.send(command)
+
+  return { bucket, key: normalizedKey }
+}
+
 /**
  * Download a file from a URL and upload it to storage, returning only the key.
  * This ensures we store keys only, not external URLs.
@@ -310,8 +341,7 @@ export const presignDownload = async (
       return await signValue(keyOrKeys)
     }
 
-    const urls = await Promise.all(keyOrKeys.map((key) => signValue(key || '')))
-    return urls.filter((url): url is string => url !== null)
+    return Promise.all(keyOrKeys.map((key) => signValue(key || '')))
   } catch (error: any) {
     if (error instanceof StorageConfigurationError) {
       console.warn('Skipping presigned download because storage is not configured:', {

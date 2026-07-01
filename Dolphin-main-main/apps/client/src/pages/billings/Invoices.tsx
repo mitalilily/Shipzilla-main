@@ -116,8 +116,9 @@ const Invoices = () => {
         // If it's not already a URL, get presigned URL first
         if (!isHttpUrl(urlOrKey)) {
           const result = await presignMutation.mutateAsync({ keys: [urlOrKey] })
-          downloadUrl = result?.[0]
-          if (!downloadUrl) throw new Error('No signed URL returned')
+          const signedUrl = result?.[0]
+          if (!signedUrl) throw new Error('No signed URL returned')
+          downloadUrl = signedUrl
         }
 
         // Fetch the file as blob from R2

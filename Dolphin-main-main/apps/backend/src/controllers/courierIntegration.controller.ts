@@ -81,6 +81,11 @@ const buildServiceabilityOptions = (body: any): Record<string, any> => {
     options.destination_pincode = explicitDestination
   }
 
+  const pieceCount = parseOptionalNumber(body?.piece_count ?? body?.pieceCount ?? body?.numberOfBoxes)
+  if (pieceCount !== undefined) {
+    options.pieceCount = pieceCount
+  }
+
   const isReverse =
     parseOptionalBoolean(body?.isReverse ?? body?.is_reverse) ??
     (typeof body?.payment_type === 'string' && body.payment_type.toLowerCase() === 'reverse'

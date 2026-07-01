@@ -528,6 +528,7 @@ interface NimbusServiceabilityParams {
   shipment_type?: 'b2b' | 'b2c'
   breadth?: number
   height?: number
+  pieceCount?: number
   isReverse?: boolean
   preferred_carriers?: number[]
   delivery_type?: number
@@ -2157,6 +2158,8 @@ export const fetchAvailableCouriersWithRatesB2B = async (
             length: normalizedLength,
             width: normalizedBreadth,
             height: normalizedHeight,
+            pieceCount:
+              Number(params.pieceCount ?? 0) > 0 ? Number(params.pieceCount) : undefined,
             invoiceValue: Number(params.order_amount ?? params.orderAmount ?? 0),
             paymentMode:
               String(params.payment_type ?? '').toLowerCase() === 'cod' ? 'COD' : 'PREPAID',

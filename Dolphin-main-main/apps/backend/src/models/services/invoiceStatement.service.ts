@@ -158,7 +158,7 @@ export async function getInvoiceStatement(invoiceId: string, requestingUserId?: 
       const presignedPdf = await presignDownload(inv.pdfUrl)
       pdfUrl = Array.isArray(presignedPdf)
         ? presignedPdf.length > 0
-          ? presignedPdf[0]
+          ? (presignedPdf[0] ?? undefined)
           : undefined
         : presignedPdf || undefined
     }
@@ -166,7 +166,7 @@ export async function getInvoiceStatement(invoiceId: string, requestingUserId?: 
       const presignedCsv = await presignDownload(inv.csvUrl)
       csvUrl = Array.isArray(presignedCsv)
         ? presignedCsv.length > 0
-          ? presignedCsv[0]
+          ? (presignedCsv[0] ?? undefined)
           : undefined
         : presignedCsv || undefined
     }

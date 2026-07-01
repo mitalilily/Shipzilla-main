@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import {
   presignDownload,
   presignUpload,
+  uploadBufferToStorage,
 } from '../models/services/upload.service'
 import {
   readLocalDownloadAsset,
@@ -57,6 +58,53 @@ export const uploadLocalFile = async (req: Request, res: Response): Promise<any>
   } catch (error: any) {
     console.error('Local upload failed:', error)
     return res.status(400).json({ message: error?.message || 'Failed to store file locally' })
+  }
+}
+
+const isStorageKeyOwnedByUser = (key: string, userId: string) => {
+  const segments = String(key || '')
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+
+  return segments.length >= 3 && segments[1] === String(userId || '').trim()
+}
+
+export const uploadServerFile = async (req: any, res: Response): Promise<any> => {
+  const key = typeof req.query.key === 'string' ? req.query.key.trim() : ''
+  const userId = String(req?.user?.sub || '').trim()
+
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized' })
+  }
+
+  if (!key) {
+    return res.status(400).json({ message: 'Missing storage key' })
+  }
+
+  if (!isStorageKeyOwnedByUser(key, userId)) {
+    return res.status(403).json({ message: 'Invalid storage key for current user' })
+  }
+
+  try {
+    const body = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body || '')
+    const contentType =
+      typeof req.headers['content-type'] === 'string' ? req.headers['content-type'] : undefined
+
+    await uploadBufferToStorage({
+      key,
+      buffer: body,
+      contentType,
+    })
+
+    return res.status(200).json({
+      key,
+      storageMode: 'r2',
+      uploadedVia: 'server',
+    })
+  } catch (error: any) {
+    console.error('Server upload failed:', error)
+    return res.status(400).json({ message: error?.message || 'Failed to upload file to storage' })
   }
 }
 

@@ -1,6 +1,5 @@
 import { Box, Button, Container, Grid, Paper, Step, StepLabel, Stepper } from '@mui/material'
 import { useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import React, { useEffect, useRef, useState } from 'react'
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5'
 import axiosInstance from '../../../../api/axiosInstance'
@@ -8,6 +7,7 @@ import { useSubmitKyc } from '../../../../hooks/User/Kyc/UseKyc'
 import type { BusinessStructure, CompanyType } from '../../../../types/generic.types'
 import type { KycDetails } from '../../../../types/user.types'
 import { dataUrlToFile } from '../../../../utils/functions'
+import { uploadFileWithFallback } from '../../../../utils/upload'
 import { toast } from '../../../UI/Toast'
 import AdditionalDetailsStep, { type AdditionalKYCForm } from './AdditionalInfoStep'
 import { BusinessStructureStep } from './BusinessStructureStep'
@@ -108,15 +108,11 @@ const KYCVerificationStep: React.FC<{
             folder: 'kyc',
           })
 
-          if (presign.storageMode === 'local') {
-            await axiosInstance.put(presign.uploadUrl, file, {
-              headers: { 'Content-Type': file.type },
-            })
-          } else {
-            await axios.put(presign.uploadUrl, file, {
-              headers: { 'Content-Type': file.type },
-            })
-          }
+          await uploadFileWithFallback({
+            descriptor: presign,
+            file,
+            contentType: file.type,
+          })
 
           selfieUrl = presign?.key
         }

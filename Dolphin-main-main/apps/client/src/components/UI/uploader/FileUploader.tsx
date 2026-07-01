@@ -22,12 +22,12 @@ import {
   type ButtonProps,
 } from '@mui/material'
 import { keyframes, styled } from '@mui/material/styles'
-import axios from 'axios'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useDropzone, type Accept } from 'react-dropzone'
 import { IoCloudUploadOutline } from 'react-icons/io5'
 import { MdClose, MdEdit } from 'react-icons/md' // ← new
 import axiosInstance from '../../../api/axiosInstance'
+import { uploadFileWithFallback } from '../../../utils/upload'
 import { toast } from '../Toast'
 import styles from './uploader.module.css'
 
@@ -237,19 +237,13 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             folder: folderKey,
           })
 
-          if (data.storageMode === 'local') {
-            await axiosInstance.put(data.uploadUrl, file, {
-              headers: { 'Content-Type': contentType },
-              onUploadProgress: (e) => e.total && setProgress(Math.round((e.loaded * 100) / e.total)),
-            })
-          } else {
-            // Upload directly to R2 using presigned URL - no credentials needed
-            await axios.put(data.uploadUrl, file, {
-              withCredentials: false,
-              headers: { 'Content-Type': contentType },
-              onUploadProgress: (e) => e.total && setProgress(Math.round((e.loaded * 100) / e.total)),
-            })
-          }
+          await uploadFileWithFallback({
+            descriptor: data,
+            file,
+            contentType,
+            onUploadProgress: (e) =>
+              e.total && setProgress(Math.round((e.loaded * 100) / e.total)),
+          })
 
           uploaded.push({
             url: data.publicUrl,

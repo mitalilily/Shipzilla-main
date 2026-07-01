@@ -35,6 +35,7 @@ export interface UseAvailableCouriersParams {
   length?: number
   breadth?: number
   height?: number
+  pieceCount?: number
   enabled?: boolean
   shipmentType?: 'b2b' | 'b2c'
   payment_type: 'cod' | 'prepaid'
@@ -77,6 +78,7 @@ export const useAvailableCouriers = (params: UseAvailableCouriersParams) => {
       length,
       breadth,
       height,
+      params.pieceCount,
       shipmentType,
       params?.pickupName,
     ],
@@ -93,6 +95,7 @@ export const useAvailableCouriers = (params: UseAvailableCouriersParams) => {
         isCalculator: params.isCalculator === true || params.context === 'rate_calculator',
         breadth,
         height,
+        piece_count: params.pieceCount,
       }),
     enabled: enabled && !!pickupPincode && !!deliveryPincode && (!!weight || !!cod),
     staleTime: 1000 * 60 * 5,
@@ -116,6 +119,7 @@ export const useAvailableCouriersMutation = () => {
         length: params.length,
         breadth: params.breadth,
         height: params.height,
+        piece_count: params.pieceCount,
         shipment_type: params?.shipmentType,
         isCalculator: params.isCalculator === true || params.context === 'rate_calculator',
       })
