@@ -80,6 +80,11 @@ import {
   normalizeB2CShippingMode,
 } from './b2cRateCard.service'
 import { calculateFreight } from './pricing/chargeableFreight'
+import {
+  checkCourierServiceability,
+  createForwardShipment,
+  generateAwb,
+} from './shiprocketExtended.service'
 
 // Load correct .env based on NODE_ENV
 const env = process.env.NODE_ENV || 'development'
@@ -495,6 +500,126 @@ const getTomorrowPickupDate = () => {
   const nextDay = new Date()
   nextDay.setDate(nextDay.getDate() + 1)
   return nextDay.toISOString().split('T')[0]
+}
+
+type ShiprocketLiveCourierOption = {
+  id: number
+  name: string
+  rate: number
+  codCharges: number
+  otherCharges: number
+  chargeableWeightG: number | null
+  volumetricWeightG: number | null
+  estimatedDeliveryDays: string | null
+  raw: any
+}
+
+const extractFirstArray = (payload: any): any[] => {
+  if (Array.isArray(payload)) return payload
+  if (!payload || typeof payload !== 'object') return []
+
+  const candidates = [
+    payload?.data?.available_courier_companies,
+    payload?.available_courier_companies,
+    payload?.data?.couriers,
+    payload?.couriers,
+    payload?.data,
+    payload?.results,
+    payload?.response,
+  ]
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate
+  }
+
+  return Object.values(payload).find((candidate) => Array.isArray(candidate)) || []
+}
+
+const parseShiprocketLiveCouriers = (payload: any): ShiprocketLiveCourierOption[] => {
+  const rows = extractFirstArray(payload)
+
+  return rows
+    .map((row: any) => {
+      const id = Number(row?.courier_company_id ?? row?.courier_id ?? row?.id ?? row?.carrier_id)
+      const name = String(
+        row?.courier_name ??
+          row?.name ??
+          row?.courier_company ??
+          row?.carrier_name ??
+          row?.label ??
+          '',
+      ).trim()
+
+      if (!Number.isFinite(id) || id <= 0 || !name) return null
+
+      const totalRate = Number(
+        row?.rate ??
+          row?.total_charge ??
+          row?.total_charges ??
+          row?.freight_charge ??
+          row?.freight_charges ??
+          row?.charge ??
+          row?.cost ??
+          0,
+      )
+      const codCharges = Number(row?.cod_charge ?? row?.cod_charges ?? 0)
+      const freightCharges = Number(row?.freight_charge ?? row?.freight_charges ?? totalRate)
+      const otherCharges = Math.max(0, totalRate - freightCharges - codCharges)
+      const chargeableWeightG = Number(
+        row?.charge_weight ??
+          row?.chargeable_weight ??
+          row?.charged_weight ??
+          row?.charged_weight_g ??
+          0,
+      )
+      const volumetricWeightG = Number(
+        row?.volumetric_weight ??
+          row?.volumetric_weight_g ??
+          row?.volumetric_weight_grams ??
+          0,
+      )
+
+      return {
+        id,
+        name,
+        rate: Number.isFinite(totalRate) ? totalRate : 0,
+        codCharges: Number.isFinite(codCharges) ? codCharges : 0,
+        otherCharges,
+        chargeableWeightG:
+          Number.isFinite(chargeableWeightG) && chargeableWeightG > 0 ? chargeableWeightG : null,
+        volumetricWeightG:
+          Number.isFinite(volumetricWeightG) && volumetricWeightG > 0 ? volumetricWeightG : null,
+        estimatedDeliveryDays:
+          String(row?.estimated_delivery_days ?? row?.tat ?? row?.estimated_delivery_date ?? '')
+            .trim() || null,
+        raw: row,
+      }
+    })
+    .filter((row): row is ShiprocketLiveCourierOption => Boolean(row))
+}
+
+const fetchShiprocketLiveB2BCouriers = async (params: {
+  originPincode: string
+  destinationPincode: string
+  paymentType?: string | null
+  orderAmount?: number
+  weightKg?: number
+  length?: number
+  breadth?: number
+  height?: number
+}) => {
+  const response = await checkCourierServiceability({
+    pickup_postcode: params.originPincode,
+    delivery_postcode: params.destinationPincode,
+    cod: String(params.paymentType || '').toLowerCase() === 'cod' ? 1 : 0,
+    weight: Number(params.weightKg ?? 0) > 0 ? Number(params.weightKg) : 0.5,
+    length: Number(params.length ?? 0) > 0 ? Number(params.length) : 1,
+    breadth: Number(params.breadth ?? 0) > 0 ? Number(params.breadth) : 1,
+    height: Number(params.height ?? 0) > 0 ? Number(params.height) : 1,
+    declared_value: Number(params.orderAmount ?? 0) > 0 ? Number(params.orderAmount) : 100,
+  })
+
+  return parseShiprocketLiveCouriers(response)
 }
 
 const normalizePickupDateForRetry = (pickupDateRaw: unknown, isManifestRetry: boolean) => {
@@ -2000,6 +2125,13 @@ export const fetchAvailableCouriersWithRatesB2B = async (
     const destinationPincode =
       normalizePincode(params.destination_pincode) ?? normalizePincode(params.destination)
 
+    const normalizedWeightGrams = normalizeServiceabilityWeightToGrams(params.weight)
+    const normalizedActualWeightKg =
+      normalizedWeightGrams > 0 ? Number((normalizedWeightGrams / 1000).toFixed(3)) : 0
+    const normalizedLength = Number(params.length ?? 0) || undefined
+    const normalizedBreadth = Number(params.breadth ?? 0) || undefined
+    const normalizedHeight = Number(params.height ?? 0) || undefined
+
     let destinationZoneId: string | null = null
 
     if (destinationPincode) {
@@ -2012,6 +2144,28 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       destinationZoneId = destZoneRow?.zoneId ?? null
     }
 
+    let shiprocketLiveCouriers: ShiprocketLiveCourierOption[] = []
+    if (originPincode && destinationPincode) {
+      try {
+        shiprocketLiveCouriers = await fetchShiprocketLiveB2BCouriers({
+          originPincode,
+          destinationPincode,
+          paymentType: params.payment_type ?? null,
+          orderAmount: Number(params.order_amount ?? params.orderAmount ?? 0),
+          weightKg: normalizedActualWeightKg,
+          length: normalizedLength,
+          breadth: normalizedBreadth,
+          height: normalizedHeight,
+        })
+      } catch (shiprocketError: any) {
+        console.error('[fetchAvailableCouriersWithRatesB2B] Shiprocket live serviceability failed', {
+          originPincode,
+          destinationPincode,
+          error: shiprocketError?.message || shiprocketError,
+        })
+      }
+    }
+
     // Step 3: Validate we have both zones
     if (!originZoneId || !destinationZoneId) {
       console.error('B2B Zone lookup failed:', {
@@ -2020,6 +2174,37 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         destinationPincode,
         destinationZoneId,
       })
+      if (shiprocketLiveCouriers.length) {
+        return shiprocketLiveCouriers
+          .map((courier) => ({
+            id: courier.id,
+            courier_option_key: `shiprocket__${courier.id}`,
+            name: courier.name,
+            displayName: courier.name,
+            integration_type: 'shiprocket',
+            serviceProvider: 'shiprocket',
+            rate: courier.rate,
+            freight_charges: Math.max(0, courier.rate - courier.codCharges - courier.otherCharges),
+            cod_charges: courier.codCharges,
+            other_charges: courier.otherCharges,
+            courier_cost_estimate: courier.rate,
+            chargeable_weight: courier.chargeableWeightG,
+            volumetric_weight: courier.volumetricWeightG,
+            localRates: {
+              forward: {
+                rate: courier.rate,
+                cod_charges: courier.codCharges,
+                other_charges: courier.otherCharges,
+                mode: 'b2b',
+              },
+            },
+            estimated_delivery_days: courier.estimatedDeliveryDays,
+            edd: courier.estimatedDeliveryDays,
+            provider_serviceability: courier.raw,
+          }))
+          .sort((a, b) => Number(a.rate ?? Infinity) - Number(b.rate ?? Infinity))
+      }
+
       throw new Error(
         `B2B zone lookup failed. Origin zone: ${
           originZoneId ? 'found' : 'not found'
@@ -2120,15 +2305,9 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         .limit(1),
     ])
 
-    const normalizedWeightGrams = normalizeServiceabilityWeightToGrams(params.weight)
-    const normalizedActualWeightKg =
-      normalizedWeightGrams > 0 ? Number((normalizedWeightGrams / 1000).toFixed(3)) : 0
-    const normalizedLength = Number(params.length ?? 0) || undefined
-    const normalizedBreadth = Number(params.breadth ?? 0) || undefined
-    const normalizedHeight = Number(params.height ?? 0) || undefined
-
     // Step 6: Build courier list with rates
     const courierMap = new Map<string, any>()
+    const liveShiprocketById = new Map(shiprocketLiveCouriers.map((courier) => [courier.id, courier]))
 
     for (const rate of zoneToZoneRates) {
       if (!rate.courierId) continue
@@ -2150,6 +2329,8 @@ export const fetchAvailableCouriersWithRatesB2B = async (
           .limit(1)
 
         if (!courierRow) continue
+
+        const liveShiprocketCourier = liveShiprocketById.get(Number(rate.courierId))
 
         let calculatedRate: Awaited<ReturnType<typeof calculateB2BRate>> | null = null
         try {
@@ -2184,31 +2365,41 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         )
         const volumetricWeightKg = Number(calculatedRate?.calculation?.volumetricWeight ?? 0)
         const totalRate = Number(
-          calculatedRate?.charges?.total ?? Number(rate.ratePerKg ?? 0) * billableWeightKg,
+          calculatedRate?.charges?.total ??
+            liveShiprocketCourier?.rate ??
+            Number(rate.ratePerKg ?? 0) * billableWeightKg,
         )
         const codCharges =
           String(params.payment_type ?? '').toLowerCase() === 'cod'
-            ? (calculatedRate?.charges?.overheads || []).reduce((sum: number, charge: any) => {
+            ? ((calculatedRate?.charges?.overheads || []).reduce((sum: number, charge: any) => {
                 const code = String(charge?.code ?? '').toUpperCase()
                 return code.includes('COD') ? sum + Number(charge?.amount ?? 0) : sum
-              }, 0)
+              }, 0) || liveShiprocketCourier?.codCharges || 0)
             : 0
         const otherCharges = Math.max(
           0,
-          Number(calculatedRate?.charges?.total ?? totalRate) -
-            Number(calculatedRate?.charges?.baseFreight ?? totalRate) -
-            codCharges,
+          liveShiprocketCourier?.otherCharges ??
+            (Number(calculatedRate?.charges?.total ?? totalRate) -
+              Number(calculatedRate?.charges?.baseFreight ?? totalRate) -
+              codCharges),
         )
 
         courierMap.set(courierKey, {
-          id: courierRow.id,
+          id: liveShiprocketCourier?.id ?? courierRow.id,
           courier_option_key: courierKey,
-          name: courierRow.name,
+          name: liveShiprocketCourier?.name || courierRow.name,
+          displayName: liveShiprocketCourier?.name || courierRow.name,
           integration_type: rate.serviceProvider?.toLowerCase() || 'unknown',
           serviceProvider: rate.serviceProvider?.toLowerCase(),
           rate: totalRate,
-          chargeable_weight: Math.round(billableWeightKg * 1000),
-          volumetric_weight: Math.round(volumetricWeightKg * 1000),
+          chargeable_weight:
+            liveShiprocketCourier?.chargeableWeightG ?? Math.round(billableWeightKg * 1000),
+          volumetric_weight:
+            liveShiprocketCourier?.volumetricWeightG ?? Math.round(volumetricWeightKg * 1000),
+          freight_charges: Math.max(0, totalRate - codCharges - otherCharges),
+          cod_charges: codCharges,
+          other_charges: otherCharges,
+          courier_cost_estimate: liveShiprocketCourier?.rate ?? totalRate,
           localRates: {
             forward: {
               rate: totalRate,
@@ -2229,9 +2420,55 @@ export const fetchAvailableCouriersWithRatesB2B = async (
             destinationZoneCode: destinationZoneDetails[0]?.code ?? '',
             destinationZoneName: destinationZoneDetails[0]?.name ?? '',
           },
+          estimated_delivery_days: liveShiprocketCourier?.estimatedDeliveryDays,
+          edd: liveShiprocketCourier?.estimatedDeliveryDays,
+          provider_serviceability: liveShiprocketCourier?.raw ?? null,
           createdAt: courierRow.createdAt,
         })
       }
+    }
+
+    for (const liveCourier of shiprocketLiveCouriers) {
+      const courierKey = `shiprocket__${liveCourier.id}`
+      if (courierMap.has(courierKey)) continue
+
+      courierMap.set(courierKey, {
+        id: liveCourier.id,
+        courier_option_key: courierKey,
+        name: liveCourier.name,
+        displayName: liveCourier.name,
+        integration_type: 'shiprocket',
+        serviceProvider: 'shiprocket',
+        rate: liveCourier.rate,
+        freight_charges: Math.max(0, liveCourier.rate - liveCourier.codCharges - liveCourier.otherCharges),
+        cod_charges: liveCourier.codCharges,
+        other_charges: liveCourier.otherCharges,
+        courier_cost_estimate: liveCourier.rate,
+        chargeable_weight: liveCourier.chargeableWeightG,
+        volumetric_weight: liveCourier.volumetricWeightG,
+        localRates: {
+          forward: {
+            rate: liveCourier.rate,
+            cod_charges: liveCourier.codCharges,
+            other_charges: liveCourier.otherCharges,
+            mode: 'b2b',
+          },
+        },
+        approxZone: {
+          id: destinationZoneDetails[0]?.id ?? destinationZoneId,
+          code: destinationZoneDetails[0]?.code ?? '',
+          name: destinationZoneDetails[0]?.name ?? '',
+          originZoneId,
+          originZoneCode: originZoneDetails[0]?.code ?? '',
+          originZoneName: originZoneDetails[0]?.name ?? '',
+          destinationZoneId,
+          destinationZoneCode: destinationZoneDetails[0]?.code ?? '',
+          destinationZoneName: destinationZoneDetails[0]?.name ?? '',
+        },
+        estimated_delivery_days: liveCourier.estimatedDeliveryDays,
+        edd: liveCourier.estimatedDeliveryDays,
+        provider_serviceability: liveCourier.raw,
+      })
     }
 
     // Step 7: Convert map to array and filter couriers with rates
@@ -4481,8 +4718,7 @@ export const createB2BShipmentService = async (
     : Number(params.invoice_amount ?? params.order_amount ?? 0)
 
   const bookingProviderInput = String(params.integration_type || '').trim().toLowerCase()
-  let bookingIntegrationType =
-    bookingProviderInput === 'shiprocket' ? 'shipmozo' : bookingProviderInput
+  let bookingIntegrationType = bookingProviderInput
 
   if (!bookingIntegrationType && params.courier_id) {
     const [courierRow] = await db
@@ -4492,13 +4728,15 @@ export const createB2BShipmentService = async (
       .limit(1)
 
     const derivedProvider = String(courierRow?.serviceProvider || '').trim().toLowerCase()
-    bookingIntegrationType = derivedProvider === 'shiprocket' ? 'shipmozo' : derivedProvider
+    bookingIntegrationType = derivedProvider
   }
 
-  if (bookingIntegrationType !== 'shipmozo') {
+  if (!['shiprocket', 'shipmozo'].includes(bookingIntegrationType)) {
     throw new HttpError(
       400,
-      `Unsupported B2B integration_type: ${params.integration_type || 'unknown'}. Supported values: shiprocket.`,
+      `Unsupported B2B integration_type: ${
+        params.integration_type || 'unknown'
+      }. Supported values: shiprocket, shipmozo.`,
     )
   }
 
@@ -4707,11 +4945,73 @@ export const createB2BShipmentService = async (
   let shipmentData: any
 
   try {
-    const shipmozo = new ShipmozoService()
-    shipmentData = await shipmozo.createShipment({
-      ...payload,
-      collectable_amount: payload.payment_type === 'cod' ? Number(payload.order_amount ?? 0) : 0,
-    })
+    if (bookingIntegrationType === 'shiprocket') {
+      const pickupLocationName = String(
+        params.pickup?.warehouse_name ||
+          pickupWarehouse?.addressNickname ||
+          pickupWarehouse?.contactName ||
+          '',
+      ).trim()
+
+      if (!pickupLocationName) {
+        throw new HttpError(
+          400,
+          'Pickup location name is required for Shiprocket B2B booking. Please save a valid pickup address first.',
+        )
+      }
+
+      shipmentData = await createForwardShipment({
+        order_id: normalizedOrderNumber,
+        order_date:
+          String(params.order_date || '').trim() || new Date().toISOString().slice(0, 10),
+        pickup_location: pickupLocationName,
+        courier_id: params.courier_id,
+        billing_customer_name: params.consignee.name,
+        billing_last_name: '',
+        billing_address: params.consignee.address,
+        billing_address_2: params.consignee.address_2 || '',
+        billing_city: params.consignee.city,
+        billing_state: params.consignee.state,
+        billing_country: params.consignee.country || 'India',
+        billing_pincode: params.consignee.pincode,
+        billing_email: params.consignee.email || 'ops@shipzilla.in',
+        billing_phone: params.consignee.phone,
+        shipping_is_billing: true,
+        order_items: normalizedOrderItems.map((item: (typeof normalizedOrderItems)[number]) => ({
+          name: item.name,
+          sku: item.sku,
+          units: item.qty,
+          hsn: item.hsn || undefined,
+          selling_price: item.price,
+          discount: item.discount || 0,
+          tax: item.tax_rate || 0,
+        })),
+        payment_method:
+          String(params.payment_type || '').toLowerCase() === 'cod' ? 'COD' : 'Prepaid',
+        shipping_charges:
+          Number(params.shipping_charges ?? chargesBreakdown?.total ?? params.order_amount ?? 0) || 0,
+        transaction_charges: Number(params.transaction_fee ?? 0) || 0,
+        total_discount: Number(params.discount ?? 0) || 0,
+        giftwrap_charges: Number(params.gift_wrap ?? 0) || 0,
+        sub_total: Number(invoiceValue ?? params.order_amount ?? 0) || 0,
+        weight: Number(params.package_weight ?? 0),
+        length: Number(params.package_length ?? 0),
+        breadth: Number(params.package_breadth ?? 0),
+        height: Number(params.package_height ?? 0),
+        customer_gstin: params.consignee.gstin || undefined,
+        ewaybill_no:
+          String(
+            params.ewaybill_number ?? params.ewbn ?? params.ewb ?? params.ewbn_number ?? '',
+          ).trim() || undefined,
+        request_pickup: String(params.request_auto_pickup || '').toLowerCase() === 'yes',
+      })
+    } else {
+      const shipmozo = new ShipmozoService()
+      shipmentData = await shipmozo.createShipment({
+        ...payload,
+        collectable_amount: payload.payment_type === 'cod' ? Number(payload.order_amount ?? 0) : 0,
+      })
+    }
   } catch (error: any) {
     await db
       .update(b2b_orders)
@@ -4725,18 +5025,49 @@ export const createB2BShipmentService = async (
   }
 
   const shipmentRecord = shipmentData?.data || shipmentData || {}
-  const awbNumber =
-    shipmentRecord?.awb_number || shipmentRecord?.tracking_number || shipmentRecord?.awb || ''
   const shipmentId =
     shipmentRecord?.shipment_id ||
+    shipmentRecord?.shipment_id?.toString?.() ||
+    shipmentRecord?.shipment_data?.shipment_id ||
+    shipmentRecord?.data?.shipment_id ||
     shipmentRecord?.reference_id ||
     shipmentRecord?.pickup_id ||
     shipmentRecord?.order_id ||
-    awbNumber
+    shipmentRecord?.order_id?.toString?.() ||
+    ''
+  let awbNumber =
+    shipmentRecord?.awb_number ||
+    shipmentRecord?.awb_code ||
+    shipmentRecord?.tracking_number ||
+    shipmentRecord?.waybill_no ||
+    shipmentRecord?.awb ||
+    ''
+
+  if (!awbNumber && bookingIntegrationType === 'shiprocket' && shipmentId && params.courier_id) {
+    try {
+      const awbResponse = await generateAwb({
+        shipment_id: shipmentId,
+        courier_id: params.courier_id,
+      })
+      const awbPayload = awbResponse?.data || awbResponse || {}
+      awbNumber =
+        awbPayload?.awb_code ||
+        awbPayload?.awb_number ||
+        awbPayload?.tracking_number ||
+        awbPayload?.awb ||
+        awbNumber
+    } catch (awbError: any) {
+      console.error('Failed to generate Shiprocket AWB for B2B shipment', {
+        shipmentId,
+        courierId: params.courier_id,
+        error: awbError?.message || awbError,
+      })
+    }
+  }
   const courierPartner =
+    shipmentRecord?.courier_name ||
     shipmentRecord?.courier_company_service ||
     shipmentRecord?.courier_company ||
-    shipmentRecord?.courier_name ||
     shipmentRecord?.courier ||
     params.courier_partner ||
     'Shiprocket'
