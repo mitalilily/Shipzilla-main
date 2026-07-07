@@ -449,30 +449,38 @@ export class ShipmozoService {
       pickup_pincode: payload.origin,
       delivery_pincode: payload.destination,
     })
-    const serviceable = pinRaw.data?.serviceable === true
-    if (!serviceable) {
-      return {
-        serviceable: false,
-        records: [],
-        codAvailable: false,
-        prepaidAvailable: false,
-        tat: null,
-        raw: pinRaw,
-      }
-    }
 
-    const rateRaw = await this.rateCalculator({
-      pickup_pincode: payload.origin,
-      delivery_pincode: payload.destination,
-      payment_type: payload.payment_type === 'cod' ? 'COD' : 'PREPAID',
-      shipment_type: 'FORWARD',
-      order_amount: payload.order_amount,
-      cod_amount: payload.payment_type === 'cod' ? payload.order_amount : '',
-      weight: payload.weight,
-      length: payload.length,
-      width: payload.breadth,
-      height: payload.height,
-    })
+    // Shipmozo sometimes returns a false-negative on the pincode gate even when the
+    // rate calculator can still resolve serviceable couriers. Prefer the stronger
+    // signal from the rate calculator so B2C courier discovery does not collapse to
+    // an empty list on the booking screen.
+    let rateRaw: ShipmozoApiResponse<any> | null = null
+    try {
+      rateRaw = await this.rateCalculator({
+        pickup_pincode: payload.origin,
+        delivery_pincode: payload.destination,
+        payment_type: payload.payment_type === 'cod' ? 'COD' : 'PREPAID',
+        shipment_type: 'FORWARD',
+        order_amount: payload.order_amount,
+        cod_amount: payload.payment_type === 'cod' ? payload.order_amount : '',
+        weight: payload.weight,
+        length: payload.length,
+        width: payload.breadth,
+        height: payload.height,
+      })
+    } catch (err: any) {
+      if (pinRaw.data?.serviceable !== true) {
+        return {
+          serviceable: false,
+          records: [],
+          codAvailable: false,
+          prepaidAvailable: false,
+          tat: null,
+          raw: { pincode: pinRaw, rate: null, error: this.extractErrorMessage(err, 'Shipmozo rate calculator failed') },
+        }
+      }
+      throw err
+    }
 
     const data = rateRaw.data
     const records = Array.isArray(data)
@@ -488,7 +496,7 @@ export class ShipmozoService {
               : []
 
     return {
-      serviceable: records.length > 0,
+      serviceable: pinRaw.data?.serviceable === true || records.length > 0,
       records,
       codAvailable: payload.payment_type === 'cod' ? records.length > 0 : true,
       prepaidAvailable: true,
