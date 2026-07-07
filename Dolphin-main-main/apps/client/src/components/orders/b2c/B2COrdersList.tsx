@@ -684,7 +684,18 @@ const B2COrdersList = () => {
         )
       },
     },
-    { label: 'Buyer Name', id: 'buyer_name' },
+    {
+      label: 'Buyer Name',
+      id: 'buyer_name',
+      render: (v, row) => (
+        <Stack spacing={0.25}>
+          <Typography sx={{ fontWeight: 700 }}>{v || '—'}</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            {row.buyer_phone || 'No phone'}
+          </Typography>
+        </Stack>
+      ),
+    },
     {
       label: 'Order Total',
       id: 'order_amount',

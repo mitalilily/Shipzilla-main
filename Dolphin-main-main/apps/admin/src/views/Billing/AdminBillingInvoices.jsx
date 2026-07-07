@@ -59,6 +59,7 @@ import {
   useInvoiceStatement,
 } from 'hooks/useBillingInvoices'
 import { useMemo, useState } from 'react'
+import { useHistory } from 'react-router-dom'
 import { adminApplyBillingPreferenceToAll, adminUpdateUserBillingPreference } from 'services/billingPreferences.service'
 import {
   adminAddInvoiceAdjustment,
@@ -70,6 +71,7 @@ import {
 import { GenericTable } from 'views/Dashboard/Tables/components/GenericTable'
 
 export default function AdminBillingInvoices() {
+  const history = useHistory()
   const formatDateYmdLocal = (value) => {
     if (!value) return ''
     if (typeof value === 'string') return value
@@ -850,7 +852,24 @@ export default function AdminBillingInvoices() {
                   {orderRows.map((r) => (
                     <tr key={r.id}>
                       <td style={{ padding: 6 }}>{r.order_number}</td>
-                      <td style={{ padding: 6 }}>{r.awb_number || '-'}</td>
+                      <td style={{ padding: 6 }}>
+                        {r.awb_number ? (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            colorScheme="orange"
+                            onClick={() =>
+                              history.push(
+                                `/admin/order-tracking?awb=${encodeURIComponent(r.awb_number)}`,
+                              )
+                            }
+                          >
+                            {r.awb_number}
+                          </Button>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
                       <td style={{ padding: 6, textAlign: 'right' }}>
                         ₹{Number(r.freight_charges || 0).toFixed(2)}
                       </td>

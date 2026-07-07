@@ -7,6 +7,7 @@ import {
   Collapse,
   Divider,
   IconButton,
+  Link,
   Paper,
   Stack,
   Table,
@@ -23,6 +24,7 @@ import {
 } from '@mui/material'
 import React, { useEffect, useRef } from 'react'
 import { MdExpandLess, MdExpandMore } from 'react-icons/md'
+import { Link as RouterLink } from 'react-router-dom'
 import CustomCheckbox from '../inputs/CustomCheckbox'
 
 export interface Column<T> {
@@ -60,6 +62,17 @@ export interface DataTableProps<T extends { id: string | number }> {
   totalCount?: number
   onRowClick?: (row: T) => void
   selectionResetToken?: number | string
+}
+
+const AWB_COLUMN_IDS = new Set(['awb_number', 'awb', 'awbNumber'])
+
+const getAwbTrackingPath = (columnId: string, value: unknown) => {
+  if (!AWB_COLUMN_IDS.has(columnId)) return null
+
+  const awb = String(value ?? '').trim()
+  if (!awb) return null
+
+  return `/tracking?awb=${encodeURIComponent(awb)}`
 }
 
 export default function DataTable<T extends { id: string | number }>(props: DataTableProps<T>) {
@@ -175,6 +188,31 @@ export default function DataTable<T extends { id: string | number }>(props: Data
         expandedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 160)
     }
+  }
+
+  const getCellContent = (col: Column<T>, row: T) => {
+    const value = row[col.id]
+
+    if (col.render) {
+      return col.render(value, row)
+    }
+
+    const trackingPath = getAwbTrackingPath(String(col.id), value)
+    if (trackingPath) {
+      return (
+        <Link
+          component={RouterLink}
+          to={trackingPath}
+          underline="hover"
+          onClick={(event) => event.stopPropagation()}
+          sx={{ fontWeight: 700 }}
+        >
+          {String(value)}
+        </Link>
+      )
+    }
+
+    return value as React.ReactNode
   }
 
   return (
@@ -363,7 +401,7 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                       )}
                       {columns.map((col) => {
                         if (col.hiddenOnMobile) return null
-                        const value = col.render ? col.render(row[col.id], row) : row[col.id]
+                        const value = getCellContent(col, row)
                         return (
                           <Box key={col.id as string}>
                             <Typography
@@ -553,7 +591,7 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                           {columns.map((col) => {
                             if (col.hiddenOnMobile && isMobile) return null
                             const value = row[col.id]
-                            const cellContent = col.render ? col.render(value, row) : (value as React.ReactNode)
+                            const cellContent = getCellContent(col, row)
                             const shouldTruncate = col.truncate !== false
 
                             let tooltipTitle: string | undefined

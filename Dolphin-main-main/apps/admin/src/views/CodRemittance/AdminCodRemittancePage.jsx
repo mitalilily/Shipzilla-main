@@ -137,6 +137,11 @@ export default function AdminCodRemittancePage() {
   const remittances = remittanceData?.data?.remittances || []
   const totalCount = remittanceData?.data?.totalCount || 0
 
+  const openTracking = (awb) => {
+    if (!awb) return
+    history.push(`/admin/order-tracking?awb=${encodeURIComponent(awb)}`)
+  }
+
   // Handlers
   const handleExport = async () => {
     try {
@@ -557,7 +562,14 @@ export default function AdminCodRemittancePage() {
                 <Text fontWeight="600" fontSize="sm">
                   {value}
                 </Text>
-                <Text fontSize="xs" color="gray.500">
+                <Text
+                  as={row.awbNumber ? 'button' : 'span'}
+                  type={row.awbNumber ? 'button' : undefined}
+                  fontSize="xs"
+                  color={row.awbNumber ? 'orange.500' : 'gray.500'}
+                  onClick={row.awbNumber ? () => openTracking(row.awbNumber) : undefined}
+                  cursor={row.awbNumber ? 'pointer' : 'default'}
+                >
                   AWB: {row.awbNumber || 'N/A'}
                 </Text>
               </Box>
@@ -969,7 +981,20 @@ export default function AdminCodRemittancePage() {
                                       />
                                     </Td>
                                     <Td fontSize="xs">{item.orderNumber}</Td>
-                                    <Td fontSize="xs">{item.awb}</Td>
+                                    <Td fontSize="xs">
+                                      {item.awb ? (
+                                        <Button
+                                          variant="link"
+                                          size="xs"
+                                          colorScheme="orange"
+                                          onClick={() => openTracking(item.awb)}
+                                        >
+                                          {item.awb}
+                                        </Button>
+                                      ) : (
+                                        '—'
+                                      )}
+                                    </Td>
                                     <Td fontSize="xs" fontWeight="600">
                                       ₹{item.courierAmount?.toLocaleString('en-IN')}
                                     </Td>
@@ -1037,7 +1062,20 @@ export default function AdminCodRemittancePage() {
                                       />
                                     </Td>
                                     <Td fontSize="xs">{item.orderNumber}</Td>
-                                    <Td fontSize="xs">{item.awb}</Td>
+                                    <Td fontSize="xs">
+                                      {item.awb ? (
+                                        <Button
+                                          variant="link"
+                                          size="xs"
+                                          colorScheme="orange"
+                                          onClick={() => openTracking(item.awb)}
+                                        >
+                                          {item.awb}
+                                        </Button>
+                                      ) : (
+                                        '—'
+                                      )}
+                                    </Td>
                                     <Td fontSize="xs" fontWeight="600" color="orange.600">
                                       {item.courierAmount !== null &&
                                       item.courierAmount !== undefined
@@ -1083,7 +1121,20 @@ export default function AdminCodRemittancePage() {
                             <Tbody>
                               {csvPreviewData.results.notFound.map((item, index) => (
                                 <Tr key={index} bg="red.50">
-                                  <Td fontSize="xs">{item.awb}</Td>
+                                  <Td fontSize="xs">
+                                    {item.awb ? (
+                                      <Button
+                                        variant="link"
+                                        size="xs"
+                                        colorScheme="orange"
+                                        onClick={() => openTracking(item.awb)}
+                                      >
+                                        {item.awb}
+                                      </Button>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </Td>
                                   <Td fontSize="xs">{item.orderNumber}</Td>
                                   <Td fontSize="xs">
                                     ₹{item.courierAmount?.toLocaleString('en-IN')}
@@ -1116,7 +1167,20 @@ export default function AdminCodRemittancePage() {
                             <Tbody>
                               {csvPreviewData.results.alreadyCredited.map((item) => (
                                 <Tr key={item.remittanceId} bg="gray.50">
-                                  <Td fontSize="xs">{item.awb}</Td>
+                                  <Td fontSize="xs">
+                                    {item.awb ? (
+                                      <Button
+                                        variant="link"
+                                        size="xs"
+                                        colorScheme="orange"
+                                        onClick={() => openTracking(item.awb)}
+                                      >
+                                        {item.awb}
+                                      </Button>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </Td>
                                   <Td fontSize="xs">{item.orderNumber}</Td>
                                   <Td fontSize="xs">
                                     {new Date(item.creditedAt).toLocaleString()}

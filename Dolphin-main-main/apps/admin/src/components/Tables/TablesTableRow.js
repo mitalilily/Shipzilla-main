@@ -1,5 +1,8 @@
 // TablesTableRow.jsx
-import { Td, Tr, useColorModeValue } from '@chakra-ui/react'
+import { Link as ChakraLink, Td, Tr, useColorModeValue } from '@chakra-ui/react'
+import { Link as RouterLink } from 'react-router-dom'
+
+const AWB_COLUMN_KEYS = new Set(['awb_number', 'awb', 'awbNumber'])
 
 const TablesTableRow = ({
   row,
@@ -18,13 +21,33 @@ const TablesTableRow = ({
   stickyRightOffsets = {},
 }) => {
   const bg = useColorModeValue('white', 'gray.800')
+  const awbLinkColor = useColorModeValue('orange.500', 'orange.200')
 
   return (
     <Tr>
       {checkboxComponent}
       {columnKeys.map((key, idx) => {
         const value = row[key]
-        const content = renderers[key] ? renderers[key](value, row) : value
+        const awb = String(value ?? '').trim()
+        const trackingPath =
+          AWB_COLUMN_KEYS.has(String(key)) && awb
+            ? `/admin/order-tracking?awb=${encodeURIComponent(awb)}`
+            : null
+        const content = renderers[key]
+          ? renderers[key](value, row)
+          : trackingPath
+            ? (
+                <ChakraLink
+                  as={RouterLink}
+                  to={trackingPath}
+                  color={awbLinkColor}
+                  fontWeight="700"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {awb}
+                </ChakraLink>
+              )
+            : value
         const isLastDataColumn = idx === columnKeys.length - 1
 
         return (

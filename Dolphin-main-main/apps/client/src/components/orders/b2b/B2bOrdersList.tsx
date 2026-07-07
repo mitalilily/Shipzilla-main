@@ -112,7 +112,18 @@ const B2BOrdersList = ({
         </Stack>
       ),
     },
-    { label: 'Buyer', id: 'buyer_name' },
+    {
+      label: 'Buyer',
+      id: 'buyer_name',
+      render: (v, row) => (
+        <Stack spacing={0.25}>
+          <Typography sx={{ fontWeight: 700 }}>{v || '-'}</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            {row.buyer_phone || 'No phone'}
+          </Typography>
+        </Stack>
+      ),
+    },
     { label: 'Amount', id: 'order_amount', render: (v) => `Rs ${Number(v ?? 0).toFixed(2)}` },
     { label: 'Courier', id: 'courier_partner' },
     {
