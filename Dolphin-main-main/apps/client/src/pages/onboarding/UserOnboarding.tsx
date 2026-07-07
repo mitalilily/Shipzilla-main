@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { FiCheckCircle } from 'react-icons/fi'
 import { MdArrowBack, MdArrowForward } from 'react-icons/md'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import StepOneForm from '../../components/onboarding/StepOneForm'
 import StepThree from '../../components/onboarding/StepThree'
 import StepTwoForm from '../../components/onboarding/StepTwoForm'
@@ -33,9 +33,29 @@ const steps = [
   { key: 3, title: 'Channel Setup', helper: 'Website and channel preferences' },
 ]
 
+type RouteState = {
+  from?: {
+    pathname?: string
+    search?: string
+    hash?: string
+  }
+}
+
+const resolvePostOnboardingPath = (state?: RouteState | null) => {
+  const from = state?.from
+  const path = from?.pathname || ''
+
+  if (!path || path === '/' || path === '/app') return '/app'
+  if (path === '/login' || path === '/signup' || path === '/onboarding-questions') return '/app'
+
+  return `${path}${from?.search || ''}${from?.hash || ''}`
+}
+
 export default function UserOnboarding() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const location = useLocation()
+  const routeState = location.state as RouteState | null
 
   const { user: userData, loading: fetchingUserData } = useAuth()
   const { mutateAsync: completeOnboarding, isPending } = useCompleteUserOnboarding()
@@ -50,14 +70,14 @@ export default function UserOnboarding() {
     if (!userData) return
 
     if (userData.onboardingComplete) {
-      navigate('/app')
+      navigate(resolvePostOnboardingPath(routeState), { replace: true })
       return
     }
 
     const resumeStep = (userData.onboardingStep ?? 0) + 1
     const clamped = Math.min(Math.max(resumeStep, 1), steps.length)
     setStep(clamped)
-  }, [userData, navigate])
+  }, [userData, navigate, routeState])
 
   useEffect(() => {
     if (!userData || !Object.keys(userData).length) return
@@ -144,8 +164,8 @@ export default function UserOnboarding() {
       if (step < steps.length) {
         setStep((prev) => prev + 1)
       } else {
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] })
-        navigate('/app')
+        queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+        navigate(resolvePostOnboardingPath(routeState), { replace: true })
       }
     }
   }

@@ -54,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [walletBalance, setWalletBalance] = useState<number | null>(null)
   const [userId, setUserId] = useState('')
   const [uiUser, setUiUser] = useState<IUserProfileDB>(() => createUiMockUser(storedUiSession))
+  const [lastResolvedUser, setLastResolvedUser] = useState<IUserProfileDB | null>(null)
 
   const {
     data: user,
@@ -65,6 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (UI_ONLY_AUTH) return
     // If we successfully fetched a user, ensure auth is marked as true.
     if (user?.id) {
+      setLastResolvedUser(user)
       setIsAuthenticated(true)
     }
     // Do NOT automatically mark user as unauthenticated on generic errors here.
@@ -94,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     clearUiSession()
     setIsAuthenticated(false)
     setUiUser(createUiMockUser(null))
+    setLastResolvedUser(null)
     queryClient.removeQueries({ queryKey: ['userInfo'] })
     queryClient.removeQueries({ queryKey: ['userProfile'] })
     queryClient.removeQueries({ queryKey: ['walletBalance'] })
@@ -129,8 +132,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const value: AuthCtx = {
-    user: UI_ONLY_AUTH ? uiUser : user ?? { ...emptyUserProfile },
-    loading: UI_ONLY_AUTH ? false : userFetching,
+    user: UI_ONLY_AUTH ? uiUser : user ?? lastResolvedUser ?? { ...emptyUserProfile },
+    loading: UI_ONLY_AUTH ? false : Boolean(isAuthenticated && userFetching && !lastResolvedUser?.id),
     isAuthenticated,
     setUserId,
     setTokens,
