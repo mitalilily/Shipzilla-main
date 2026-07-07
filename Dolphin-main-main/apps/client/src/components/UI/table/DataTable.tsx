@@ -110,6 +110,8 @@ export default function DataTable<T extends { id: string | number }>(props: Data
   const tableBg = '#FFFCF8'
   const rowHover = alpha(primary, 0.045)
   const mobileCardBg = 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,244,238,0.96) 100%)'
+  const tableHeaderZIndex = Math.max(theme.zIndex.appBar - 3, 1)
+  const tableStickyCellZIndex = Math.max(theme.zIndex.appBar - 2, tableHeaderZIndex + 1)
 
   const [localPage, setLocalPage] = React.useState(0)
   const [localRowsPerPage, setLocalRowsPerPage] = React.useState(defaultRowsPerPage)
@@ -480,7 +482,7 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                           top: 0,
                           background: headerBg,
                           borderBottom: `1px solid ${borderColor}`,
-                          zIndex: theme.zIndex.appBar + 1,
+                          zIndex: tableHeaderZIndex,
                           py: 1.4,
                         }}
                       >
@@ -507,7 +509,7 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                             fontSize: '11px',
                             textTransform: 'uppercase',
                             letterSpacing: '0.09em',
-                            zIndex: col.sticky ? theme.zIndex.appBar + 3 : theme.zIndex.appBar + 1,
+                            zIndex: col.sticky ? tableStickyCellZIndex : tableHeaderZIndex,
                             borderBottom: `1px solid ${borderColor}`,
                             py: 1.4,
                             px: 2,
@@ -546,7 +548,7 @@ export default function DataTable<T extends { id: string | number }>(props: Data
                           background: headerBg,
                           borderBottom: `1px solid ${borderColor}`,
                           width: 40,
-                          zIndex: theme.zIndex.appBar + 1,
+                          zIndex: tableHeaderZIndex,
                         }}
                       />
                     )}

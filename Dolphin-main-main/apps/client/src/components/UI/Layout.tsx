@@ -64,6 +64,7 @@ export default function Layout() {
             transition: 'width 200ms ease',
             willChange: 'width',
             position: 'relative',
+            zIndex: (muiTheme) => muiTheme.zIndex.drawer + 2,
           }}
         >
           <Sidebar
@@ -80,6 +81,7 @@ export default function Layout() {
           flexGrow: 1,
           minWidth: 0,
           position: 'relative',
+          zIndex: 0,
           minHeight: '100vh',
           overflowX: 'hidden',
           bgcolor: 'transparent',
