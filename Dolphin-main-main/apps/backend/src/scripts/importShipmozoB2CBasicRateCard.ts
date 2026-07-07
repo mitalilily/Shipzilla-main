@@ -17,7 +17,7 @@ const parseArgs = () => {
       getArg('--csv') ||
       path.resolve(__dirname, './data/b2c/shipmozo_b2c_rate_card_filled.csv'),
     planName: getArg('--plan-name') || 'Basic',
-    allowFailures: args.includes('--allow-failures'),
+    allowFailures: args.includes('--allow-failures') || !args.includes('--strict'),
   }
 }
 
@@ -51,6 +51,18 @@ async function main() {
 
   if (result.imported === 0) {
     throw new Error('Shipmozo B2C Basic rate-card import did not import any rows.')
+  }
+
+  if (result.failed > 0) {
+    console.warn(
+      `Shipmozo B2C Basic rate-card import completed with ${result.failed} row(s) that could not be applied.`,
+    )
+    for (const failure of result.failures.slice(0, 5)) {
+      console.warn(` - ${failure.courierName}: ${failure.reason}`)
+    }
+    if (result.failures.length > 5) {
+      console.warn(` - ...and ${result.failures.length - 5} more`)
+    }
   }
 
   if (result.failed > 0 && !allowFailures) {
