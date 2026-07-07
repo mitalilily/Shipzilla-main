@@ -528,7 +528,7 @@ export const checkCourierServiceability = async (params: {
   deliveryslot?: string
   coupon_id?: number
 }) => {
-  return shiprocketRequest('GET', '/courier/serviceability/', undefined, params)
+  return shiprocketServiceabilityRequest('GET', '/courier/serviceability/', undefined, params)
 }
 
 /**
@@ -540,7 +540,7 @@ export const getSelfServiceability = async (params?: {
   delivery_postcode?: string
   payment_type?: string
 }) => {
-  return shiprocketRequest('GET', '/courier/serviceability/self', undefined, params)
+  return shiprocketServiceabilityRequest('GET', '/courier/serviceability/self', undefined, params)
 }
 
 /**
@@ -548,7 +548,7 @@ export const getSelfServiceability = async (params?: {
  * Get locality details for a postcode
  */
 export const getPostcodeDetails = async (postcode: number | string) => {
-  return shiprocketRequest('GET', '/open/postcode/details', undefined, { postcode })
+  return shiprocketServiceabilityRequest('GET', '/open/postcode/details', undefined, { postcode })
 }
 
 // ───────────────────────────── 2. ORDERS ─────────────────────────────

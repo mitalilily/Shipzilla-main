@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { randomUUID } from 'crypto'
 import {
   and,
   asc,
@@ -4447,6 +4448,7 @@ const createB2BShipmentServiceLegacy = async (
   const [pendingOrder] = await db
     .insert(b2b_orders)
     .values({
+      id: randomUUID(),
       order_number: normalizedOrderNumber,
       order_date: params?.order_date,
       order_amount: params?.order_amount,
@@ -4863,6 +4865,7 @@ export const createB2BShipmentService = async (
   const [pendingOrder] = await db
     .insert(b2b_orders)
     .values({
+      id: randomUUID(),
       order_number: normalizedOrderNumber,
       order_date: params?.order_date,
       order_amount: params?.order_amount,
