@@ -8,7 +8,6 @@ import {
   MenuItem,
   MenuList,
   Portal,
-  Stack,
   Tooltip,
   useDisclosure,
   useToast,
@@ -52,34 +51,36 @@ const OrdersTable = ({
 
   const captions = [
     'Order ID',
+    'Source',
+    'Type',
     'AWB Number',
-    'Docs',
-    'Merchant',
     'Customer',
-    'Status',
-    'Order Type',
-    'Amount',
+    'City',
+    'State',
     'Courier',
-    'Order Date',
+    'Status',
+    'Created At',
   ]
   const columnKeys = [
     'order_number',
+    'source',
+    'type',
     'awb_number',
-    'documents',
-    'merchantName',
     'buyer_name',
-    'order_status',
-    'order_type',
-    'order_amount',
+    'city',
+    'state',
     'courier_partner',
-    'order_date',
+    'order_status',
+    'created_at',
   ]
   const actionsColumnWidth = '180px'
-  const docsColumnWidth = '240px'
 
   const getStatusColor = (status) => {
     const statusColors = {
       pending: 'orange',
+      booked: 'blue',
+      manifest_failed: 'red',
+      pickup_initiated: 'yellow',
       shipment_created: 'blue',
       in_transit: 'purple',
       out_for_delivery: 'cyan',
@@ -90,11 +91,22 @@ const OrdersTable = ({
       rto_in_transit: 'purple',
       rto_delivered: 'gray',
     }
-    return statusColors[status] || 'gray'
+    return statusColors[String(status || '').toLowerCase()] || 'gray'
   }
 
-  const getOrderTypeColor = (type) => {
-    return type === 'cod' ? 'green' : 'blue'
+  const getShipmentType = (order) => {
+    const candidates = [order?.type, order?.shipment_type, order?.business_type]
+    const normalizedCandidate = candidates.find((value) => {
+      const normalized = String(value || '').toLowerCase()
+      return normalized === 'b2b' || normalized === 'b2c'
+    })
+
+    if (normalizedCandidate) return String(normalizedCandidate).toUpperCase()
+
+    const orderType = String(order?.order_type || '').toLowerCase()
+    if (orderType === 'b2b' || orderType === 'b2c') return orderType.toUpperCase()
+
+    return 'N/A'
   }
 
   const handleViewDetails = (order) => {
@@ -108,10 +120,8 @@ const OrdersTable = ({
   }
 
   const handleCopyAWB = (awb) => {
-    if (awb) {
-      navigator.clipboard.writeText(awb)
-      // You might want to show a toast notification here
-    }
+    if (!awb) return
+    navigator.clipboard.writeText(awb)
   }
 
   const handleTrackShipment = (order) => {
@@ -121,9 +131,9 @@ const OrdersTable = ({
 
   const canCancelShipment = (order) => {
     if (!order) return false
-    const status = (order.order_status || '').toLowerCase()
+    const status = String(order.order_status || '').toLowerCase()
     if (!cancellableStatuses.has(status)) return false
-    const provider = (order.integration_type || '').toLowerCase()
+    const provider = String(order.integration_type || '').toLowerCase()
     if (provider && !supportedCancellationProviders.has(provider)) return false
     return Boolean(order.id)
   }
@@ -144,7 +154,7 @@ const OrdersTable = ({
       await cancelOrderMutation(order.id)
       toast({
         title: 'Cancellation requested',
-        description: `Order ${order.order_id || order.id} cancellation has been requested.`,
+        description: `Order ${order.order_number || order.id} cancellation has been requested.`,
         status: 'success',
         duration: 4000,
         isClosable: true,
@@ -203,11 +213,11 @@ const OrdersTable = ({
   }
 
   const renderers = {
-    order_id: (value) => (
+    order_number: (value) => (
       <Tooltip label={value}>
         <span
           style={{
-            maxWidth: '120px',
+            maxWidth: '160px',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -219,31 +229,31 @@ const OrdersTable = ({
         </span>
       </Tooltip>
     ),
-    merchantName: (value, row) => (
-      <Button
-        variant="link"
-        colorScheme="blue"
-        size="sm"
-        onClick={() => {
-          if (row?.user_id) {
-            history.push(`/admin/users-management/${row.user_id}/overview`)
-          } else {
-            toast({
-              title: 'Merchant details unavailable',
-              description: 'User identifier missing for this order.',
-              status: 'warning',
-              duration: 4000,
-              isClosable: true,
-            })
-          }
-        }}
-      >
-        {value || row?.merchantEmail || row?.merchantPhone || 'Unknown Merchant'}
-      </Button>
+    source: (value, row) => (
+      <Badge colorScheme={row?.is_external_api ? 'purple' : 'green'} borderRadius="md" px={2} py={1}>
+        {row?.is_external_api ? 'API' : value || 'Local'}
+      </Badge>
     ),
-    awb_number: (value) => (
+    type: (_value, row) => (
+      <Badge colorScheme="blue" fontSize="0.8em" px={2} py={1} borderRadius="md">
+        {getShipmentType(row)}
+      </Badge>
+    ),
+    awb_number: (value, row) => (
       <Flex align="center" gap={2}>
-        <span style={{ fontFamily: 'monospace' }}>{value || 'N/A'}</span>
+        {value ? (
+          <Button
+            variant="link"
+            colorScheme="orange"
+            size="sm"
+            fontFamily="mono"
+            onClick={() => handleTrackShipment(row)}
+          >
+            {value}
+          </Button>
+        ) : (
+          <span style={{ fontFamily: 'monospace' }}>N/A</span>
+        )}
         {value && (
           <Icon
             as={FiCopy}
@@ -255,59 +265,40 @@ const OrdersTable = ({
         )}
       </Flex>
     ),
-    documents: (_value, row) => {
-      const hasLabel = Boolean(String(row.label_url || row.label_key || row.label || '').trim())
-      const hasInvoice = Boolean(
-        String(row.invoice_url || row.invoice_key || row.invoice_link || '').trim(),
-      )
-
-      return (
-        <Stack direction="row" spacing={2} flexWrap="wrap">
-          <Badge colorScheme={hasLabel ? 'green' : 'orange'} borderRadius="md" px={2} py={1}>
-            {hasLabel ? 'Label Generated' : 'Label Pending'}
-          </Badge>
-          <Badge colorScheme={hasInvoice ? 'green' : 'orange'} borderRadius="md" px={2} py={1}>
-            {hasInvoice ? 'Invoice Generated' : 'Invoice Pending'}
-          </Badge>
-        </Stack>
-      )
-    },
     buyer_name: (value, row) => (
       <div>
-        <div style={{ fontWeight: '500' }}>{value}</div>
+        <div style={{ fontWeight: '500' }}>{value || 'N/A'}</div>
         {row.buyer_phone && (
           <div style={{ fontSize: '0.85em', color: 'gray' }}>{row.buyer_phone}</div>
         )}
       </div>
     ),
+    city: (value) => value || 'N/A',
+    state: (value) => value || 'N/A',
+    courier_partner: (value) => value || 'Not Assigned',
     order_status: (value) => (
       <Badge colorScheme={getStatusColor(value)} fontSize="0.8em" px={2} py={1} borderRadius="md">
-        {value?.replace(/_/g, ' ').toUpperCase()}
+        {String(value || 'unknown').replace(/_/g, ' ').toUpperCase()}
       </Badge>
     ),
-    order_type: (value) => (
-      <Badge
-        colorScheme={getOrderTypeColor(value)}
-        fontSize="0.8em"
-        px={2}
-        py={1}
-        borderRadius="md"
-      >
-        {value?.toUpperCase()}
-      </Badge>
-    ),
-    order_amount: (value) => (
-      <span style={{ fontWeight: '600' }}>₹{parseFloat(value || 0).toFixed(2)}</span>
-    ),
-    courier_partner: (value) => value || 'Not Assigned',
-    order_date: (value) => {
-      if (!value) return 'N/A'
-      const date = new Date(value)
-      return date.toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
+    created_at: (value, row) => {
+      const resolvedValue = value || row?.order_date
+      if (!resolvedValue) return 'N/A'
+
+      const date = new Date(resolvedValue)
+
+      return (
+        date.toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        }) +
+        ', ' +
+        date.toLocaleTimeString('en-IN', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      )
     },
   }
 
@@ -366,18 +357,17 @@ const OrdersTable = ({
         perPageOptions={[10, 20, 50, 100]}
         actionsColumnWidth={actionsColumnWidth}
         columnWidths={{
-          order_id: '140px',
+          order_number: '180px',
+          source: '120px',
+          type: '110px',
           awb_number: '180px',
-          documents: docsColumnWidth,
-          buyer_name: '200px',
+          buyer_name: '220px',
+          city: '140px',
+          state: '140px',
+          courier_partner: '170px',
           order_status: '150px',
-          order_type: '100px',
-          order_amount: '120px',
-          courier_partner: '150px',
-          order_date: '120px',
+          created_at: '180px',
         }}
-        stickyRightColumnKeys={['documents']}
-        stickyRightOffsets={{ documents: actionsColumnWidth }}
       />
 
       {selectedOrder && (

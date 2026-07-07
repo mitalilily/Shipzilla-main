@@ -6,6 +6,7 @@ import {
   Heading,
   HStack,
   Icon,
+  Stack,
   Text,
   Select,
   useColorModeValue,
@@ -29,6 +30,15 @@ import {
 } from 'react-icons/fi'
 import { useLocation } from 'react-router-dom'
 import { exportOrdersToCSV } from 'services/order.service'
+
+const shipmentStatusFilters = [
+  { label: 'All', value: '' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Booked', value: 'booked' },
+  { label: 'Manifest failed', value: 'manifest_failed' },
+  { label: 'Pickup initiated', value: 'pickup_initiated' },
+  { label: 'Shipment created', value: 'shipment_created' },
+]
 
 const getTodayDateInputValue = () => {
   const now = new Date()
@@ -71,6 +81,7 @@ const Orders = () => {
 
   const textColor = useColorModeValue('gray.700', 'white')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
+  const statusFilterHoverBg = useColorModeValue('gray.50', 'whiteAlpha.100')
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -136,6 +147,9 @@ const Orders = () => {
       placeholder: 'All Statuses',
       options: [
         { value: 'pending', label: 'Pending' },
+        { value: 'booked', label: 'Booked' },
+        { value: 'manifest_failed', label: 'Manifest Failed' },
+        { value: 'pickup_initiated', label: 'Pickup Initiated' },
         { value: 'shipment_created', label: 'Shipment Created' },
         { value: 'in_transit', label: 'In Transit' },
         { value: 'out_for_delivery', label: 'Out for Delivery' },
@@ -207,6 +221,36 @@ const Orders = () => {
           </Button>
         </HStack>
       </Flex>
+
+      <Card mb={4} boxShadow="sm">
+        <CardBody p={4}>
+          <Text fontSize="sm" fontWeight="700" color={textColor} mb={3}>
+            Status
+          </Text>
+          <Stack direction="row" spacing={3} flexWrap="wrap">
+            {shipmentStatusFilters.map((filter) => {
+              const active = filters.status === filter.value
+
+              return (
+                <Button
+                  key={filter.value || 'all'}
+                  size="sm"
+                  onClick={() => handleStatusFilter(filter.value)}
+                  borderRadius="10px"
+                  borderWidth="1px"
+                  borderColor={active ? 'orange.200' : borderColor}
+                  bg={active ? 'orange.50' : 'white'}
+                  color={active ? 'orange.500' : textColor}
+                  fontWeight={active ? '800' : '600'}
+                  _hover={{ bg: active ? 'orange.100' : statusFilterHoverBg }}
+                >
+                  {filter.label}
+                </Button>
+              )
+            })}
+          </Stack>
+        </CardBody>
+      </Card>
 
       {/* Compact Statistics */}
       <Grid

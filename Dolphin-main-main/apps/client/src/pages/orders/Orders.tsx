@@ -1,17 +1,27 @@
 import { alpha, Alert, Box, Button, Container, Fade, Popover, Stack, Typography } from '@mui/material'
 import { useState } from 'react'
 import { MdAdd } from 'react-icons/md'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useSearchParams } from 'react-router-dom'
 import AllOrders from '../../components/orders/AllOrders'
 import B2COrderFormSteps from '../../components/orders/b2c/B2COrderForm'
 import CustomDrawer from '../../components/UI/drawer/CustomDrawer'
 import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
+
+const shipmentStatusFilters = [
+  { label: 'All', value: '' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Booked', value: 'booked' },
+  { label: 'Manifest failed', value: 'manifest_failed' },
+  { label: 'Pickup initiated', value: 'pickup_initiated' },
+  { label: 'Shipment created', value: 'shipment_created' },
+]
 
 export default function Orders() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [orderType, setOrderType] = useState<'b2c' | 'b2b' | null>(null)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { guardOrderCreation, redirectToSetup, isReady, isLoading: readinessLoading, progress } =
     useOrderCreationGuard()
 
@@ -52,6 +62,16 @@ export default function Orders() {
     { label: 'B2C Orders', path: '/orders/b2c/list' },
     { label: 'B2B Orders', path: '/orders/b2b/list' },
   ]
+  const activeStatus = searchParams.get('status') || ''
+
+  const handleStatusFilter = (status: string) => {
+    const nextParams = new URLSearchParams(searchParams)
+
+    if (status) nextParams.set('status', status)
+    else nextParams.delete('status')
+
+    setSearchParams(nextParams)
+  }
 
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 1.5, md: 2.4 } }}>
@@ -175,6 +195,45 @@ export default function Orders() {
             )
           })}
         </Stack>
+        <Box
+          sx={{
+            px: { xs: 1.25, md: 1.8 },
+            py: { xs: 1.5, md: 1.8 },
+            borderTop: '1px solid rgba(29, 40, 66, 0.08)',
+            bgcolor: '#ffffff',
+          }}
+        >
+          <Typography sx={{ mb: 1.2, fontWeight: 700, color: '#1D2842' }}>Status</Typography>
+          <Stack direction="row" flexWrap="wrap" gap={1.1}>
+            {shipmentStatusFilters.map((filter) => {
+              const active = activeStatus === filter.value
+
+              return (
+                <Button
+                  key={filter.value || 'all'}
+                  onClick={() => handleStatusFilter(filter.value)}
+                  sx={{
+                    px: 2,
+                    py: 0.9,
+                    minWidth: 'unset',
+                    borderRadius: 1.2,
+                    border: '1px solid',
+                    borderColor: active ? 'rgba(241, 100, 41, 0.4)' : 'rgba(29, 40, 66, 0.12)',
+                    bgcolor: active ? 'rgba(241, 100, 41, 0.08)' : '#ffffff',
+                    color: active ? '#F16429' : '#1D2842',
+                    fontWeight: active ? 800 : 600,
+                    textTransform: 'none',
+                    '&:hover': {
+                      bgcolor: active ? 'rgba(241, 100, 41, 0.12)' : alpha('#1D2842', 0.04),
+                    },
+                  }}
+                >
+                  {filter.label}
+                </Button>
+              )
+            })}
+          </Stack>
+        </Box>
       </Box>
 
       <Box sx={{ mt: 1.5 }}>

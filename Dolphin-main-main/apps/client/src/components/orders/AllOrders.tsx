@@ -104,7 +104,7 @@ const AllOrders = () => {
 
   useEffect(() => {
     const status = searchParams.get('status') || undefined
-    if (status && filters.status !== status) {
+    if (filters.status !== status) {
       setFilters((prev) => ({
         ...prev,
         status,
