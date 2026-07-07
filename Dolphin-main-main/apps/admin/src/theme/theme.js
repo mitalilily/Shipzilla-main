@@ -14,7 +14,7 @@ import { breakpoints } from './foundations/breakpoints'
 import { globalStyles } from './styles'
 
 const fieldBase = {
-  borderRadius: '18px',
+  borderRadius: '6px',
   borderColor: 'rgba(93,35,148,0.14)',
   bg: 'rgba(255,255,255,0.88)',
   fontWeight: '600',
@@ -128,12 +128,12 @@ const componentOverrides = {
                 py: '16px',
               },
               '& td:first-of-type': {
-                borderTopLeftRadius: '18px',
-                borderBottomLeftRadius: '18px',
+                borderTopLeftRadius: '0',
+                borderBottomLeftRadius: '0',
               },
               '& td:last-of-type': {
-                borderTopRightRadius: '18px',
-                borderBottomRightRadius: '18px',
+                borderTopRightRadius: '0',
+                borderBottomRightRadius: '0',
               },
             },
           },
@@ -143,7 +143,7 @@ const componentOverrides = {
     Tabs: {
       baseStyle: {
         tab: {
-          borderRadius: '999px',
+          borderRadius: '6px',
           px: '18px',
           py: '10px',
           fontWeight: '700',
@@ -156,7 +156,7 @@ const componentOverrides = {
         },
         tablist: {
           p: '6px',
-          borderRadius: '999px',
+          borderRadius: '6px',
           bg: 'rgba(255,255,255,0.72)',
           border: '1px solid rgba(93,35,148,0.08)',
           boxShadow: '0 14px 28px rgba(67,22,109,0.08)',
@@ -166,7 +166,7 @@ const componentOverrides = {
     Modal: {
       baseStyle: {
         dialog: {
-          borderRadius: '30px',
+          borderRadius: '8px',
           borderWidth: '1px',
           borderColor: 'rgba(93,35,148,0.12)',
           boxShadow: '0 34px 72px rgba(67,22,109,0.18)',
@@ -195,7 +195,7 @@ const componentOverrides = {
     },
     Badge: {
       baseStyle: {
-        borderRadius: 'full',
+        borderRadius: '6px',
         textTransform: 'none',
         px: '2.5',
         py: '1',
@@ -204,9 +204,19 @@ const componentOverrides = {
     },
     Tooltip: {
       baseStyle: {
-        borderRadius: '12px',
+        borderRadius: '6px',
       },
     },
+  },
+  radii: {
+    none: '0',
+    sm: '4px',
+    md: '6px',
+    lg: '8px',
+    xl: '10px',
+    '2xl': '12px',
+    '3xl': '14px',
+    full: '9999px',
   },
   fonts: {
     heading: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",

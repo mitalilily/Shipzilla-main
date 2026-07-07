@@ -10,7 +10,7 @@ export const buttonStyles = {
         'transparent-with-icon': {
           bg: 'transparent',
           fontWeight: '600',
-          borderRadius: '999px',
+          borderRadius: '6px',
           cursor: 'pointer',
           _active: {
             bg: 'transparent',
@@ -26,7 +26,7 @@ export const buttonStyles = {
         },
       },
       baseStyle: {
-        borderRadius: '999px',
+        borderRadius: '6px',
         fontWeight: '700',
         transitionProperty: 'transform, background-color, border-color, box-shadow',
         transitionDuration: '180ms',

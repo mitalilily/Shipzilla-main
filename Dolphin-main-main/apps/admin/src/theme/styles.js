@@ -40,7 +40,7 @@ export const globalStyles = {
       },
       '::-webkit-scrollbar-thumb': {
         background: mode('rgba(93,35,148,0.24)', 'rgba(255,255,255,0.22)')(props),
-        borderRadius: '999px',
+        borderRadius: '6px',
       },
     }),
   },

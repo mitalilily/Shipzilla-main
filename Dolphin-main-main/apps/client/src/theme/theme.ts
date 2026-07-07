@@ -59,7 +59,7 @@ const theme = createTheme({
     divider: alpha(brand.ink, 0.08),
   },
   shape: {
-    borderRadius: 20,
+    borderRadius: 6,
   },
   typography: {
     fontFamily: brandFonts.body,
@@ -162,7 +162,7 @@ const theme = createTheme({
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: 22,
+          borderRadius: 6,
           boxShadow: brand.shadow,
           border: `1px solid ${alpha(brand.line, 0.88)}`,
           background: brandGradients.surface,
@@ -180,7 +180,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           background: brandGradients.surface,
-          borderRadius: 22,
+          borderRadius: 6,
         },
         elevation1: {
           boxShadow: '0 18px 38px rgba(67, 22, 109, 0.08)',
@@ -193,7 +193,7 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 999,
+          borderRadius: 6,
           padding: '11px 22px',
           fontSize: '0.88rem',
           fontWeight: 700,
@@ -237,7 +237,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 20,
+            borderRadius: 6,
             backgroundColor: alpha('#FFFFFF', 0.88),
             '& fieldset': {
               borderColor: alpha(brand.ink, 0.12),
@@ -265,7 +265,7 @@ const theme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 999,
+          borderRadius: 6,
           fontWeight: 700,
         },
         filled: {
@@ -281,11 +281,79 @@ const theme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 24,
+          borderRadius: 6,
           border: `1px solid ${alpha(brand.primary, 0.12)}`,
           boxShadow: '0 32px 68px rgba(67, 22, 109, 0.16)',
           background: brandGradients.surface,
           overflow: 'hidden',
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 6,
+          border: `1px solid ${alpha(brand.ink, 0.08)}`,
+        },
+        list: {
+          paddingTop: 4,
+          paddingBottom: 4,
+        },
+      },
+    },
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 6,
+          border: `1px solid ${alpha(brand.ink, 0.08)}`,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+        },
+      },
+    },
+    MuiAutocomplete: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 6,
+        },
+      },
+    },
+    MuiTabs: {
+      styleOverrides: {
+        root: {
+          minHeight: 42,
+        },
+        indicator: {
+          height: 3,
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          minHeight: 42,
+          borderRadius: 4,
+        },
+      },
+    },
+    MuiAccordion: {
+      styleOverrides: {
+        root: {
+          borderRadius: '6px !important',
+          overflow: 'hidden',
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
         },
       },
     },

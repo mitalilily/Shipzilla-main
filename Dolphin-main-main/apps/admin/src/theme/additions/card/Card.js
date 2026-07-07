@@ -24,7 +24,7 @@ const Card = {
         props.colorMode === 'dark'
           ? '0 12px 30px rgba(2, 8, 23, 0.5)'
           : '0 18px 36px rgba(67, 22, 109, 0.08)',
-      borderRadius: '24px',
+      borderRadius: '8px',
       overflow: 'hidden',
       backdropFilter: 'blur(10px)',
     }),
