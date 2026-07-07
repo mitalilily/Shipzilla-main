@@ -1368,14 +1368,15 @@ export const fetchAvailableCouriersWithRates = async (
         params.destination ?? params.destination_pincode,
       )?.toString()
       const orderAmountValue = Number(params.order_amount ?? params.orderAmount ?? 0)
+      const serviceabilityOrderAmount = orderAmountValue > 0 ? orderAmountValue : 1
 
-      if (originPincode && destinationPincode && orderAmountValue > 0) {
+      if (originPincode && destinationPincode) {
         try {
           xpressbeesResp = await xpressbees.checkServiceability({
             origin: originPincode,
             destination: destinationPincode,
             payment_type: params.payment_type === 'cod' ? 'cod' : 'prepaid',
-            order_amount: String(orderAmountValue),
+            order_amount: String(serviceabilityOrderAmount),
             weight: String(Number(params.weight ?? 0)),
             length: String(Number(params.length ?? 0)),
             breadth: String(Number(params.breadth ?? 0)),
@@ -1423,14 +1424,15 @@ export const fetchAvailableCouriersWithRates = async (
         params.destination ?? params.destination_pincode,
       )?.toString()
       const orderAmountValue = Number(params.order_amount ?? params.orderAmount ?? 0)
+      const serviceabilityOrderAmount = orderAmountValue > 0 ? orderAmountValue : 1
 
-      if (originPincode && destinationPincode && orderAmountValue > 0) {
+      if (originPincode && destinationPincode) {
         try {
           shipmozoResp = await shipmozo.checkServiceability({
             origin: originPincode,
             destination: destinationPincode,
             payment_type: params.payment_type === 'cod' ? 'cod' : 'prepaid',
-            order_amount: String(orderAmountValue),
+            order_amount: String(serviceabilityOrderAmount),
             weight: String(Number(params.weight ?? 0)),
             length: String(Number(params.length ?? 0)),
             breadth: String(Number(params.breadth ?? 0)),

@@ -167,21 +167,32 @@ const toWeightKg = (value: unknown) => {
 const mask = (value: string) =>
   value.length > 8 ? `${value.slice(0, 4)}...${value.slice(-4)}` : value ? '***' : ''
 
+const getEnvValue = (...names: string[]) => {
+  for (const name of names) {
+    const value = process.env[name]
+    if (String(value ?? '').trim()) return String(value).trim()
+  }
+  return ''
+}
+
 export class ShipmozoService {
   private baseApi =
-    process.env.SHIPMOZO_API_BASE ||
-    process.env.SHIPMOZO_API_BASE_URL ||
+    getEnvValue('SHIPMOZO_API_BASE', 'SHIPMOZO_API_BASE_URL', 'SHIPMOZO_TEST_API_BASE') ||
     DEFAULT_SHIPMOZO_BASE_URL
-  private username = process.env.SHIPMOZO_USERNAME || ''
-  private password = process.env.SHIPMOZO_PASSWORD || ''
+  private username = getEnvValue('SHIPMOZO_USERNAME', 'SHIPMOZO_TEST_USERNAME')
+  private password = getEnvValue('SHIPMOZO_PASSWORD', 'SHIPMOZO_TEST_PASSWORD')
   private publicKey =
-    process.env.SHIPMOZO_PUBLIC_KEY || process.env.SHIPMOZO_CLIENT_ID || ''
+    getEnvValue('SHIPMOZO_PUBLIC_KEY', 'SHIPMOZO_CLIENT_ID', 'SHIPMOZO_TEST_PUBLIC_KEY', 'SHIPMOZO_TEST_CLIENT_ID')
   private privateKey =
-    process.env.SHIPMOZO_PRIVATE_KEY ||
-    process.env.SHIPMOZO_API_KEY ||
-    process.env.SHIPMOZO_API_TOKEN ||
-    ''
-  private webhookSecret = process.env.SHIPMOZO_WEBHOOK_SECRET || ''
+    getEnvValue(
+      'SHIPMOZO_PRIVATE_KEY',
+      'SHIPMOZO_API_KEY',
+      'SHIPMOZO_API_TOKEN',
+      'SHIPMOZO_TEST_PRIVATE_KEY',
+      'SHIPMOZO_TEST_API_KEY',
+      'SHIPMOZO_TEST_API_TOKEN',
+    )
+  private webhookSecret = getEnvValue('SHIPMOZO_WEBHOOK_SECRET', 'SHIPMOZO_TEST_WEBHOOK_SECRET')
   private static cachedConfig: ShipmozoConfig | null | undefined
   private static cachedKeys: ShipmozoKeys | null = null
 

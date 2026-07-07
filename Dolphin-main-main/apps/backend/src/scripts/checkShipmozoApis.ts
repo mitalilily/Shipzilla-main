@@ -14,6 +14,9 @@ const sampleCourierId = process.env.SHIPMOZO_TEST_COURIER_ID || ''
 
 const service = new ShipmozoService()
 
+const hasShipmozoEnv = (...names: string[]) =>
+  names.some((name) => String(process.env[name] ?? '').trim().length > 0)
+
 const assertShape = (name: string, raw: any) => {
   if (!raw || typeof raw !== 'object') {
     throw new Error(`${name} returned a non-object response`)
@@ -44,12 +47,14 @@ async function main() {
   await step('Info API', () => service.info())
 
   const hasKeys =
-    Boolean(process.env.SHIPMOZO_PUBLIC_KEY && process.env.SHIPMOZO_PRIVATE_KEY) ||
-    Boolean(process.env.SHIPMOZO_USERNAME && process.env.SHIPMOZO_PASSWORD)
+    (hasShipmozoEnv('SHIPMOZO_PUBLIC_KEY', 'SHIPMOZO_TEST_PUBLIC_KEY') &&
+      hasShipmozoEnv('SHIPMOZO_PRIVATE_KEY', 'SHIPMOZO_TEST_PRIVATE_KEY')) ||
+    (hasShipmozoEnv('SHIPMOZO_USERNAME', 'SHIPMOZO_TEST_USERNAME') &&
+      hasShipmozoEnv('SHIPMOZO_PASSWORD', 'SHIPMOZO_TEST_PASSWORD'))
 
   if (!hasKeys) {
     console.log(
-      '[Shipmozo check] Credentialed checks skipped: set SHIPMOZO_PUBLIC_KEY/SHIPMOZO_PRIVATE_KEY or SHIPMOZO_USERNAME/SHIPMOZO_PASSWORD.',
+      '[Shipmozo check] Credentialed checks skipped: set SHIPMOZO_PUBLIC_KEY/SHIPMOZO_PRIVATE_KEY (or SHIPMOZO_TEST_PUBLIC_KEY/SHIPMOZO_TEST_PRIVATE_KEY) or SHIPMOZO_USERNAME/SHIPMOZO_PASSWORD (or SHIPMOZO_TEST_USERNAME/SHIPMOZO_TEST_PASSWORD).',
     )
     return
   }

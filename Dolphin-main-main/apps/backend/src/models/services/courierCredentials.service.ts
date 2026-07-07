@@ -110,6 +110,14 @@ export const DEFAULT_EKART_BASE_URL = 'https://app.elite.ekartlogistics.in'
 export const DEFAULT_SHIPMOZO_BASE_URL = 'https://shipping-api.com/app/api/v1'
 export const DEFAULT_SHIPROCKET_BASE_URL = 'https://apiv2.shiprocket.in/v1/external'
 
+const getEnvValue = (...names: string[]) => {
+  for (const name of names) {
+    const value = process.env[name]
+    if (String(value ?? '').trim()) return String(value).trim()
+  }
+  return ''
+}
+
 const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessType): boolean => {
   if (provider === 'delhivery') {
     return !!(process.env.DELHIVERY_API_KEY || process.env.DELHIVERY_CLIENT_NAME)
@@ -134,15 +142,15 @@ const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessTy
   }
   if (provider === 'shipmozo') {
     return !!(
-      process.env.SHIPMOZO_PUBLIC_KEY ||
-      process.env.SHIPMOZO_PRIVATE_KEY ||
-      process.env.SHIPMOZO_CLIENT_ID ||
-      process.env.SHIPMOZO_API_TOKEN ||
-      process.env.SHIPMOZO_API_KEY ||
-      process.env.SHIPMOZO_USERNAME ||
-      process.env.SHIPMOZO_PASSWORD ||
-      process.env.SHIPMOZO_API_BASE ||
-      process.env.SHIPMOZO_API_BASE_URL
+      getEnvValue('SHIPMOZO_PUBLIC_KEY', 'SHIPMOZO_TEST_PUBLIC_KEY') ||
+      getEnvValue('SHIPMOZO_PRIVATE_KEY', 'SHIPMOZO_TEST_PRIVATE_KEY') ||
+      getEnvValue('SHIPMOZO_CLIENT_ID', 'SHIPMOZO_TEST_CLIENT_ID') ||
+      getEnvValue('SHIPMOZO_API_TOKEN', 'SHIPMOZO_TEST_API_TOKEN') ||
+      getEnvValue('SHIPMOZO_API_KEY', 'SHIPMOZO_TEST_API_KEY') ||
+      getEnvValue('SHIPMOZO_USERNAME', 'SHIPMOZO_TEST_USERNAME') ||
+      getEnvValue('SHIPMOZO_PASSWORD', 'SHIPMOZO_TEST_PASSWORD') ||
+      getEnvValue('SHIPMOZO_API_BASE', 'SHIPMOZO_TEST_API_BASE') ||
+      getEnvValue('SHIPMOZO_API_BASE_URL', 'SHIPMOZO_TEST_API_BASE_URL')
     )
   }
   if (provider === 'shiprocket') {
