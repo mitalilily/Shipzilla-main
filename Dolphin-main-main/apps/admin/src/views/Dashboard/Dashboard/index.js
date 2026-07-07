@@ -94,9 +94,18 @@ export default function Dashboard() {
   const charts = stats.charts || {}
   const insights = stats.insights || []
 
+  const operationsSnapshot = {
+    todayOrders: toNum(todayOps.orders).toLocaleString(),
+    waitingForDispatch: `${toNum(todayOps.pending)} waiting for dispatch`,
+    deliverySuccess: `${toNum(operational.deliverySuccessRate)}%`,
+    deliveryHint: 'Last 24 hours',
+    codDue: formatCurrency(financial.codRemittanceDue),
+    codHint: 'Pending remittance',
+  }
+
   const heroHighlights = [
     {
-      title: 'Today orders',
+      title: "Today's orders",
       value: toNum(todayOps.orders).toLocaleString(),
     },
     {
@@ -183,7 +192,7 @@ export default function Dashboard() {
                   </HStack>
                 </HStack>
 
-                <RollingVanScene compact />
+                <RollingVanScene compact snapshot={operationsSnapshot} />
 
                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing={2.5}>
                   {heroHighlights.map((item) => (
@@ -253,7 +262,7 @@ export default function Dashboard() {
 
         <SimpleGrid columns={{ base: 1, sm: 2, xl: 4 }} spacing={4} mb={6}>
           <MetricCard
-            title="Today Orders"
+            title="Today's Orders"
             value={toNum(todayOps.orders).toLocaleString()}
             subtitle={`${toNum(todayOps.pending)} of today's orders pending dispatch`}
             icon={<IconPackageExport size={18} />}

@@ -107,7 +107,18 @@ function StaticRouteIllustration() {
   )
 }
 
-export function RollingVanScene({ compact = false }) {
+const defaultSnapshot = {
+  todayOrders: '1,284',
+  waitingForDispatch: '84 waiting for dispatch',
+  deliverySuccess: '96%',
+  deliveryHint: 'Last 24 hours',
+  codDue: '₹12.8L',
+  codHint: 'Pending remittance',
+}
+
+export function RollingVanScene({ compact = false, snapshot = {} }) {
+  const liveSnapshot = { ...defaultSnapshot, ...snapshot }
+
   return (
     <Shell
       eyebrow="Operations snapshot"
@@ -116,9 +127,9 @@ export function RollingVanScene({ compact = false }) {
       compact={compact}
     >
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
-        <MetricTile label="Today's orders" value="1,284" hint="84 waiting for dispatch" />
-        <MetricTile label="Delivery success" value="96%" hint="Last 24 hours" />
-        <MetricTile label="COD due" value="₹12.8L" hint="Pending remittance" />
+        <MetricTile label="Today's orders" value={liveSnapshot.todayOrders} hint={liveSnapshot.waitingForDispatch} />
+        <MetricTile label="Delivery success" value={liveSnapshot.deliverySuccess} hint={liveSnapshot.deliveryHint} />
+        <MetricTile label="COD due" value={liveSnapshot.codDue} hint={liveSnapshot.codHint} />
       </SimpleGrid>
       <Box mt={4}>
         <StaticRouteIllustration />
