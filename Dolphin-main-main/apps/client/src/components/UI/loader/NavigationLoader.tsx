@@ -1,11 +1,11 @@
+import { LinearProgress, Box } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import FullScreenLoader from './FullScreenLoader'
 
-const MIN_DISPLAY_TIME = 700 // 2 seconds
+const MIN_DISPLAY_TIME = 120
 
 /**
- * NavigationLoader - Shows the loader for at least 2 seconds on every route change
+ * NavigationLoader - Lightweight route transition indicator.
  */
 export default function NavigationLoader() {
   const location = useLocation()
@@ -27,5 +27,27 @@ export default function NavigationLoader() {
 
   if (!isLoading) return null
 
-  return <FullScreenLoader />
+  return (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: (theme) => theme.zIndex.appBar + 20,
+        pointerEvents: 'none',
+      }}
+    >
+      <LinearProgress
+        sx={{
+          height: 3,
+          borderRadius: 0,
+          backgroundColor: 'rgba(93, 35, 148, 0.08)',
+          '& .MuiLinearProgress-bar': {
+            background: 'linear-gradient(90deg, #5D2394 0%, #D66F3D 100%)',
+          },
+        }}
+      />
+    </Box>
+  )
 }

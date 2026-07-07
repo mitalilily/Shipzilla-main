@@ -1,13 +1,16 @@
-import { Button, Link, Stack, Typography } from '@mui/material'
-import { useState } from 'react'
-import type { ReactNode } from 'react'
+import { Link, Stack, Typography } from '@mui/material'
 import moment from 'moment'
+import { useState } from 'react'
+import { MdLocalShipping, MdVisibility } from 'react-icons/md'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { useB2BOrdersByUser, useGenerateManifest } from '../../../hooks/Orders/useOrders'
 import type { B2BOrder } from '../../../types/generic.types'
 import StatusChip from '../../UI/chip/StatusChip'
 import DataTable, { type Column } from '../../UI/table/DataTable'
 import TableSkeleton from '../../UI/table/TableSkeleton'
 import { OrderExpandedRow } from '../OrderExpandedRow'
+import OrderActionsMenu, { type OrderActionMenuItem } from '../OrderActionsMenu'
+import { buildOrderTrackingPath } from '../orderNavigation'
 
 export const statusColorMap: Record<string, 'success' | 'pending' | 'error' | 'info'> = {
   delivered: 'success',
@@ -34,6 +37,7 @@ const B2BOrdersList = ({
   setRowsPerPage,
   filters,
 }: B2BOrdersListProps) => {
+  const navigate = useNavigate()
   const { data, isLoading, isError } = useB2BOrdersByUser(page, rowsPerPage, filters)
   const { mutate: triggerManifest, isPending: isGeneratingManifest } = useGenerateManifest()
   const [manifestingAwb, setManifestingAwb] = useState<string | null>(null)
@@ -69,7 +73,26 @@ const B2BOrdersList = ({
       ),
     },
     { label: 'Order #', id: 'order_number' },
-    { label: 'AWB', id: 'awb_number' },
+    {
+      label: 'AWB',
+      id: 'awb_number',
+      render: (v, row) => {
+        const trackingPath = buildOrderTrackingPath(row)
+        if (!trackingPath) return v || '-'
+
+        return (
+          <Link
+            component={RouterLink}
+            to={trackingPath}
+            underline="hover"
+            onClick={(event) => event.stopPropagation()}
+            sx={{ fontWeight: 700 }}
+          >
+            {v}
+          </Link>
+        )
+      },
+    },
     {
       label: 'Docs',
       id: 'id',
@@ -90,12 +113,12 @@ const B2BOrdersList = ({
       ),
     },
     { label: 'Buyer', id: 'buyer_name' },
-    { label: 'Amount', id: 'order_amount', render: (v) => `₹${Number(v)?.toFixed(2)}` },
+    { label: 'Amount', id: 'order_amount', render: (v) => `Rs ${Number(v ?? 0).toFixed(2)}` },
     { label: 'Courier', id: 'courier_partner' },
     {
       label: 'Source',
       id: 'is_external_api',
-      render: (_v, row) => (
+      render: (_, row) => (
         <StatusChip
           label={row.is_external_api ? 'API' : 'Local'}
           status={row.is_external_api ? 'info' : 'success'}
@@ -108,63 +131,70 @@ const B2BOrdersList = ({
       minWidth: 150,
       sticky: 'right',
       stickyOffset: 360,
-      render: (v) => <StatusChip label={v} status={statusColorMap[v] || 'info'} />,
+      render: (v) => <StatusChip label={v} status={statusColorMap[String(v)] || 'info'} />,
     },
     { label: 'Order Date', id: 'order_date', render: (v) => moment(v).format('DD MMM YYYY') },
     { label: 'Last Updated', id: 'updated_at', render: (v) => moment(v).format('DD MMM YYYY') },
     {
       label: 'Actions',
       id: 'id',
-      minWidth: 140,
+      minWidth: 160,
       sticky: 'right',
       stickyOffset: 0,
       render: (_, row) => {
-        const courierText = (row.courier_partner || '').toLowerCase()
-        const integrationText = String((row as B2BOrder & { integration_type?: string }).integration_type || '').toLowerCase()
+        const courierText = String(row.courier_partner || '').toLowerCase()
+        const integrationText = String(
+          (row as B2BOrder & { integration_type?: string }).integration_type || '',
+        ).toLowerCase()
         const isXpressbees =
           integrationText === 'xpressbees' || courierText.includes('xpressbees')
         const isEkart = integrationText === 'ekart' || courierText.includes('ekart')
+        const canManifest = Boolean(row.awb_number) && !row.manifest && (isXpressbees || isEkart)
+        const trackingPath = buildOrderTrackingPath(row)
+        const isThisManifesting = isGeneratingManifest && manifestingAwb === row.awb_number
 
-        const canManifest = !!row.awb_number && !row.manifest && (isXpressbees || isEkart)
+        const actions: OrderActionMenuItem[] = [
+          ...(trackingPath
+            ? [
+                {
+                  key: 'view-details',
+                  label: 'View Details',
+                  icon: <MdVisibility size={18} />,
+                  onClick: () => navigate(trackingPath),
+                },
+                {
+                  key: 'track-shipment',
+                  label: 'Track Shipment',
+                  icon: <MdLocalShipping size={18} />,
+                  onClick: () => navigate(trackingPath),
+                },
+              ]
+            : []),
+          ...(canManifest
+            ? [
+                {
+                  key: 'generate-manifest',
+                  label: isThisManifesting ? 'Manifesting...' : 'Generate Manifest',
+                  icon: <MdLocalShipping size={18} />,
+                  disabled: isThisManifesting,
+                  onClick: () => handleGenerateManifest(row),
+                },
+              ]
+            : []),
+          ...(row.manifest
+            ? [
+                {
+                  key: 'view-manifest',
+                  label: 'View Manifest',
+                  icon: <MdVisibility size={18} />,
+                  onClick: () =>
+                    window.open(String(row.manifest), '_blank', 'noopener,noreferrer'),
+                },
+              ]
+            : []),
+        ]
 
-        const actions: ReactNode[] = []
-
-        if (canManifest) {
-          const isThisManifesting = isGeneratingManifest && manifestingAwb === row.awb_number
-          actions.push(
-            <Button
-              key="manifest"
-              size="small"
-              variant="contained"
-              disabled={isThisManifesting}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleGenerateManifest(row)
-              }}
-            >
-              {isThisManifesting ? 'Manifesting…' : 'Manifest'}
-            </Button>,
-          )
-        }
-
-        if (row.manifest) {
-          actions.push(
-            <Link
-              key="view-manifest"
-              href={row.manifest}
-              target="_blank"
-              rel="noopener"
-              underline="hover"
-              onClick={(e) => e.stopPropagation()}
-            >
-              View
-            </Link>,
-          )
-        }
-
-        if (!actions.length) return null
-
-        return <Stack direction="row" spacing={1}>{actions}</Stack>
+        return <OrderActionsMenu actions={actions} />
       },
     },
   ]

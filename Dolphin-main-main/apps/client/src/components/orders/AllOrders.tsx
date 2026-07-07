@@ -1,11 +1,19 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Alert, AlertTitle, Box, Button, Stack, Typography } from '@mui/material'
+import { Alert, AlertTitle, Box, Button, Link, Stack, Typography } from '@mui/material'
+import moment from 'moment'
 import { useEffect, useState } from 'react'
+import { MdDescription, MdLocalShipping, MdRefresh, MdVisibility } from 'react-icons/md'
 import { TbFilter, TbPlus, TbRefresh } from 'react-icons/tb'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link as RouterLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { generateManifestService } from '../../api/order.service'
 import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
-import { useAllOrders, useB2BOrdersByUser, useB2COrdersByUser } from '../../hooks/Orders/useOrders'
+import {
+  useAllOrders,
+  useB2BOrdersByUser,
+  useB2COrdersByUser,
+  useRegenerateOrderDocuments,
+  useSyncShipmentTracking,
+} from '../../hooks/Orders/useOrders'
 import { usePresignedDownloadMutation } from '../../hooks/Uploads/usePresignedDownloadUrls'
 import { getTodayDateInputValue } from '../../utils/date'
 import { FilterBar, type FilterField } from '../FilterBar'
@@ -14,6 +22,8 @@ import StatusChip from '../UI/chip/StatusChip'
 import DataTable, { type Column } from '../UI/table/DataTable'
 import TableSkeleton from '../UI/table/TableSkeleton'
 import { statusColorMap } from './b2c/B2COrdersList'
+import OrderActionsMenu, { type OrderActionMenuItem } from './OrderActionsMenu'
+import { buildOrderTrackingPath, buildOrderTrackingParams } from './orderNavigation'
 import {
   BULK_MANIFEST_LIMIT,
   downloadFile,
@@ -33,6 +43,10 @@ import { OrderExpandedRow } from './OrderExpandedRow'
 interface Order {
   id: string | number
   type?: 'b2c' | 'b2b'
+  awb_number?: string | null
+  order_number?: string | null
+  buyer_phone?: string | null
+  buyer_email?: string | null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any
 }
@@ -50,24 +64,6 @@ type BulkFeedback = {
   message: string
 }
 
-const hasLabelGenerated = (order: Order) =>
-  Boolean(String(order.label_url || order.label_key || order.label || '').trim())
-
-const hasInvoiceGenerated = (order: Order) =>
-  Boolean(String(order.invoice_url || order.invoice_key || order.invoice_link || '').trim())
-
-const renderDocumentTags = (order: Order) => (
-  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-    <StatusChip
-      label={hasLabelGenerated(order) ? 'Label Generated' : 'Label Pending'}
-      status={hasLabelGenerated(order) ? 'success' : 'pending'}
-    />
-    <StatusChip
-      label={hasInvoiceGenerated(order) ? 'Invoice Generated' : 'Invoice Pending'}
-      status={hasInvoiceGenerated(order) ? 'success' : 'pending'}
-    />
-  </Stack>
-)
 const isManifestEligible = (order: Order) => {
   return order.type === 'b2c' ? isB2CManifestEligible(order) : false
 }
@@ -95,6 +91,8 @@ const AllOrders = () => {
   const { guardOrderCreation, isLoading: readinessLoading } = useOrderCreationGuard()
   const queryClient = useQueryClient()
   const { mutateAsync: presignDownloads } = usePresignedDownloadMutation()
+  const { mutateAsync: regenerateDocuments } = useRegenerateOrderDocuments()
+  const { mutateAsync: syncShipmentTracking } = useSyncShipmentTracking()
   const isB2CView = location.pathname.startsWith('/orders/b2c')
   const isB2BView = location.pathname.startsWith('/orders/b2b')
   const currentOrderView: 'all' | 'b2c' | 'b2b' = isB2CView ? 'b2c' : isB2BView ? 'b2b' : 'all'
@@ -430,28 +428,208 @@ const AllOrders = () => {
     }
   }
 
+  const handleRegenerateDocuments = async (
+    order: Order,
+    regenerateLabel = true,
+    regenerateInvoice = true,
+  ) => {
+    await regenerateDocuments({
+      orderId: String(order.id),
+      regenerateLabel,
+      regenerateInvoice,
+    })
+  }
+
+  const handleSyncLiveStatus = async (order: Order) => {
+    const trackingParams = buildOrderTrackingParams(order)
+    if (!trackingParams) return
+
+    await syncShipmentTracking(trackingParams)
+  }
+
+  const handleDownloadDocument = async (order: Order, type: DocumentType) => {
+    const { key, url } = getDocumentReference(order, type)
+    if (!key && !url) return
+
+    const fileName = getDownloadFileName(order, type, key || url)
+    if (url) {
+      await downloadFile(url, fileName)
+      return
+    }
+
+    if (!key) return
+
+    const presignedUrls = await presignDownloads({ keys: [key] })
+    const resolvedUrl = Array.isArray(presignedUrls) ? presignedUrls[0] : null
+    if (!resolvedUrl) return
+
+    await downloadFile(resolvedUrl, fileName)
+  }
+
   const columns: Column<Order>[] = [
-    { id: 'order_number', label: 'Order #' },
+    { id: 'order_number', label: 'Order ID' },
+    {
+      id: 'source',
+      label: 'Source',
+      render: (_v, row) => (row.is_external_api ? 'API' : String(row.source || 'Local')),
+    },
     { id: 'type', label: 'Type' },
+    {
+      id: 'awb_number',
+      label: 'AWB',
+      render: (v, row) => {
+        const trackingPath = buildOrderTrackingPath(row)
+        if (!trackingPath) return v || '—'
+
+        return (
+          <Link
+            component={RouterLink}
+            to={trackingPath}
+            underline="hover"
+            onClick={(event) => event.stopPropagation()}
+            sx={{ fontWeight: 700 }}
+          >
+            {v}
+          </Link>
+        )
+      },
+    },
     { id: 'buyer_name', label: 'Buyer Name' },
     { id: 'city', label: 'City' },
     { id: 'state', label: 'State' },
-    { id: 'order_amount', label: 'Amount' },
+    { id: 'courier_partner', label: 'Courier' },
     {
-      id: 'id',
-      label: 'Docs',
-      minWidth: 220,
-      sticky: 'right',
-      stickyOffset: 0,
-      render: (_v, row) => renderDocumentTags(row),
+      id: 'order_status',
+      label: 'Status',
+      render: (v) => <StatusChip label={v} status={statusColorMap[String(v)] || 'info'} />,
     },
     {
-      label: 'Status',
-      id: 'order_status',
-      minWidth: 150,
+      id: 'created_at',
+      label: 'Created At',
+      render: (v) => moment(v).format('DD MMM YYYY, hh:mm A'),
+    },
+    {
+      id: 'id',
+      label: 'Action',
+      minWidth: 160,
       sticky: 'right',
-      stickyOffset: 220,
-      render: (v) => <StatusChip label={v} status={statusColorMap[v] || 'info'} />,
+      stickyOffset: 0,
+      render: (_v, row) => {
+        const trackingPath = buildOrderTrackingPath(row)
+        const courierText = String(row.courier_partner || '').toLowerCase()
+        const integrationText = String(row.integration_type || '').toLowerCase()
+        const isB2C = row.type === 'b2c'
+        const isB2B = row.type === 'b2b'
+        const canB2BManifest =
+          Boolean(row.awb_number) &&
+          !row.manifest &&
+          (integrationText.includes('xpressbees') ||
+            integrationText.includes('ekart') ||
+            courierText.includes('xpressbees') ||
+            courierText.includes('ekart'))
+        const canManifest = isB2C
+          ? isB2CManifestEligible(row)
+          : isB2B
+            ? canB2BManifest
+            : false
+        const hasLabelDocument = Boolean(String(row.label_url || row.label_key || row.label || '').trim())
+        const hasInvoiceDocument = Boolean(
+          String(row.invoice_url || row.invoice_key || row.invoice_link || '').trim(),
+        )
+        const hasManifestDocument = Boolean(
+          String(row.manifest_url || row.manifest_key || row.manifest || '').trim(),
+        )
+
+        const actions: OrderActionMenuItem[] = [
+          ...(trackingPath
+            ? [
+                {
+                  key: 'view-details',
+                  label: 'View Details',
+                  icon: <MdVisibility size={18} />,
+                  onClick: () => navigate(trackingPath),
+                },
+              ]
+            : []),
+          ...(canManifest
+            ? [
+                {
+                  key: 'generate-manifest',
+                  label: 'Generate Manifest',
+                  icon: <MdLocalShipping size={18} />,
+                  onClick: () => {
+                    const awb = String(row.awb_number || row.order_number || '').trim()
+                    if (!awb) return
+                    void generateManifestService({
+                      awbs: [awb],
+                      type: isB2B ? 'b2b' : 'b2c',
+                    })
+                  },
+                },
+              ]
+            : []),
+          {
+            key: 'regenerate-label',
+            label: 'Regenerate Label',
+            icon: <MdDescription size={18} />,
+            onClick: () => handleRegenerateDocuments(row, true, false),
+          },
+          {
+            key: 'regenerate-invoice',
+            label: 'Regenerate Invoice',
+            icon: <MdDescription size={18} />,
+            onClick: () => handleRegenerateDocuments(row, false, true),
+          },
+          ...(hasLabelDocument
+            ? [
+                {
+                  key: 'download-label',
+                  label: 'Download Label',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'label'),
+                },
+              ]
+            : []),
+          ...(hasInvoiceDocument
+            ? [
+                {
+                  key: 'download-invoice',
+                  label: 'Download Invoice',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'invoice'),
+                },
+              ]
+            : []),
+          ...(hasManifestDocument
+            ? [
+                {
+                  key: 'download-manifest',
+                  label: 'Download Manifest',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'manifest'),
+                },
+              ]
+            : []),
+          ...(trackingPath
+            ? [
+                {
+                  key: 'track-shipment',
+                  label: 'Track Shipment',
+                  icon: <MdLocalShipping size={18} />,
+                  onClick: () => navigate(trackingPath),
+                },
+                {
+                  key: 'sync-live-status',
+                  label: 'Sync Live Status',
+                  icon: <MdRefresh size={18} />,
+                  onClick: () => handleSyncLiveStatus(row),
+                },
+              ]
+            : []),
+        ]
+
+        return <OrderActionsMenu actions={actions} />
+      },
     },
   ]
 

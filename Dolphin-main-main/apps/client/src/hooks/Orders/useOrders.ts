@@ -14,6 +14,7 @@ import {
   type GenerateManifestResponse,
   type RetryManifestResponse,
 } from '../../api/order.service'
+import { fetchTracking, type TrackingParams } from '../../api/tracking.service'
 import { cancelShipment as cancelShipmentApi } from '../../api/pickups'
 import { createReverseShipment } from '../../api/returns'
 import { toast } from '../../components/UI/Toast'
@@ -171,6 +172,27 @@ export const useRegenerateOrderDocuments = () => {
     onError: (error: any) => {
       const message =
         error?.response?.data?.message || error?.message || 'Failed to regenerate documents'
+      toast.open({ message, severity: 'error' })
+    },
+  })
+}
+
+export const useSyncShipmentTracking = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (params: TrackingParams) => fetchTracking(params),
+    onSuccess: () => {
+      toast.open({ message: 'Live shipment status refreshed.', severity: 'success' })
+      queryClient.invalidateQueries({ queryKey: ['b2cOrdersByUser'] })
+      queryClient.invalidateQueries({ queryKey: ['b2bOrdersByUser'] })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['tracking'] })
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to refresh live status'
       toast.open({ message, severity: 'error' })
     },
   })

@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+﻿import { useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
   AlertTitle,
@@ -11,14 +11,18 @@ import {
   useTheme,
 } from '@mui/material'
 import moment from 'moment'
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
+import { MdCancel, MdDescription, MdLocalShipping, MdRefresh, MdVisibility } from 'react-icons/md'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { generateManifestService } from '../../../api/order.service'
 import { useAllCouriersWithDetails } from '../../../hooks/Integrations/useCouriers'
 import {
   useB2COrdersByUser,
   useCancelShipment,
   useCreateReverseShipment,
+  useRegenerateOrderDocuments,
   useRetryFailedManifest,
+  useSyncShipmentTracking,
 } from '../../../hooks/Orders/useOrders'
 import { useOrderCreationGuard } from '../../../hooks/useOrderCreationGuard'
 import { usePickupAddresses } from '../../../hooks/Pickup/usePickupAddresses'
@@ -33,6 +37,8 @@ import { SmartTabs } from '../../UI/tab/Tabs'
 import DataTable, { type Column } from '../../UI/table/DataTable'
 import TableSkeleton from '../../UI/table/TableSkeleton'
 import CustomSelect from '../../UI/inputs/CustomSelect'
+import OrderActionsMenu, { type OrderActionMenuItem } from '../OrderActionsMenu'
+import { buildOrderTrackingParams, buildOrderTrackingPath } from '../orderNavigation'
 import {
   BULK_MANIFEST_LIMIT,
   downloadFile,
@@ -51,7 +57,7 @@ import { OrderExpandedRow } from '../OrderExpandedRow'
 import ReverseModal from '../reverse/ReverseModal'
 import B2COrderFormSteps from './B2COrderForm'
 
-/* ───────────── Types ───────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 interface OrderFilters {
   status?: string
   sortBy?: 'created_at'
@@ -70,7 +76,7 @@ type BulkFeedback = {
   message: string
 }
 
-/* ───────────── Status Color Mapping ───────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Status Color Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export const statusColorMap: Record<string, 'success' | 'pending' | 'error' | 'info'> = {
   pending: 'pending',
   booked: 'info',
@@ -89,7 +95,7 @@ export const statusColorMap: Record<string, 'success' | 'pending' | 'error' | 'i
   manifest_generated: 'info', // legacy
 }
 
-/* ───────────── Shipping Statuses ───────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Shipping Statuses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const shippingStatusMap: Record<string, string> = {
   pending: 'Pending',
   booked: 'Booked',
@@ -109,6 +115,7 @@ const shippingStatusMap: Record<string, string> = {
 
 const B2COrdersList = () => {
   const theme = useTheme()
+  const navigate = useNavigate()
   const isXs = useMediaQuery(theme.breakpoints.down('sm')) // mobile
   const isSm = useMediaQuery(theme.breakpoints.between('sm', 'md')) // tablet
   const isMd = useMediaQuery(theme.breakpoints.between('md', 'lg')) // small desktop
@@ -145,6 +152,10 @@ const B2COrdersList = () => {
 
   const { data, isLoading, isError } = useB2COrdersByUser(page, rowsPerPage, effectiveFilters)
   const { mutateAsync: retryFailedManifest, isPending: retryingManifest } = useRetryFailedManifest()
+  const { mutateAsync: regenerateDocuments, isPending: regeneratingDocuments } =
+    useRegenerateOrderDocuments()
+  const { mutateAsync: syncShipmentTracking, isPending: syncingTracking } =
+    useSyncShipmentTracking()
   const queryClient = useQueryClient()
   const { mutateAsync: presignDownloads } = usePresignedDownloadMutation()
   const { data: couriers } = useAllCouriersWithDetails()
@@ -169,7 +180,7 @@ const B2COrdersList = () => {
     setSelectionResetToken((current) => current + 1)
   }
 
-  /* ───────────── Handlers ───────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const handleGenerateManifest = async (order: B2COrder) => {
     const manifestRef = getB2CManifestIdentifier(order)
     if (!manifestRef) {
@@ -232,6 +243,73 @@ const B2COrdersList = () => {
   const handleRetryManifest = async (order: B2COrder) => {
     if (!order.id) return
     await retryFailedManifest(String(order.id))
+  }
+
+  const handleRegenerateDocuments = async (order: B2COrder, regenerateLabel = true, regenerateInvoice = true) => {
+    await regenerateDocuments({
+      orderId: String(order.id),
+      regenerateLabel,
+      regenerateInvoice,
+    })
+  }
+
+  const handleTrackShipment = (order: B2COrder) => {
+    const trackingPath = buildOrderTrackingPath(order)
+    if (!trackingPath) {
+      toast.open({
+        message: `Tracking details are not available yet for ${order.order_number}.`,
+        severity: 'warning',
+      })
+      return
+    }
+
+    navigate(trackingPath)
+  }
+
+  const handleSyncLiveStatus = async (order: B2COrder) => {
+    const trackingParams = buildOrderTrackingParams(order)
+    if (!trackingParams) {
+      toast.open({
+        message: `Tracking details are not available yet for ${order.order_number}.`,
+        severity: 'warning',
+      })
+      return
+    }
+
+    await syncShipmentTracking(trackingParams)
+  }
+
+  const handleDownloadDocument = async (order: B2COrder, type: DocumentType) => {
+    const { key, url } = getDocumentReference(order, type)
+
+    if (!key && !url) {
+      toast.open({
+        message: `${type[0].toUpperCase()}${type.slice(1)} is not available yet for ${order.order_number}.`,
+        severity: 'warning',
+      })
+      return
+    }
+
+    const fileName = getDownloadFileName(order, type, key || url)
+
+    if (url) {
+      await downloadFile(url, fileName)
+      return
+    }
+
+    if (!key) return
+
+    const presignedUrls = await presignDownloads({ keys: [key] })
+    const resolvedUrl = Array.isArray(presignedUrls) ? presignedUrls[0] : null
+    if (!resolvedUrl) {
+      toast.open({
+        message: `Failed to prepare ${type} download for ${order.order_number}.`,
+        severity: 'error',
+      })
+      return
+    }
+
+    await downloadFile(resolvedUrl, fileName)
   }
 
   const handleApplyFilters = (appliedFilters: OrderFilters) => {
@@ -516,7 +594,7 @@ const B2COrdersList = () => {
     }
   }
 
-  /* ───────────── Filter Fields ───────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Filter Fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const filterFields: FilterField[] = [
     {
       name: 'search',
@@ -565,7 +643,7 @@ const B2COrdersList = () => {
     ...filters,
   }
 
-  /* ───────────── Columns ───────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Columns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   const isCancellable = (row: B2COrder) => {
     const status = (row.order_status || '').toLowerCase()
     const cancellableStatuses = new Set(['pending', 'booked', 'pickup_initiated'])
@@ -573,12 +651,6 @@ const B2COrdersList = () => {
     const providerSupports = ['delhivery', 'ekart', 'xpressbees', 'shipmozo'].includes(provider)
     return providerSupports && cancellableStatuses.has(status)
   }
-
-  const hasLabelGenerated = (row: B2COrder) =>
-    Boolean(String(row.label_url || row.label_key || row.label || '').trim())
-
-  const hasInvoiceGenerated = (row: B2COrder) =>
-    Boolean(String(row.invoice_url || row.invoice_key || row.invoice_link || '').trim())
 
   const columns: Column<B2COrder>[] = [
     {
@@ -591,207 +663,226 @@ const B2COrdersList = () => {
         />
       ),
     },
-    { label: 'Order #', id: 'order_number' },
-    { label: 'AWB', id: 'awb_number' },
+    { label: 'Order ID', id: 'order_number' },
     {
-      label: 'Docs',
-      id: 'id',
-      minWidth: 220,
-      sticky: 'right',
-      stickyOffset: 140,
-      render: (_v, row) => (
-        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-          <StatusChip
-            label={hasLabelGenerated(row) ? 'Label Generated' : 'Label Pending'}
-            status={hasLabelGenerated(row) ? 'success' : 'pending'}
-          />
-          <StatusChip
-            label={hasInvoiceGenerated(row) ? 'Invoice Generated' : 'Invoice Pending'}
-            status={hasInvoiceGenerated(row) ? 'success' : 'pending'}
-          />
-        </Stack>
-      ),
+      label: 'AWB',
+      id: 'awb_number',
+      render: (v, row) => {
+        const trackingPath = buildOrderTrackingPath(row)
+        if (!trackingPath) return v || '—'
+
+        return (
+          <Link
+            component={RouterLink}
+            to={trackingPath}
+            underline="hover"
+            onClick={(event) => event.stopPropagation()}
+            sx={{ fontWeight: 700 }}
+          >
+            {v}
+          </Link>
+        )
+      },
     },
-    { label: 'Buyer', id: 'buyer_name' },
+    { label: 'Buyer Name', id: 'buyer_name' },
     {
       label: 'Order Total',
       id: 'order_amount',
-      render: (_v, row) => {
-        const orderAmount = Number(row.order_amount ?? 0)
-        const cod = Number(row.cod_charges ?? 0)
-        const customerTotal = Math.max(orderAmount - cod, 0)
-        return `₹${customerTotal.toFixed(2)}`
-      },
+      render: (v) => `Rs ${Number(v ?? 0).toFixed(2)}`,
     },
     {
       label: 'Shipping Charge',
       id: 'shipping_charges',
-      render: (v) => `₹${Number(v ?? 0).toFixed(2)}`,
+      render: (v) => `Rs ${Number(v ?? 0).toFixed(2)}`,
     },
     {
       label: 'COD Charge',
       id: 'cod_charges',
-      render: (v) => `₹${Number(v ?? 0).toFixed(2)}`,
+      render: (v) => `Rs ${Number(v ?? 0).toFixed(2)}`,
     },
     {
       label: 'Other Charge',
       id: 'other_charges',
-      render: (v) => `₹${Number(v ?? 0).toFixed(2)}`,
+      render: (v) => `Rs ${Number(v ?? 0).toFixed(2)}`,
     },
     { label: 'Courier', id: 'courier_partner' },
-
     {
-      label: 'Source',
-      id: 'is_external_api',
-      render: (_v, row) => (
-        <StatusChip
-          label={row.is_external_api ? 'API' : 'Local'}
-          status={row.is_external_api ? 'info' : 'success'}
-        />
-      ),
+      label: 'Tracking',
+      id: 'awb_number',
+      render: (_v, row) => {
+        const trackingPath = buildOrderTrackingPath(row)
+        if (!trackingPath) return '—'
+
+        return (
+          <Link
+            component={RouterLink}
+            to={trackingPath}
+            underline="hover"
+            onClick={(event) => event.stopPropagation()}
+            sx={{ fontWeight: 700 }}
+          >
+            Track
+          </Link>
+        )
+      },
     },
     {
       label: 'Status',
       id: 'order_status',
       minWidth: 150,
       sticky: 'right',
-      stickyOffset: 360,
-      render: (v) => <StatusChip label={v} status={statusColorMap[v] || 'info'} />,
+      stickyOffset: 160,
+      render: (v) => <StatusChip label={v} status={statusColorMap[String(v)] || 'info'} />,
     },
-    { label: 'Created At', id: 'created_at', render: (v) => moment(v).format('DD MMM YYYY, hh:mm A') },
-    { label: 'Last Updated', id: 'updated_at', render: (v) => moment(v).format('DD MMM YYYY, hh:mm A') },
     {
-      label: 'Actions',
+      label: 'Payment Mode',
+      id: 'order_type',
+      render: (v) => String(v || '-').toUpperCase(),
+    },
+    {
+      label: 'Created At',
+      id: 'created_at',
+      render: (v) => moment(v).format('DD MMM YYYY, hh:mm A'),
+    },
+    {
+      label: 'Tracking Updated At',
+      id: 'updated_at',
+      render: (v) => moment(v).format('DD MMM YYYY, hh:mm A'),
+    },
+    {
+      label: 'Action',
       id: 'id',
-      minWidth: 140,
+      minWidth: 160,
       sticky: 'right',
       stickyOffset: 0,
       render: (_, row) => {
-        // 1) Build actions compactly; include Reverse + Manifest + Cancel where applicable
-        const actions: ReactNode[] = []
-
-        // Show Reverse for delivered (all providers)
-        if ((row.order_status || '').toLowerCase() === 'delivered') {
-          actions.push(
-            <Button
-              key="reverse"
-              size="small"
-              variant="outlined"
-              onClick={() => setReverseOrder(row)}
-              sx={{ px: 1.25, minWidth: 0 }}
-            >
-              Reverse
-            </Button>,
-          )
-        }
-
-        if (isB2CManifestEligible(row)) {
-          actions.push(
-            <Button
-              key="manifest"
-              size="small"
-              variant="contained"
-              disabled={bulkManifesting}
-              onClick={() => handleGenerateManifest(row)}
-              sx={{ px: 1.25, minWidth: 0 }}
-            >
-              Manifest
-            </Button>,
-          )
-        }
-
+        const trackingPath = buildOrderTrackingPath(row)
+        const canManifest = isB2CManifestEligible(row)
         const retriesRemaining = Number(row.manifest_retries_remaining ?? 0)
         const canRetryManifest =
           row.can_retry_manifest === true &&
           String(row.integration_type || '').toLowerCase() === 'delhivery'
-
-        if (String(row.order_status || '').toLowerCase() === 'manifest_failed' && canRetryManifest) {
-          actions.push(
-            <Button
-              key="retry-manifest"
-              size="small"
-              variant="contained"
-              color="warning"
-              disabled={retryingManifest}
-              onClick={() => handleRetryManifest(row)}
-              sx={{ px: 1.25, minWidth: 0 }}
-            >
-              {retryingManifest ? 'Retrying...' : `Retry (${retriesRemaining} left)`}
-            </Button>,
-          )
-        }
-
-        if (isCancellable(row)) {
-          actions.push(
-            <Button
-              key="cancel"
-              size="small"
-              variant="outlined"
-              color="error"
-              onClick={() => cancelShipment(row.id as unknown as string)}
-              sx={{ px: 1.25, minWidth: 0, border: '1px solid red', color: 'red' }}
-            >
-              Cancel
-            </Button>,
-          )
-        }
-
-        // If the provider already returned a manifest/label flow and there are no direct actions, show info text
-        if (
-          actions.length === 0 &&
-          String(row.order_status || '').toLowerCase() !== 'manifest_failed' &&
-          ['delhivery', 'ekart', 'xpressbees', 'shipmozo'].includes(
-            String(row.integration_type || '').toLowerCase(),
-          )
-        ) {
-          return (
-            <Typography variant="body2" color="text.secondary">
-              Auto-Manifested{' '}
-              {/* {row.manifest && (
-                <Typography component="span" color="primary" fontWeight={500}>
-                  (Batch ID: {row.manifest})
-                </Typography>
-              )} */}
-            </Typography>
-          )
-        }
-
-        if (
-          actions.length === 0 &&
-          String(row.order_status || '').toLowerCase() === 'manifest_failed' &&
-          String(row.integration_type || '').toLowerCase() === 'delhivery'
-        ) {
-          return (
-            <Typography variant="body2" color="error.main">
-              Retry limit reached
-            </Typography>
-          )
-        }
-
-        if (row.order_status === 'manifest_generated' && row.manifest) {
-          actions.push(
-            <Link
-              key="view-manifest"
-              href={row.manifest}
-              target="_blank"
-              rel="noopener"
-              underline="hover"
-            >
-              View
-            </Link>,
-          )
-        }
-
-        return (
-          <Stack direction="row" spacing={0.75}>
-            {actions}
-          </Stack>
+        const hasLabelDocument = Boolean(String(row.label_url || row.label_key || row.label || '').trim())
+        const hasInvoiceDocument = Boolean(
+          String(row.invoice_url || row.invoice_key || row.invoice_link || '').trim(),
         )
+        const hasManifestDocument = Boolean(
+          String(row.manifest_url || row.manifest_key || row.manifest || '').trim(),
+        )
+
+        const actions: OrderActionMenuItem[] = [
+          ...(trackingPath
+            ? [
+                {
+                  key: 'view-details',
+                  label: 'View Details',
+                  icon: <MdVisibility size={18} />,
+                  onClick: () => handleTrackShipment(row),
+                },
+              ]
+            : []),
+          ...(canManifest
+            ? [
+                {
+                  key: 'generate-manifest',
+                  label: bulkManifesting ? 'Manifest unavailable' : 'Generate Manifest',
+                  icon: <MdLocalShipping size={18} />,
+                  disabled: bulkManifesting,
+                  onClick: () => handleGenerateManifest(row),
+                },
+              ]
+            : []),
+          ...(String(row.order_status || '').toLowerCase() === 'manifest_failed' && canRetryManifest
+            ? [
+                {
+                  key: 'retry-manifest',
+                  label: retryingManifest ? 'Retrying...' : `Retry (${retriesRemaining} left)`,
+                  icon: <MdRefresh size={18} />,
+                  disabled: retryingManifest,
+                  onClick: () => handleRetryManifest(row),
+                },
+              ]
+            : []),
+          {
+            key: 'regenerate-label',
+            label: regeneratingDocuments ? 'Regenerating Label...' : 'Regenerate Label',
+            icon: <MdDescription size={18} />,
+            disabled: regeneratingDocuments,
+            onClick: () => handleRegenerateDocuments(row, true, false),
+          },
+          {
+            key: 'regenerate-invoice',
+            label: regeneratingDocuments ? 'Regenerating Invoice...' : 'Regenerate Invoice',
+            icon: <MdDescription size={18} />,
+            disabled: regeneratingDocuments,
+            onClick: () => handleRegenerateDocuments(row, false, true),
+          },
+          ...(hasLabelDocument
+            ? [
+                {
+                  key: 'download-label',
+                  label: 'Download Label',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'label'),
+                },
+              ]
+            : []),
+          ...(hasInvoiceDocument
+            ? [
+                {
+                  key: 'download-invoice',
+                  label: 'Download Invoice',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'invoice'),
+                },
+              ]
+            : []),
+          ...(hasManifestDocument
+            ? [
+                {
+                  key: 'download-manifest',
+                  label: 'Download Manifest',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'manifest'),
+                },
+              ]
+            : []),
+          ...(isCancellable(row)
+            ? [
+                {
+                  key: 'cancel-shipment',
+                  label: 'Cancel Shipment',
+                  icon: <MdCancel size={18} />,
+                  danger: true,
+                  onClick: () => cancelShipment(row.id as unknown as string),
+                },
+              ]
+            : []),
+          ...(trackingPath
+            ? [
+                {
+                  key: 'track-shipment',
+                  label: 'Track Shipment',
+                  icon: <MdLocalShipping size={18} />,
+                  onClick: () => handleTrackShipment(row),
+                },
+                {
+                  key: 'sync-live-status',
+                  label: syncingTracking ? 'Syncing...' : 'Sync Live Status',
+                  icon: <MdRefresh size={18} />,
+                  disabled: syncingTracking,
+                  onClick: () => handleSyncLiveStatus(row),
+                },
+              ]
+            : []),
+        ]
+
+        return <OrderActionsMenu actions={actions} />
       },
     },
   ]
 
-  /* ───────────── Tabs ───────────── */
+  /* Tabs */
   const tabs = [
     { label: 'All', value: '' },
     ...Object.entries(shippingStatusMap).map(([value, label]) => ({
@@ -839,10 +930,10 @@ const B2COrdersList = () => {
         </Button>
       </Stack>
 
-      {/* 🔹 Status Tabs Row */}
+      {/* ðŸ”¹ Status Tabs Row */}
       <SmartTabs tabs={tabs} value={selectedTab} onChange={handleTabChange} />
 
-      {/* 🔹 Advanced Filter Bar */}
+      {/* ðŸ”¹ Advanced Filter Bar */}
       <FilterBar
         fields={filterFields}
         onApply={handleApplyFilters}
@@ -939,7 +1030,7 @@ const B2COrdersList = () => {
         </Box>
       )}
 
-      {/* 🔹 Data Table */}
+      {/* ðŸ”¹ Data Table */}
       {isLoading ? (
         <TableSkeleton />
       ) : (
@@ -995,3 +1086,5 @@ const B2COrdersList = () => {
 }
 
 export default B2COrdersList
+
+
