@@ -24,9 +24,13 @@ export const useCouriers = ({ page, limit, filters = {} }: UseCouriersParams = {
 
 export interface UseAvailableCouriersParams {
   pickupPincode: string
+  pickupCity?: string
+  pickupState?: string
   pickupName?: string
   pickupId?: string
   deliveryPincode: string
+  deliveryCity?: string
+  deliveryState?: string
   pickupAddressKey?: string
   deliveryAddressKey?: string
   weight?: number
@@ -85,7 +89,11 @@ export const useAvailableCouriers = (params: UseAvailableCouriersParams) => {
     queryFn: () =>
       fetchAvailableCouriers({
         origin: pickupPincode,
+        source_city: params.pickupCity,
+        source_state: params.pickupState,
         destination: deliveryPincode,
+        destination_city: params.deliveryCity,
+        destination_state: params.deliveryState,
         pickupId,
         payment_type: payment_type,
         order_amount: normalizedOrderAmount,
@@ -111,7 +119,11 @@ export const useAvailableCouriersMutation = () => {
 
       return fetchAvailableCouriers({
         origin: params.pickupPincode,
+        source_city: params.pickupCity,
+        source_state: params.pickupState,
         destination: params.deliveryPincode,
+        destination_city: params.deliveryCity,
+        destination_state: params.deliveryState,
         pickupId: params.pickupId,
         payment_type: params.cod && params.cod > 0 ? 'cod' : 'prepaid',
         order_amount: normalizedOrderAmount,

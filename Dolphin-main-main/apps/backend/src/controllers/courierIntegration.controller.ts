@@ -31,6 +31,14 @@ const parseOptionalNumber = (value: unknown): number | undefined => {
   return Number.isNaN(num) ? undefined : num
 }
 
+const parseOptionalString = (...values: unknown[]): string | undefined => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  }
+  return undefined
+}
+
 const extractPreferredCarrierIds = (raw: unknown): number[] | undefined => {
   if (!Array.isArray(raw)) return undefined
   const ids = raw
@@ -80,6 +88,26 @@ const buildServiceabilityOptions = (body: any): Record<string, any> => {
   if (explicitDestination !== undefined) {
     options.destination_pincode = explicitDestination
   }
+
+  const sourceCity = parseOptionalString(body?.source_city, body?.sourceCity, body?.pickupCity)
+  if (sourceCity) options.source_city = sourceCity
+
+  const sourceState = parseOptionalString(body?.source_state, body?.sourceState, body?.pickupState)
+  if (sourceState) options.source_state = sourceState
+
+  const destinationCity = parseOptionalString(
+    body?.destination_city,
+    body?.destinationCity,
+    body?.deliveryCity,
+  )
+  if (destinationCity) options.destination_city = destinationCity
+
+  const destinationState = parseOptionalString(
+    body?.destination_state,
+    body?.destinationState,
+    body?.deliveryState,
+  )
+  if (destinationState) options.destination_state = destinationState
 
   const pieceCount = parseOptionalNumber(body?.piece_count ?? body?.pieceCount ?? body?.numberOfBoxes)
   if (pieceCount !== undefined) {

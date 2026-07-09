@@ -150,7 +150,11 @@ export function RateCalculator() {
 
       const payload = {
         pickupPincode: formData.pickupPincode,
+        pickupCity: formData.pickupCity,
+        pickupState: formData.pickupState,
         deliveryPincode: formData.deliveryPincode,
+        deliveryCity: formData.deliveryCity,
+        deliveryState: formData.deliveryState,
         // 👇 send applicable weight (grams) to backend
         weight: weightToSendGrams,
         cod: formData.paymentType === 'cod' ? Math.max(orderAmountValue, 1) : 0,

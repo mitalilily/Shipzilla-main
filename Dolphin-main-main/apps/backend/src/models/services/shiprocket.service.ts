@@ -82,10 +82,10 @@ import {
 } from './b2cRateCard.service'
 import { calculateFreight } from './pricing/chargeableFreight'
 import {
-  checkCourierServiceability,
   createForwardShipment,
   generateAwb,
 } from './shiprocketExtended.service'
+import { getShiprocketCargoShipmentCharges } from './shiprocketCargo.service'
 
 // Load correct .env based on NODE_ENV
 const env = process.env.NODE_ENV || 'development'
@@ -512,6 +512,9 @@ type ShiprocketLiveCourierOption = {
   chargeableWeightG: number | null
   volumetricWeightG: number | null
   estimatedDeliveryDays: string | null
+  modeName?: string | null
+  modeId?: number | null
+  transporterId?: string | null
   raw: any
 }
 
@@ -533,19 +536,39 @@ const extractFirstArray = (payload: any): any[] => {
     if (Array.isArray(candidate)) return candidate
   }
 
-  return Object.values(payload).find((candidate) => Array.isArray(candidate)) || []
+  const firstNestedArray = Object.values(payload).find((candidate) => Array.isArray(candidate))
+  if (Array.isArray(firstNestedArray)) return firstNestedArray
+
+  const objectValues = Object.values(payload).filter(
+    (candidate) => candidate && typeof candidate === 'object',
+  )
+  const cargoRateRows = objectValues.filter((candidate: any) => {
+    const id = Number(candidate?.id ?? candidate?.courier_id ?? candidate?.courier_company_id)
+    const name = String(
+      candidate?.delivery_partner ??
+        candidate?.courier_name ??
+        candidate?.name ??
+        candidate?.common_name ??
+        '',
+    ).trim()
+    return Number.isFinite(id) && id > 0 && Boolean(name)
+  })
+
+  return cargoRateRows.length ? cargoRateRows : []
 }
 
 const parseShiprocketLiveCouriers = (payload: any): ShiprocketLiveCourierOption[] => {
   const rows = extractFirstArray(payload)
 
   return rows
-    .map((row: any) => {
+    .map((row: any): ShiprocketLiveCourierOption | null => {
       const id = Number(row?.courier_company_id ?? row?.courier_id ?? row?.id ?? row?.carrier_id)
       const name = String(
-        row?.courier_name ??
+        row?.delivery_partner ??
+          row?.courier_name ??
           row?.name ??
           row?.courier_company ??
+          row?.common_name ??
           row?.carrier_name ??
           row?.label ??
           '',
@@ -555,6 +578,9 @@ const parseShiprocketLiveCouriers = (payload: any): ShiprocketLiveCourierOption[
 
       const totalRate = Number(
         row?.rate ??
+          row?.rates ??
+          row?.working?.total ??
+          row?.working?.total_charge ??
           row?.total_charge ??
           row?.total_charges ??
           row?.freight_charge ??
@@ -593,6 +619,9 @@ const parseShiprocketLiveCouriers = (payload: any): ShiprocketLiveCourierOption[
         estimatedDeliveryDays:
           String(row?.estimated_delivery_days ?? row?.tat ?? row?.estimated_delivery_date ?? '')
             .trim() || null,
+        modeName: String(row?.mode_name ?? '').trim() || null,
+        modeId: Number.isFinite(Number(row?.mode_id)) ? Number(row?.mode_id) : null,
+        transporterId: String(row?.transporter_id ?? '').trim() || null,
         raw: row,
       }
     })
@@ -608,16 +637,41 @@ const fetchShiprocketLiveB2BCouriers = async (params: {
   length?: number
   breadth?: number
   height?: number
+  pieceCount?: number
+  originCity?: string | null
+  originState?: string | null
+  destinationCity?: string | null
+  destinationState?: string | null
 }) => {
-  const response = await checkCourierServiceability({
-    pickup_postcode: params.originPincode,
-    delivery_postcode: params.destinationPincode,
-    cod: String(params.paymentType || '').toLowerCase() === 'cod' ? 1 : 0,
-    weight: Number(params.weightKg ?? 0) > 0 ? Number(params.weightKg) : 0.5,
-    length: Number(params.length ?? 0) > 0 ? Number(params.length) : 1,
-    breadth: Number(params.breadth ?? 0) > 0 ? Number(params.breadth) : 1,
-    height: Number(params.height ?? 0) > 0 ? Number(params.height) : 1,
-    declared_value: Number(params.orderAmount ?? 0) > 0 ? Number(params.orderAmount) : 100,
+  const [originLocation, destinationLocation] = await Promise.all([
+    fetchLocationByPincode(params.originPincode),
+    fetchLocationByPincode(params.destinationPincode),
+  ])
+
+  const quantity = Math.max(1, Math.ceil(Number(params.pieceCount ?? 1) || 1))
+  const totalWeightKg = Number(params.weightKg ?? 0) > 0 ? Number(params.weightKg) : 0.5
+  const perPackageWeightKg = Math.max(totalWeightKg / quantity, 0.1)
+
+  const response = await getShiprocketCargoShipmentCharges({
+    from_pincode: params.originPincode,
+    from_city: params.originCity || originLocation?.city || '',
+    from_state: params.originState || originLocation?.state || '',
+    to_pincode: params.destinationPincode,
+    to_city: params.destinationCity || destinationLocation?.city || '',
+    to_state: params.destinationState || destinationLocation?.state || '',
+    quantity,
+    invoice_value: Number(params.orderAmount ?? 0) > 0 ? Number(params.orderAmount) : 100,
+    calculator_page: 'true',
+    packaging_unit_details: [
+      {
+        units: quantity,
+        length: Number(params.length ?? 0) > 0 ? Number(params.length) : 1,
+        height: Number(params.height ?? 0) > 0 ? Number(params.height) : 1,
+        weight: Number(perPackageWeightKg.toFixed(3)),
+        width: Number(params.breadth ?? 0) > 0 ? Number(params.breadth) : 1,
+        unit: 'cm',
+      },
+    ],
   })
 
   return parseShiprocketLiveCouriers(response)
@@ -662,6 +716,10 @@ interface NimbusServiceabilityParams {
   cost_info?: boolean
   source_pincode?: number
   destination_pincode?: number
+  source_city?: string
+  source_state?: string
+  destination_city?: string
+  destination_state?: string
   pickupId?: string
   // Hint that this call is coming from a rate calculator UI (we can skip heavy live checks)
   isCalculator?: boolean
@@ -1108,23 +1166,48 @@ async function filterCouriersByBusinessType(
 
   // Fetch business_type for all couriers
   const courierBusinessTypes = await db
-    .select({ id: couriers.id, businessType: couriers.businessType })
+    .select({
+      id: couriers.id,
+      serviceProvider: couriers.serviceProvider,
+      businessType: couriers.businessType,
+    })
     .from(couriers)
     .where(inArray(couriers.id, courierIds))
 
-  const businessTypeMap = new Map(
-    courierBusinessTypes.map((c) => [c.id, c.businessType as ('b2c' | 'b2b')[]]),
-  )
+  const normalizeProviderKey = (value: unknown) => String(value || '').trim().toLowerCase()
+  const makeKey = (id: unknown, provider: unknown) => `${Number(id)}__${normalizeProviderKey(provider)}`
+  const businessTypeMap = new Map<string, ('b2c' | 'b2b')[]>()
+  const fallbackBusinessTypeMap = new Map<number, ('b2c' | 'b2b')[]>()
+
+  for (const c of courierBusinessTypes) {
+    const types = c.businessType as ('b2c' | 'b2b')[]
+    businessTypeMap.set(makeKey(c.id, c.serviceProvider), types)
+    if (!fallbackBusinessTypeMap.has(Number(c.id))) {
+      fallbackBusinessTypeMap.set(Number(c.id), types)
+    }
+  }
 
   // Filter couriers to only include those with the expected business type
   const filtered = courierList.filter((c: any) => {
-    const types = businessTypeMap.get(c.id) || []
+    const providerKey = normalizeProviderKey(c.integration_type || c.serviceProvider)
+    const types =
+      businessTypeMap.get(makeKey(c.id, providerKey)) || fallbackBusinessTypeMap.get(Number(c.id)) || []
     const hasBusinessType = Array.isArray(types) && types.includes(expectedBusinessType)
+    const isLiveShiprocketB2B =
+      expectedBusinessType === 'b2b' &&
+      providerKey === 'shiprocket' &&
+      c.provider_serviceability &&
+      (!Array.isArray(types) || types.length === 0)
+
+    if (isLiveShiprocketB2B) {
+      return true
+    }
 
     if (!hasBusinessType) {
       console.log('🚫 Removing courier - wrong business_type', {
         courierId: c.id,
         courierName: c.name,
+        serviceProvider: providerKey,
         businessType: types,
         expected: expectedBusinessType,
       })
@@ -2157,6 +2240,11 @@ export const fetchAvailableCouriersWithRatesB2B = async (
           length: normalizedLength,
           breadth: normalizedBreadth,
           height: normalizedHeight,
+          pieceCount: params.pieceCount,
+          originCity: params.source_city,
+          originState: params.source_state,
+          destinationCity: params.destination_city,
+          destinationState: params.destination_state,
         })
       } catch (shiprocketError: any) {
         console.error('[fetchAvailableCouriersWithRatesB2B] Shiprocket live serviceability failed', {
