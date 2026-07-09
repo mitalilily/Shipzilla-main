@@ -38,6 +38,7 @@ export type ShipmozoConfig = {
 
 export type ShiprocketConfig = {
   apiBase?: string
+  clientId?: string
   email?: string
   password?: string
   apiToken?: string
@@ -235,6 +236,7 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
   if (provider === 'shiprocket') {
     const cfg: ShiprocketConfig = {
       apiBase: normalize(row.apiBase),
+      clientId: normalize(row.clientId),
       email: normalize(row.username),
       password: normalize(row.password),
       apiToken: normalize(row.apiKey),

@@ -85,7 +85,13 @@ import {
   createForwardShipment,
   generateAwb,
 } from './shiprocketExtended.service'
-import { getShiprocketCargoShipmentCharges } from './shiprocketCargo.service'
+import {
+  createShiprocketCargoOrder,
+  createShiprocketCargoShipment,
+  getShiprocketCargoClientId,
+  getShiprocketCargoShipmentCharges,
+  getShiprocketCargoShipmentDetails,
+} from './shiprocketCargo.service'
 
 // Load correct .env based on NODE_ENV
 const env = process.env.NODE_ENV || 'development'
@@ -4761,6 +4767,9 @@ export const createB2BShipmentService = async (
           ).trim(),
           invoiceDate: String(invoice?.invoiceDate ?? invoice?.invoice_date ?? '').trim(),
           invoiceValue: Number(invoice?.invoiceValue ?? invoice?.invoice_value ?? 0) || 0,
+          invoiceFileUrl: String(
+            invoice?.invoiceFileUrl ?? invoice?.invoice_file_url ?? invoice?.fileUrl ?? '',
+          ).trim(),
         }))
         .filter((invoice: any) => invoice.invoiceNumber || invoice.invoiceValue > 0)
     : []
@@ -5034,6 +5043,7 @@ export const createB2BShipmentService = async (
   }
 
   let shipmentData: any
+  let cargoOrderData: any = null
 
   try {
     if (bookingIntegrationType === 'shiprocket') {
@@ -5051,51 +5061,117 @@ export const createB2BShipmentService = async (
         )
       }
 
-      shipmentData = await createForwardShipment({
-        order_id: normalizedOrderNumber,
-        order_date:
-          String(params.order_date || '').trim() || new Date().toISOString().slice(0, 10),
-        pickup_location: pickupLocationName,
-        courier_id: params.courier_id,
-        billing_customer_name: params.consignee.name,
-        billing_last_name: '',
-        billing_address: params.consignee.address,
-        billing_address_2: params.consignee.address_2 || '',
-        billing_city: params.consignee.city,
-        billing_state: params.consignee.state,
-        billing_country: params.consignee.country || 'India',
-        billing_pincode: params.consignee.pincode,
-        billing_email: params.consignee.email || 'ops@shipzilla.in',
-        billing_phone: params.consignee.phone,
-        shipping_is_billing: true,
-        order_items: normalizedOrderItems.map((item: (typeof normalizedOrderItems)[number]) => ({
-          name: item.name,
-          sku: item.sku,
-          units: item.qty,
-          hsn: item.hsn || undefined,
-          selling_price: item.price,
-          discount: item.discount || 0,
-          tax: item.tax_rate || 0,
+      const clientId = await getShiprocketCargoClientId()
+      const invoiceNumber = String(params.invoice_number || '').trim()
+      const invoiceDate = String(params.invoice_date || '').trim()
+      const supportingDocs = normalizedInvoices
+        .map((invoice: any) => invoice.invoiceFileUrl)
+        .filter((url: string) => /^https?:\/\//i.test(url))
+
+      if (!invoiceNumber || !invoiceDate || !supportingDocs.length) {
+        throw new HttpError(
+          400,
+          'A B2B Cargo booking requires an invoice number, invoice date, and at least one uploaded invoice document.',
+        )
+      }
+
+      const pickupDateInput = String(params.pickup?.pickup_date || params.pickup_date || '').trim()
+      const pickupDate = /^\d{4}-\d{2}-\d{2}$/.test(pickupDateInput)
+        ? pickupDateInput
+        : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      const pickupTimeInput = String(params.pickup?.pickup_time || params.pickup_time || '10:00:00').trim()
+      const pickupTime = /^\d{2}:\d{2}$/.test(pickupTimeInput)
+        ? `${pickupTimeInput}:00`
+        : /^\d{2}:\d{2}:\d{2}$/.test(pickupTimeInput)
+          ? pickupTimeInput
+          : '10:00:00'
+      const requestedMode = String(
+        params.mode || params.shipping_mode || params.shipment_mode || params.courier_option_key || '',
+      ).toLowerCase()
+      const modeName = requestedMode.includes('air') ? 'air' : 'surface'
+      const isCod = String(params.payment_type || '').toLowerCase() === 'cod'
+
+      cargoOrderData = await createShiprocketCargoOrder({
+        no_of_packages: normalizedBoxes.reduce(
+          (total: number, box: any) => total + box.quantity,
+          0,
+        ),
+        invoice_value: invoiceValue,
+        approx_weight: Number(params.package_weight || derivedMetrics.package_weight),
+        is_insured: insuranceEnabled,
+        is_to_pay: false,
+        to_pay_amount: null,
+        source_warehouse_name: pickupLocationName,
+        source_address_line1: params.pickup.address,
+        source_address_line2: params.pickup.address_2 || '',
+        source_pincode: params.pickup.pincode,
+        source_city: params.pickup.city,
+        source_state: params.pickup.state,
+        sender_contact_person_name: params.pickup.name,
+        sender_contact_person_email: String((params.pickup as any)?.email || 'ops@shipzilla.in'),
+        sender_contact_person_contact_no: params.pickup.phone,
+        destination_warehouse_name: params.consignee.company_name || params.consignee.name,
+        destination_address_line1: params.consignee.address,
+        destination_address_line2: params.consignee.address_2 || '',
+        destination_pincode: params.consignee.pincode,
+        destination_city: params.consignee.city,
+        destination_state: params.consignee.state,
+        recipient_contact_person_name: params.consignee.name,
+        recipient_contact_person_email: params.consignee.email || 'ops@shipzilla.in',
+        recipient_contact_person_contact_no: params.consignee.phone,
+        client_id: clientId,
+        packaging_unit_details: normalizedBoxes.map((box: any) => ({
+          units: box.quantity,
+          weight: box.weight,
+          length: box.length,
+          height: box.height,
+          width: box.breadth,
         })),
-        payment_method:
-          String(params.payment_type || '').toLowerCase() === 'cod' ? 'COD' : 'Prepaid',
-        shipping_charges:
-          Number(params.shipping_charges ?? chargesBreakdown?.total ?? params.order_amount ?? 0) || 0,
-        transaction_charges: Number(params.transaction_fee ?? 0) || 0,
-        total_discount: Number(params.discount ?? 0) || 0,
-        giftwrap_charges: Number(params.gift_wrap ?? 0) || 0,
-        sub_total: Number(invoiceValue ?? params.order_amount ?? 0) || 0,
-        weight: Number(params.package_weight ?? 0),
-        length: Number(params.package_length ?? 0),
-        breadth: Number(params.package_breadth ?? 0),
-        height: Number(params.package_height ?? 0),
-        customer_gstin: params.consignee.gstin || undefined,
-        ewaybill_no:
+        is_cod: isCod,
+        cod_amount: isCod ? Number(params.order_amount || invoiceValue) : null,
+        mode_name: modeName,
+        channel_partner: null,
+        po_no: null,
+        po_expiry_date: null,
+        is_appointment_taken: false,
+        source: 'API',
+        supporting_docs: supportingDocs,
+      })
+
+      const cargoOrderId = Number(cargoOrderData?.order_id)
+      const cargoModeId = Number(cargoOrderData?.mode_id)
+      const cargoDeliveryPartnerId = Number(cargoOrderData?.delivery_partner_id)
+      if (!cargoOrderId || !cargoModeId || !cargoDeliveryPartnerId) {
+        throw new HttpError(
+          502,
+          'Shiprocket Cargo order creation did not return the order, mode, and delivery partner identifiers required to create a shipment.',
+        )
+      }
+
+      const cargoShipment = await createShiprocketCargoShipment({
+        client_id: clientId,
+        order_id: cargoOrderId,
+        remarks: `Shipzilla B2B order ${normalizedOrderNumber}`,
+        recipient_GST: params.consignee.gstin || null,
+        to_pay_amount: isCod ? Number(params.order_amount || invoiceValue) : '0',
+        mode_id: cargoModeId,
+        delivery_partner_id: cargoDeliveryPartnerId,
+        pickup_date_time: `${pickupDate} ${pickupTime}`,
+        eway_bill_no:
           String(
             params.ewaybill_number ?? params.ewbn ?? params.ewb ?? params.ewbn_number ?? '',
-          ).trim() || undefined,
-        request_pickup: String(params.request_auto_pickup || '').toLowerCase() === 'yes',
+          ).trim() || null,
+        invoice_value: invoiceValue,
+        invoice_number: invoiceNumber,
+        invoice_date: invoiceDate,
+        supporting_docs: supportingDocs,
+        source: 'API',
       })
+
+      shipmentData = {
+        cargo_order: cargoOrderData,
+        cargo_shipment: cargoShipment,
+      }
     } else {
       const shipmozo = new ShipmozoService()
       shipmentData = await shipmozo.createShipment({
@@ -5115,8 +5191,10 @@ export const createB2BShipmentService = async (
     throw error
   }
 
-  const shipmentRecord = shipmentData?.data || shipmentData || {}
+  let shipmentRecord = shipmentData?.data || shipmentData?.cargo_shipment || shipmentData || {}
+  const cargoOrderRecord = shipmentData?.cargo_order || cargoOrderData || {}
   const shipmentId =
+    shipmentRecord?.id ||
     shipmentRecord?.shipment_id ||
     shipmentRecord?.shipment_id?.toString?.() ||
     shipmentRecord?.shipment_data?.shipment_id ||
@@ -5131,24 +5209,24 @@ export const createB2BShipmentService = async (
     shipmentRecord?.awb_code ||
     shipmentRecord?.tracking_number ||
     shipmentRecord?.waybill_no ||
+    shipmentRecord?.shipment_p?.waybill_no ||
+    shipmentRecord?.shipment_p?.awb_number ||
     shipmentRecord?.awb ||
     ''
 
-  if (!awbNumber && bookingIntegrationType === 'shiprocket' && shipmentId && params.courier_id) {
+  if (!awbNumber && bookingIntegrationType === 'shiprocket' && shipmentId) {
     try {
-      const awbResponse = await generateAwb({
-        shipment_id: shipmentId,
-        courier_id: params.courier_id,
-      })
-      const awbPayload = awbResponse?.data || awbResponse || {}
+      const awbPayload = await getShiprocketCargoShipmentDetails(shipmentId)
+      shipmentRecord = { ...shipmentRecord, ...awbPayload }
       awbNumber =
         awbPayload?.awb_code ||
         awbPayload?.awb_number ||
         awbPayload?.tracking_number ||
+        awbPayload?.waybill_no ||
         awbPayload?.awb ||
         awbNumber
     } catch (awbError: any) {
-      console.error('Failed to generate Shiprocket AWB for B2B shipment', {
+      console.error('Failed to fetch Shiprocket Cargo AWB for B2B shipment', {
         shipmentId,
         courierId: params.courier_id,
         error: awbError?.message || awbError,
@@ -5160,6 +5238,7 @@ export const createB2BShipmentService = async (
     shipmentRecord?.courier_company_service ||
     shipmentRecord?.courier_company ||
     shipmentRecord?.courier ||
+    cargoOrderRecord?.delivery_partner_name ||
     params.courier_partner ||
     'Shiprocket'
   const courierCost =
@@ -5172,7 +5251,7 @@ export const createB2BShipmentService = async (
   const labelUrl = shipmentRecord?.label ?? shipmentRecord?.label_url ?? null
   const manifestUrl = shipmentRecord?.manifest ?? shipmentRecord?.manifest_url ?? null
 
-  if (!awbNumber) {
+  if (!awbNumber && bookingIntegrationType !== 'shiprocket') {
     await db
       .update(b2b_orders)
       .set({
@@ -5195,10 +5274,12 @@ export const createB2BShipmentService = async (
       label: labelUrl ? String(labelUrl) : null,
       manifest: manifestUrl ? String(manifestUrl) : null,
       courier_cost: courierCost != null ? String(Number(courierCost)) : null,
-      delivery_message: String(shipmentData?.message || shipmentData?.status || 'Booked').slice(
-        0,
-        100,
-      ),
+      delivery_message: String(
+        shipmentData?.message ||
+          shipmentData?.status ||
+          shipmentRecord?.status ||
+          (awbNumber ? 'Booked' : 'Cargo shipment created; AWB pending'),
+      ).slice(0, 100),
       updated_at: new Date(),
     })
     .where(eq(b2b_orders.id, pendingOrder.id))

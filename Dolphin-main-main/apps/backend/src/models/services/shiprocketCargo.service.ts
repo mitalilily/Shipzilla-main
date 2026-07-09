@@ -388,12 +388,28 @@ const resolveShiprocketCargoCredentials = async (overrides?: ShiprocketCargoAuth
     process.env.SHIPROCKET_CARGO_API_BASE?.trim() ||
     DEFAULT_SHIPROCKET_CARGO_BASE_URL
   ).replace(/\/+$/, '')
+  const clientId =
+    savedConfig?.clientId?.trim() || process.env.SHIPROCKET_CARGO_CLIENT_ID?.trim() || ''
 
   return {
     accessToken,
     refreshToken,
     apiBase,
+    clientId,
   }
+}
+
+export const getShiprocketCargoClientId = async (): Promise<number> => {
+  const { clientId } = await resolveShiprocketCargoCredentials()
+  const parsedClientId = Number(clientId)
+
+  if (!Number.isInteger(parsedClientId) || parsedClientId <= 0) {
+    throw new Error(
+      'Shiprocket Cargo Client ID is not configured. Save the numeric Client ID in Courier Credentials.',
+    )
+  }
+
+  return parsedClientId
 }
 
 const cacheShiprocketCargoToken = (accessToken: string) => {

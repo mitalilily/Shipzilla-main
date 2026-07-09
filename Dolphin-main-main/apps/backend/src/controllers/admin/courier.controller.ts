@@ -574,6 +574,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
       shiprocket: {
         provider: 'shiprocket',
         apiBase: DEFAULT_SHIPROCKET_CARGO_BASE_URL,
+        clientId: '',
         username: '',
         hasRefreshToken: false,
         refreshTokenMasked: '',
@@ -604,6 +605,7 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
         acc.shiprocket = {
           provider: 'shiprocket',
           apiBase: row.apiBase || DEFAULT_SHIPROCKET_CARGO_BASE_URL,
+          clientId: row.clientId || '',
           username: row.username || '',
           hasRefreshToken: Boolean(refreshToken.trim()),
           refreshTokenMasked: maskSecret(refreshToken),
@@ -1002,11 +1004,12 @@ export const syncProviderCouriersController = async (req: Request, res: Response
 }
 
 export const updateShiprocketCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, username, password, apiKey, accessToken, refreshToken, webhookSecret } =
+  const { apiBase, clientId, username, password, apiKey, accessToken, refreshToken, webhookSecret } =
     req.body || {}
 
   try {
     const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
+    const nextClientId = typeof clientId === 'string' ? clientId.trim() : undefined
     const nextUsername = typeof username === 'string' ? username.trim() : undefined
     const nextRefreshToken =
       typeof refreshToken === 'string'
@@ -1040,6 +1043,9 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
       if (nextApiBase !== undefined) {
         updatePayload.apiBase = nextApiBase || DEFAULT_SHIPROCKET_CARGO_BASE_URL
       }
+      if (nextClientId !== undefined) {
+        updatePayload.clientId = nextClientId
+      }
       if (nextUsername !== undefined) {
         updatePayload.username = nextUsername
       }
@@ -1063,7 +1069,7 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
         apiBase: nextApiBase || DEFAULT_SHIPROCKET_CARGO_BASE_URL,
         clientName: '',
         apiKey: hasAccessToken ? nextAccessToken : '',
-        clientId: '',
+        clientId: nextClientId || '',
         username: nextUsername || '',
         password: hasRefreshToken ? nextRefreshToken : '',
         webhookSecret: hasWebhookSecret ? nextWebhookSecret : '',
@@ -1075,6 +1081,7 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
     const [saved] = await db
       .select({
         apiBase: courier_credentials.apiBase,
+        clientId: courier_credentials.clientId,
         username: courier_credentials.username,
         password: courier_credentials.password,
         apiKey: courier_credentials.apiKey,
@@ -1090,6 +1097,7 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
       data: {
         provider: 'shiprocket',
         apiBase: saved?.apiBase || DEFAULT_SHIPROCKET_CARGO_BASE_URL,
+        clientId: saved?.clientId || '',
         username: saved?.username || '',
         hasRefreshToken: Boolean((saved?.password || '').trim()),
         refreshTokenMasked: maskSecret(saved?.password),

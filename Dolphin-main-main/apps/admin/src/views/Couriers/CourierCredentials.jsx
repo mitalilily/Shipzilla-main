@@ -35,6 +35,7 @@ const CourierCredentials = () => {
   })
   const [shiprocketForm, setShiprocketForm] = useState({
     apiBase: '',
+    clientId: '',
     accessToken: '',
     refreshToken: '',
     webhookSecret: '',
@@ -54,6 +55,7 @@ const CourierCredentials = () => {
     if (data?.shiprocket) {
       setShiprocketForm({
         apiBase: data.shiprocket.apiBase || '',
+        clientId: data.shiprocket.clientId || '',
         accessToken: '',
         refreshToken: '',
         webhookSecret: '',
@@ -96,6 +98,7 @@ const CourierCredentials = () => {
     updateShiprocket.mutate(
       {
         apiBase: shiprocketForm.apiBase,
+        clientId: shiprocketForm.clientId,
         ...(shiprocketForm.accessToken ? { accessToken: shiprocketForm.accessToken } : {}),
         ...(shiprocketForm.refreshToken ? { refreshToken: shiprocketForm.refreshToken } : {}),
         ...(shiprocketForm.webhookSecret ? { webhookSecret: shiprocketForm.webhookSecret } : {}),
@@ -259,6 +262,18 @@ const CourierCredentials = () => {
                   setShiprocketForm((prev) => ({ ...prev, apiBase: e.target.value }))
                 }
                 placeholder="https://api-cargo.shiprocket.in"
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel>Cargo Client ID</FormLabel>
+              <Input
+                inputMode="numeric"
+                value={shiprocketForm.clientId}
+                onChange={(e) =>
+                  setShiprocketForm((prev) => ({ ...prev, clientId: e.target.value }))
+                }
+                placeholder="Numeric Cargo client ID"
               />
             </FormControl>
 
