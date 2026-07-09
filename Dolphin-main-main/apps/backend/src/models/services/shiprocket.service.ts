@@ -2261,6 +2261,26 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       }
     }
 
+    const buildB2BBillingBreakdown = (input: {
+      freightCharges: number
+      codCharges: number
+      otherCharges: number
+      total: number
+      otherChargeItems?: Array<{ code?: string; name?: string; amount?: number }>
+    }) => ({
+      freight_charges: Number(input.freightCharges || 0),
+      cod_charges: Number(input.codCharges || 0),
+      other_charges: Number(input.otherCharges || 0),
+      total: Number(input.total || 0),
+      other_charge_items: (input.otherChargeItems || [])
+        .filter((charge) => Number(charge?.amount || 0) > 0)
+        .map((charge) => ({
+          code: String(charge?.code || 'OTHER'),
+          name: String(charge?.name || 'Other Charge'),
+          amount: Number(charge?.amount || 0),
+        })),
+    })
+
     // Step 3: Validate we have both zones
     if (!originZoneId || !destinationZoneId) {
       console.error('B2B Zone lookup failed:', {
@@ -2271,7 +2291,9 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       })
       if (shiprocketLiveCouriers.length) {
         return shiprocketLiveCouriers
-          .map((courier) => ({
+          .map((courier) => {
+            const freightCharges = Math.max(0, courier.rate - courier.codCharges - courier.otherCharges)
+            return {
             id: courier.id,
             courier_option_key: `shiprocket__${courier.id}`,
             name: courier.name,
@@ -2279,7 +2301,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
             integration_type: 'shiprocket',
             serviceProvider: 'shiprocket',
             rate: courier.rate,
-            freight_charges: Math.max(0, courier.rate - courier.codCharges - courier.otherCharges),
+            freight_charges: freightCharges,
             cod_charges: courier.codCharges,
             other_charges: courier.otherCharges,
             courier_cost_estimate: courier.rate,
@@ -2293,10 +2315,17 @@ export const fetchAvailableCouriersWithRatesB2B = async (
                 mode: 'b2b',
               },
             },
+            billing_breakdown: buildB2BBillingBreakdown({
+              freightCharges,
+              codCharges: courier.codCharges,
+              otherCharges: courier.otherCharges,
+              total: courier.rate,
+            }),
             estimated_delivery_days: courier.estimatedDeliveryDays,
             edd: courier.estimatedDeliveryDays,
             provider_serviceability: courier.raw,
-          }))
+            }
+          })
           .sort((a, b) => Number(a.rate ?? Infinity) - Number(b.rate ?? Infinity))
       }
 
@@ -2459,25 +2488,33 @@ export const fetchAvailableCouriersWithRatesB2B = async (
           calculatedRate?.calculation?.billableWeight ?? normalizedActualWeightKg ?? 0,
         )
         const volumetricWeightKg = Number(calculatedRate?.calculation?.volumetricWeight ?? 0)
+        const calculatedOverheads = calculatedRate?.charges?.overheads || []
+        const hasCalculatedBreakdown = Boolean(calculatedRate?.charges)
+        const calculatedCodCharges = calculatedOverheads.reduce((sum: number, charge: any) => {
+          const code = String(charge?.code ?? '').toUpperCase()
+          return code.includes('COD') ? sum + Number(charge?.amount ?? 0) : sum
+        }, 0)
+        const calculatedOtherCharges = calculatedOverheads.reduce((sum: number, charge: any) => {
+          const code = String(charge?.code ?? '').toUpperCase()
+          return code.includes('COD') ? sum : sum + Number(charge?.amount ?? 0)
+        }, Number(calculatedRate?.charges?.demurrage ?? 0))
         const totalRate = Number(
-          calculatedRate?.charges?.total ??
-            liveShiprocketCourier?.rate ??
-            Number(rate.ratePerKg ?? 0) * billableWeightKg,
+          hasCalculatedBreakdown
+            ? calculatedRate?.charges?.total
+            : liveShiprocketCourier?.rate ?? Number(rate.ratePerKg ?? 0) * billableWeightKg,
         )
         const codCharges =
           String(params.payment_type ?? '').toLowerCase() === 'cod'
-            ? ((calculatedRate?.charges?.overheads || []).reduce((sum: number, charge: any) => {
-                const code = String(charge?.code ?? '').toUpperCase()
-                return code.includes('COD') ? sum + Number(charge?.amount ?? 0) : sum
-              }, 0) || liveShiprocketCourier?.codCharges || 0)
+            ? hasCalculatedBreakdown
+              ? calculatedCodCharges
+              : Number(liveShiprocketCourier?.codCharges ?? 0)
             : 0
-        const otherCharges = Math.max(
-          0,
-          liveShiprocketCourier?.otherCharges ??
-            (Number(calculatedRate?.charges?.total ?? totalRate) -
-              Number(calculatedRate?.charges?.baseFreight ?? totalRate) -
-              codCharges),
-        )
+        const otherCharges = hasCalculatedBreakdown
+          ? Math.max(0, calculatedOtherCharges)
+          : Math.max(0, Number(liveShiprocketCourier?.otherCharges ?? 0))
+        const freightCharges = hasCalculatedBreakdown
+          ? Number(calculatedRate?.charges?.baseFreight ?? 0)
+          : Math.max(0, totalRate - codCharges - otherCharges)
 
         courierMap.set(courierKey, {
           id: liveShiprocketCourier?.id ?? courierRow.id,
@@ -2491,7 +2528,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
             liveShiprocketCourier?.chargeableWeightG ?? Math.round(billableWeightKg * 1000),
           volumetric_weight:
             liveShiprocketCourier?.volumetricWeightG ?? Math.round(volumetricWeightKg * 1000),
-          freight_charges: Math.max(0, totalRate - codCharges - otherCharges),
+          freight_charges: freightCharges,
           cod_charges: codCharges,
           other_charges: otherCharges,
           courier_cost_estimate: liveShiprocketCourier?.rate ?? totalRate,
@@ -2515,6 +2552,15 @@ export const fetchAvailableCouriersWithRatesB2B = async (
             destinationZoneCode: destinationZoneDetails[0]?.code ?? '',
             destinationZoneName: destinationZoneDetails[0]?.name ?? '',
           },
+          billing_breakdown: buildB2BBillingBreakdown({
+            freightCharges,
+            codCharges,
+            otherCharges,
+            total: totalRate,
+            otherChargeItems: calculatedOverheads.filter(
+              (charge: any) => !String(charge?.code ?? '').toUpperCase().includes('COD'),
+            ),
+          }),
           estimated_delivery_days: liveShiprocketCourier?.estimatedDeliveryDays,
           edd: liveShiprocketCourier?.estimatedDeliveryDays,
           provider_serviceability: liveShiprocketCourier?.raw ?? null,
@@ -2527,6 +2573,10 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       const courierKey = `shiprocket__${liveCourier.id}`
       if (courierMap.has(courierKey)) continue
 
+      const freightCharges = Math.max(
+        0,
+        liveCourier.rate - liveCourier.codCharges - liveCourier.otherCharges,
+      )
       courierMap.set(courierKey, {
         id: liveCourier.id,
         courier_option_key: courierKey,
@@ -2535,7 +2585,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         integration_type: 'shiprocket',
         serviceProvider: 'shiprocket',
         rate: liveCourier.rate,
-        freight_charges: Math.max(0, liveCourier.rate - liveCourier.codCharges - liveCourier.otherCharges),
+        freight_charges: freightCharges,
         cod_charges: liveCourier.codCharges,
         other_charges: liveCourier.otherCharges,
         courier_cost_estimate: liveCourier.rate,
@@ -2549,6 +2599,12 @@ export const fetchAvailableCouriersWithRatesB2B = async (
             mode: 'b2b',
           },
         },
+        billing_breakdown: buildB2BBillingBreakdown({
+          freightCharges,
+          codCharges: liveCourier.codCharges,
+          otherCharges: liveCourier.otherCharges,
+          total: liveCourier.rate,
+        }),
         approxZone: {
           id: destinationZoneDetails[0]?.id ?? destinationZoneId,
           code: destinationZoneDetails[0]?.code ?? '',
@@ -4959,6 +5015,37 @@ export const createB2BShipmentService = async (
     console.error('Failed to compute B2B charges breakdown for order', params.order_number, err)
   }
 
+  const calculatedCodCharges = (chargesBreakdown?.overheads || []).reduce((sum, charge) => {
+    return String(charge.code || '').toUpperCase().includes('COD')
+      ? sum + Number(charge.amount || 0)
+      : sum
+  }, 0)
+  const calculatedFreightCharges = Number(chargesBreakdown?.baseFreight ?? params.freight_charges ?? 0)
+  const calculatedTotalCharges = Number(
+    chargesBreakdown?.total ??
+      calculatedFreightCharges +
+        (String(params.payment_type || '').toLowerCase() === 'cod'
+          ? Number(params.cod_charges ?? 0)
+          : 0) +
+        Number(params.other_charges ?? 0),
+  )
+  const b2bBilling = {
+    freightCharges: Math.max(0, calculatedFreightCharges),
+    codCharges:
+      String(params.payment_type || '').toLowerCase() === 'cod'
+        ? Math.max(0, Number(chargesBreakdown ? calculatedCodCharges : params.cod_charges ?? 0))
+        : 0,
+    otherCharges: Math.max(
+      0,
+      calculatedTotalCharges -
+        calculatedFreightCharges -
+        (String(params.payment_type || '').toLowerCase() === 'cod'
+          ? Number(chargesBreakdown ? calculatedCodCharges : params.cod_charges ?? 0)
+          : 0),
+    ),
+    total: Math.max(0, calculatedTotalCharges),
+  }
+
   const [pendingOrder] = await db
     .insert(b2b_orders)
     .values({
@@ -4988,8 +5075,10 @@ export const createB2BShipmentService = async (
       rov_charge: insuranceEnabled ? rovCharge : null,
       charges_breakdown: chargesBreakdown,
       shipping_charges: params.shipping_charges ?? 0,
-      freight_charges: params.freight_charges ?? params.shipping_charges ?? 0,
-      courier_cost: params.courier_cost ?? null,
+      freight_charges: b2bBilling.freightCharges,
+      cod_charges: b2bBilling.codCharges,
+      other_charges: b2bBilling.otherCharges,
+      courier_cost: b2bBilling.total,
       transaction_fee: params.transaction_fee ?? 0,
       discount: params.discount ?? 0,
       gift_wrap: params.gift_wrap ? Number(params.gift_wrap) : 0,
@@ -5034,6 +5123,10 @@ export const createB2BShipmentService = async (
     package_length: Number(params.package_length ?? 0),
     package_breadth: Number(params.package_breadth ?? 0),
     package_height: Number(params.package_height ?? 0),
+    freight_charges: b2bBilling.freightCharges,
+    cod_charges: b2bBilling.codCharges,
+    other_charges: b2bBilling.otherCharges,
+    courier_cost: b2bBilling.total,
     order_items: normalizedOrderItems,
     boxes: normalizedBoxes,
     company: {

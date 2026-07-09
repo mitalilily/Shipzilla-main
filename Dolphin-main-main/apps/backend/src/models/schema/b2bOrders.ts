@@ -18,6 +18,7 @@ export const b2b_orders = pgTable(
   // 🔹 Order info
   order_number: varchar('order_number', { length: 50 }).notNull(),
   cod_charges: numeric('cod_charges').$type<number>(),
+  other_charges: numeric('other_charges').$type<number>(),
   order_id: varchar('order_id', { length: 100 }).unique(),
   order_date: varchar('order_date', { length: 50 }).notNull(),
   order_amount: numeric('order_amount').notNull(),

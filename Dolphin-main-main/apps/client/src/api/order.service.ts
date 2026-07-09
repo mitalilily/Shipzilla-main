@@ -97,6 +97,8 @@ export type CreateB2BShipmentParams = {
   order_amount: number
   shipping_charges?: number
   freight_charges?: number // What platform charges seller (based on rate card)
+  cod_charges?: number
+  other_charges?: number
   courier_cost?: number // Estimated courier cost from serviceability (what platform pays courier - can be updated via webhook)
   transaction_fee?: number
   discount?: number

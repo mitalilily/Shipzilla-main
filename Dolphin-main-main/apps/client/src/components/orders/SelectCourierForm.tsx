@@ -19,6 +19,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
   const { watch, setValue, clearErrors } = useFormContext<B2BFormData | B2CFormData>()
 
   const products = watch('products') ?? []
+  const invoices = watch('invoices') ?? []
   const deliveryPincode = watch('pincode') ?? ''
   const pickupPincode = watch('pickupLocationPincode') ?? ''
   const pickupName = watch('pickupLocationName') ?? ''
@@ -66,6 +67,11 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
         }
       })
     }
+    totalProductPrice = invoices.reduce(
+      (sum: number, invoice: { invoiceValue?: number }) =>
+        sum + Number(invoice.invoiceValue ?? 0),
+      0,
+    )
   } else if (shipment_type === 'b2c') {
     totalWeight = watch('weight') ?? 0
     totalProductPrice = products?.reduce(
@@ -422,6 +428,7 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
           <Stack spacing={2}>
             {availableCouriers?.map((courier) => {
               const local = courier?.localRates
+              const billing = courier?.billing_breakdown ?? {}
               const courierOptionKey = String(
                 courier?.courier_option_key ?? courier?.id ?? courier?.courier_id ?? '',
               )
@@ -429,10 +436,26 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
                 ? selectedCourierOptionKey === courierOptionKey
                 : String(selectedCourierId) === String(courier?.id ?? courier?.courier_id ?? '')
 
-              const forwardCharge =
-                courier?.rate !== undefined && courier?.rate !== null
-                  ? Number(courier.rate)
-                  : local?.forward?.rate ?? local?.forward?.ratePerKg
+              const forwardCharge = Number(
+                billing?.freight_charges ??
+                  courier?.freight_charges ??
+                  local?.forward?.freight_charges ??
+                  local?.forward?.rate ??
+                  local?.forward?.ratePerKg ??
+                  0,
+              )
+              const courierCodCharge = Number(
+                billing?.cod_charges ?? courier?.cod_charges ?? local?.forward?.cod_charges ?? 0,
+              )
+              const otherCharge = Number(
+                billing?.other_charges ??
+                  courier?.other_charges ??
+                  local?.forward?.other_charges ??
+                  0,
+              )
+              const totalCourierCharge = Number(
+                billing?.total ?? courier?.rate ?? forwardCharge + courierCodCharge + otherCharge,
+              )
 
               return (
                 <Paper
@@ -442,12 +465,12 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
                     setValue('courierPartnerId', courier?.id ?? '')
                     setValue('courierOptionKey', courierOptionKey)
                     setValue('selectedMaxSlabWeight', courier?.max_slab_weight ?? null)
-                    setValue('courierCod', local?.forward?.cod_charges ?? 0)
+                    setValue('courierCod', courierCodCharge)
                     setValue('forwardCharges', forwardCharge)
-                    setValue('otherCharges', local?.forward?.other_charges ?? 0)
+                    setValue('otherCharges', otherCharge)
                     setValue(
                       'courierCost',
-                      courier?.courier_cost_estimate || courier?.rateEstimate || null,
+                      totalCourierCharge || courier?.courier_cost_estimate || courier?.rateEstimate || null,
                     ) // Estimated courier cost from serviceability
                     setValue('integrationType', courier?.integration_type)
                     setValue('zone', courier?.approxZone?.code ?? courier?.approxZone?.name ?? '')
@@ -535,18 +558,19 @@ export const SelectCourierForm = ({ shipment_type }: { shipment_type: 'b2b' | 'b
 
                       <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.25}>
                         <Typography sx={{ fontSize: 12, color: TEXT_SECONDARY }}>
-                          Forward Freight
+                          Estimated Total
                         </Typography>
                         <Typography sx={{ fontSize: 28, fontWeight: 900, color: TEXT_PRIMARY }}>
-                          {formatCurrency(forwardCharge)}
+                          {formatCurrency(totalCourierCharge)}
                         </Typography>
                       </Stack>
                     </Stack>
 
                     <Grid container spacing={1.1}>
                       {[
-                        ['COD', formatCurrency(local?.forward?.cod_charges)],
-                        ['Other', formatCurrency(local?.forward?.other_charges)],
+                        ['Freight', formatCurrency(forwardCharge)],
+                        ['COD', formatCurrency(courierCodCharge)],
+                        ['Other', formatCurrency(otherCharge)],
                         ['Chargeable', formatWeightKg(courier?.chargeable_weight)],
                         ['Volumetric', formatWeightKg(courier?.volumetric_weight)],
                       ].map(([label, value]) => (

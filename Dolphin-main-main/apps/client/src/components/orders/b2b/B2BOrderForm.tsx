@@ -208,6 +208,8 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
         order_amount: totalCollectable,
         shipping_charges: 0,
         freight_charges: data.forwardCharges ?? 0, // What platform charges seller (based on rate card)
+        cod_charges: data.orderType === 'cod' ? Number(data.courierCod ?? 0) : 0,
+        other_charges: Number(data.otherCharges ?? 0),
         courier_cost: data.courierCost ? Number(data.courierCost) : undefined, // Estimated courier cost from serviceability (what platform pays courier)
         transaction_fee: data.transactionFee ?? 0,
         discount: data.discount ?? 0,

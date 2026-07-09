@@ -1,0 +1,2 @@
+ALTER TABLE b2b_orders
+  ADD COLUMN IF NOT EXISTS other_charges NUMERIC(10, 2);
