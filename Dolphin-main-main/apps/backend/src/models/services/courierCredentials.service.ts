@@ -41,6 +41,8 @@ export type ShiprocketConfig = {
   email?: string
   password?: string
   apiToken?: string
+  accessToken?: string
+  refreshToken?: string
   webhookSecret?: string
 }
 
@@ -109,6 +111,7 @@ const KNOWN_PROVIDERS: ServiceProviderId[] = ['shipmozo', 'shiprocket']
 export const DEFAULT_EKART_BASE_URL = 'https://app.elite.ekartlogistics.in'
 export const DEFAULT_SHIPMOZO_BASE_URL = 'https://shipping-api.com/app/api/v1'
 export const DEFAULT_SHIPROCKET_BASE_URL = 'https://apiv2.shiprocket.in/v1/external'
+export const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
 
 const getEnvValue = (...names: string[]) => {
   for (const name of names) {
@@ -154,6 +157,14 @@ const hasEnvForProviderAndType = (provider: ServiceProviderId, _type: BusinessTy
     )
   }
   if (provider === 'shiprocket') {
+    if (_type === 'b2b') {
+      return !!(
+        process.env.SHIPROCKET_CARGO_API_TOKEN ||
+        process.env.SHIPROCKET_CARGO_REFRESH_TOKEN ||
+        process.env.SHIPROCKET_CARGO_API_BASE
+      )
+    }
+
     return !!(
       process.env.SHIPROCKET_AUTH_TOKEN ||
       process.env.SHIPROCKET_API_TOKEN ||
@@ -227,6 +238,8 @@ const buildConfigFromRow = (provider: ServiceProviderId, row: typeof courierCred
       email: normalize(row.username),
       password: normalize(row.password),
       apiToken: normalize(row.apiKey),
+      accessToken: normalize(row.apiKey),
+      refreshToken: normalize(row.password),
       webhookSecret: normalize(row.webhookSecret),
     }
     return cfg
@@ -273,10 +286,17 @@ export const upsertCourierCredentials = async (
     provider: serviceProvider,
     apiBase: normalizedApiBase,
     clientName: normalize((mergedConfig?.clientName as string) || ''),
-    apiKey: normalize((mergedConfig?.apiKey as string) || (mergedConfig?.apiToken as string) || ''),
+    apiKey: normalize(
+      (mergedConfig?.apiKey as string) ||
+        (mergedConfig?.apiToken as string) ||
+        (mergedConfig?.accessToken as string) ||
+        '',
+    ),
     clientId: normalize((mergedConfig?.clientId as string) || ''),
     username: normalize((mergedConfig?.username as string) || (mergedConfig?.email as string) || ''),
-    password: normalize((mergedConfig?.password as string) || ''),
+    password: normalize(
+      (mergedConfig?.password as string) || (mergedConfig?.refreshToken as string) || '',
+    ),
     webhookSecret: normalize((mergedConfig?.webhookSecret as string) || ''),
     updatedAt: new Date(),
   }

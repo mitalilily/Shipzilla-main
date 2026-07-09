@@ -1,4 +1,9 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
+import {
+  DEFAULT_SHIPROCKET_CARGO_BASE_URL,
+  getEffectiveCourierConfig,
+  ShiprocketConfig,
+} from './courierCredentials.service'
 
 type ShiprocketCargoAuthOverrides = {
   accessToken?: string
@@ -335,8 +340,6 @@ export type ShiprocketCargoAddAppointmentPayload = {
 
 export type ShiprocketCargoAddAppointmentResponse = Record<string, unknown> | null
 
-const DEFAULT_SHIPROCKET_CARGO_BASE_URL = 'https://api-cargo.shiprocket.in'
-
 let cachedCargoAccessToken: string | null = null
 let cargoTokenExpiry: number | null = null
 
@@ -357,13 +360,31 @@ const parseJwtExpiry = (token: string): number | null => {
   return null
 }
 
-const resolveShiprocketCargoCredentials = (overrides?: ShiprocketCargoAuthOverrides) => {
+const resolveShiprocketCargoCredentials = async (overrides?: ShiprocketCargoAuthOverrides) => {
+  let savedConfig: ShiprocketConfig | null = null
+  try {
+    savedConfig = await getEffectiveCourierConfig<ShiprocketConfig>('shiprocket', 'b2b')
+  } catch (error: any) {
+    console.warn(
+      '[Shiprocket Cargo] Saved credentials unavailable, using env fallback:',
+      error?.message || error,
+    )
+  }
+
   const accessToken =
-    overrides?.accessToken?.trim() || process.env.SHIPROCKET_CARGO_API_TOKEN?.trim() || ''
+    overrides?.accessToken?.trim() ||
+    savedConfig?.accessToken?.trim() ||
+    savedConfig?.apiToken?.trim() ||
+    process.env.SHIPROCKET_CARGO_API_TOKEN?.trim() ||
+    ''
   const refreshToken =
-    overrides?.refreshToken?.trim() || process.env.SHIPROCKET_CARGO_REFRESH_TOKEN?.trim() || ''
+    overrides?.refreshToken?.trim() ||
+    savedConfig?.refreshToken?.trim() ||
+    process.env.SHIPROCKET_CARGO_REFRESH_TOKEN?.trim() ||
+    ''
   const apiBase = (
     overrides?.apiBase?.trim() ||
+    savedConfig?.apiBase?.trim() ||
     process.env.SHIPROCKET_CARGO_API_BASE?.trim() ||
     DEFAULT_SHIPROCKET_CARGO_BASE_URL
   ).replace(/\/+$/, '')
@@ -388,7 +409,7 @@ export const clearShiprocketCargoTokenCache = () => {
 export const refreshShiprocketCargoAccessToken = async (
   overrides?: ShiprocketCargoAuthOverrides,
 ): Promise<ShiprocketCargoAuthResponse> => {
-  const { accessToken, refreshToken, apiBase } = resolveShiprocketCargoCredentials(overrides)
+  const { accessToken, refreshToken, apiBase } = await resolveShiprocketCargoCredentials(overrides)
 
   if (!accessToken) {
     throw new Error(
@@ -450,15 +471,16 @@ export const shiprocketCargoRequest = async <T = any>(
   body?: unknown,
   options?: ShiprocketCargoRequestOptions,
 ): Promise<T> => {
-  const { apiBase } = resolveShiprocketCargoCredentials({ apiBase: options?.apiBase })
+  const resolvedCredentials = await resolveShiprocketCargoCredentials({
+    accessToken: options?.accessToken,
+    refreshToken: options?.refreshToken,
+    apiBase: options?.apiBase,
+  })
+  const { apiBase } = resolvedCredentials
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const query = options?.query
   const token = options?.skipRefresh
-    ? resolveShiprocketCargoCredentials({
-        accessToken: options?.accessToken,
-        refreshToken: options?.refreshToken,
-        apiBase: options?.apiBase,
-      }).accessToken
+    ? resolvedCredentials.accessToken
     : await getShiprocketCargoAccessToken({
         accessToken: options?.accessToken,
         refreshToken: options?.refreshToken,

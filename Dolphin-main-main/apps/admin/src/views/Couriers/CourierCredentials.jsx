@@ -35,9 +35,8 @@ const CourierCredentials = () => {
   })
   const [shiprocketForm, setShiprocketForm] = useState({
     apiBase: '',
-    username: '',
-    password: '',
-    apiKey: '',
+    accessToken: '',
+    refreshToken: '',
     webhookSecret: '',
   })
 
@@ -55,9 +54,8 @@ const CourierCredentials = () => {
     if (data?.shiprocket) {
       setShiprocketForm({
         apiBase: data.shiprocket.apiBase || '',
-        username: data.shiprocket.username || '',
-        password: '',
-        apiKey: '',
+        accessToken: '',
+        refreshToken: '',
         webhookSecret: '',
       })
     }
@@ -98,9 +96,8 @@ const CourierCredentials = () => {
     updateShiprocket.mutate(
       {
         apiBase: shiprocketForm.apiBase,
-        username: shiprocketForm.username,
-        ...(shiprocketForm.password ? { password: shiprocketForm.password } : {}),
-        ...(shiprocketForm.apiKey ? { apiKey: shiprocketForm.apiKey } : {}),
+        ...(shiprocketForm.accessToken ? { accessToken: shiprocketForm.accessToken } : {}),
+        ...(shiprocketForm.refreshToken ? { refreshToken: shiprocketForm.refreshToken } : {}),
         ...(shiprocketForm.webhookSecret ? { webhookSecret: shiprocketForm.webhookSecret } : {}),
       },
       {
@@ -108,8 +105,8 @@ const CourierCredentials = () => {
           toast({ title: 'Shiprocket credentials updated', status: 'success' })
           setShiprocketForm((prev) => ({
             ...prev,
-            password: '',
-            apiKey: '',
+            accessToken: '',
+            refreshToken: '',
             webhookSecret: '',
           }))
         },
@@ -243,10 +240,12 @@ const CourierCredentials = () => {
               <Text fontWeight="semibold">Shiprocket Cargo</Text>
               <Badge
                 colorScheme={
-                  data?.shiprocket?.hasApiKey || data?.shiprocket?.hasPassword ? 'green' : 'orange'
+                  data?.shiprocket?.hasAccessToken && data?.shiprocket?.hasRefreshToken
+                    ? 'green'
+                    : 'orange'
                 }
               >
-                {data?.shiprocket?.hasApiKey || data?.shiprocket?.hasPassword
+                {data?.shiprocket?.hasAccessToken && data?.shiprocket?.hasRefreshToken
                   ? 'Configured'
                   : 'Missing credentials'}
               </Badge>
@@ -259,56 +258,46 @@ const CourierCredentials = () => {
                 onChange={(e) =>
                   setShiprocketForm((prev) => ({ ...prev, apiBase: e.target.value }))
                 }
-                placeholder="https://apiv2.shiprocket.in/v1/external"
+                placeholder="https://api-cargo.shiprocket.in"
               />
             </FormControl>
 
-            <FormControl>
-              <FormLabel>Email</FormLabel>
-              <Input
-                value={shiprocketForm.username}
-                onChange={(e) =>
-                  setShiprocketForm((prev) => ({ ...prev, username: e.target.value }))
-                }
-                placeholder="Shiprocket email"
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Password</FormLabel>
+            <FormControl isRequired>
+              <FormLabel>Access Token</FormLabel>
               <Input
                 type="password"
-                value={shiprocketForm.password}
+                value={shiprocketForm.accessToken}
                 onChange={(e) =>
-                  setShiprocketForm((prev) => ({ ...prev, password: e.target.value }))
+                  setShiprocketForm((prev) => ({ ...prev, accessToken: e.target.value }))
                 }
-                placeholder="Leave blank to keep saved password"
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>API Token</FormLabel>
-              <Input
-                type="password"
-                value={shiprocketForm.apiKey}
-                onChange={(e) =>
-                  setShiprocketForm((prev) => ({ ...prev, apiKey: e.target.value }))
+                placeholder={
+                  data?.shiprocket?.accessTokenMasked || 'Leave blank to keep saved access token'
                 }
-                placeholder={data?.shiprocket?.apiKeyMasked || 'Shiprocket API token'}
               />
-              {!!data?.shiprocket?.apiKeyMasked && (
+              {!!data?.shiprocket?.accessTokenMasked && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Current token: {data.shiprocket.apiKeyMasked}
+                  Current access token: {data.shiprocket.accessTokenMasked}
                 </Text>
               )}
             </FormControl>
 
-            <FormControl>
-              <FormLabel>Webhook URL</FormLabel>
+            <FormControl isRequired>
+              <FormLabel>Refresh Token</FormLabel>
               <Input
-                value="https://api.shipzilla.in/api/webhook/shiprocket"
-                isReadOnly
+                type="password"
+                value={shiprocketForm.refreshToken}
+                onChange={(e) =>
+                  setShiprocketForm((prev) => ({ ...prev, refreshToken: e.target.value }))
+                }
+                placeholder={
+                  data?.shiprocket?.refreshTokenMasked || 'Leave blank to keep saved refresh token'
+                }
               />
+              {!!data?.shiprocket?.refreshTokenMasked && (
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  Current refresh token: {data.shiprocket.refreshTokenMasked}
+                </Text>
+              )}
             </FormControl>
 
             <FormControl>

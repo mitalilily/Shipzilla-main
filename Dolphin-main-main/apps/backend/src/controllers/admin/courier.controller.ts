@@ -10,13 +10,14 @@ import {
 } from '../../models/services/courierIntegration.service'
 import {
   DEFAULT_EKART_BASE_URL,
+  DEFAULT_SHIPROCKET_CARGO_BASE_URL,
   DEFAULT_SHIPMOZO_BASE_URL,
-  DEFAULT_SHIPROCKET_BASE_URL,
   normalizeEkartBaseUrl,
 } from '../../models/services/courierCredentials.service'
 import { EkartService } from '../../models/services/couriers/ekart.service'
 import { ShipmozoService } from '../../models/services/couriers/shipmozo.service'
 import { XpressbeesService } from '../../models/services/couriers/xpressbees.service'
+import { clearShiprocketCargoTokenCache } from '../../models/services/shiprocketCargo.service'
 import { fetchAvailableCouriersWithRatesAdmin } from '../../models/services/shiprocket.service'
 import { listCouriersWithCounts } from '../../models/services/shiprocketExtended.service'
 import { courier_credentials } from '../../models/schema/courierCredentials'
@@ -572,11 +573,12 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
       },
       shiprocket: {
         provider: 'shiprocket',
-        apiBase: DEFAULT_SHIPROCKET_BASE_URL,
+        apiBase: DEFAULT_SHIPROCKET_CARGO_BASE_URL,
         username: '',
-        hasPassword: false,
-        hasApiKey: false,
-        apiKeyMasked: '',
+        hasRefreshToken: false,
+        refreshTokenMasked: '',
+        hasAccessToken: false,
+        accessTokenMasked: '',
         hasWebhookSecret: false,
       },
     }
@@ -597,14 +599,16 @@ export const getCourierCredentialsController = async (req: Request, res: Respons
           hasWebhookSecret: Boolean((row.webhookSecret || '').trim()),
         }
       } else if (provider === 'shiprocket') {
-        const apiKey = row.apiKey || ''
+        const accessToken = row.apiKey || ''
+        const refreshToken = row.password || ''
         acc.shiprocket = {
           provider: 'shiprocket',
-          apiBase: row.apiBase || DEFAULT_SHIPROCKET_BASE_URL,
+          apiBase: row.apiBase || DEFAULT_SHIPROCKET_CARGO_BASE_URL,
           username: row.username || '',
-          hasPassword: Boolean((row.password || '').trim()),
-          hasApiKey: Boolean(apiKey.trim()),
-          apiKeyMasked: maskSecret(apiKey),
+          hasRefreshToken: Boolean(refreshToken.trim()),
+          refreshTokenMasked: maskSecret(refreshToken),
+          hasAccessToken: Boolean(accessToken.trim()),
+          accessTokenMasked: maskSecret(accessToken),
           hasWebhookSecret: Boolean((row.webhookSecret || '').trim()),
         }
       }
@@ -998,17 +1002,28 @@ export const syncProviderCouriersController = async (req: Request, res: Response
 }
 
 export const updateShiprocketCredentialsController = async (req: Request, res: Response) => {
-  const { apiBase, username, password, apiKey, webhookSecret } = req.body || {}
+  const { apiBase, username, password, apiKey, accessToken, refreshToken, webhookSecret } =
+    req.body || {}
 
   try {
     const nextApiBase = typeof apiBase === 'string' ? apiBase.trim() : undefined
     const nextUsername = typeof username === 'string' ? username.trim() : undefined
-    const nextPassword = typeof password === 'string' ? password.trim() : undefined
-    const nextApiKey = typeof apiKey === 'string' ? apiKey.trim() : undefined
+    const nextRefreshToken =
+      typeof refreshToken === 'string'
+        ? refreshToken.trim()
+        : typeof password === 'string'
+          ? password.trim()
+          : undefined
+    const nextAccessToken =
+      typeof accessToken === 'string'
+        ? accessToken.trim()
+        : typeof apiKey === 'string'
+          ? apiKey.trim()
+          : undefined
     const nextWebhookSecret =
       typeof webhookSecret === 'string' ? webhookSecret.trim() : undefined
-    const hasPassword = typeof nextPassword === 'string' && nextPassword.length > 0
-    const hasApiKey = typeof nextApiKey === 'string' && nextApiKey.length > 0
+    const hasRefreshToken = typeof nextRefreshToken === 'string' && nextRefreshToken.length > 0
+    const hasAccessToken = typeof nextAccessToken === 'string' && nextAccessToken.length > 0
     const hasWebhookSecret =
       typeof nextWebhookSecret === 'string' && nextWebhookSecret.length > 0
 
@@ -1023,16 +1038,16 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
         updatedAt: new Date(),
       }
       if (nextApiBase !== undefined) {
-        updatePayload.apiBase = nextApiBase || DEFAULT_SHIPROCKET_BASE_URL
+        updatePayload.apiBase = nextApiBase || DEFAULT_SHIPROCKET_CARGO_BASE_URL
       }
       if (nextUsername !== undefined) {
         updatePayload.username = nextUsername
       }
-      if (hasPassword) {
-        updatePayload.password = nextPassword
+      if (hasRefreshToken) {
+        updatePayload.password = nextRefreshToken
       }
-      if (hasApiKey) {
-        updatePayload.apiKey = nextApiKey
+      if (hasAccessToken) {
+        updatePayload.apiKey = nextAccessToken
       }
       if (hasWebhookSecret) {
         updatePayload.webhookSecret = nextWebhookSecret
@@ -1045,15 +1060,17 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
     } else {
       await db.insert(courier_credentials).values({
         provider: 'shiprocket',
-        apiBase: nextApiBase || DEFAULT_SHIPROCKET_BASE_URL,
+        apiBase: nextApiBase || DEFAULT_SHIPROCKET_CARGO_BASE_URL,
         clientName: '',
-        apiKey: hasApiKey ? nextApiKey : '',
+        apiKey: hasAccessToken ? nextAccessToken : '',
         clientId: '',
         username: nextUsername || '',
-        password: hasPassword ? nextPassword : '',
+        password: hasRefreshToken ? nextRefreshToken : '',
         webhookSecret: hasWebhookSecret ? nextWebhookSecret : '',
       })
     }
+
+    clearShiprocketCargoTokenCache()
 
     const [saved] = await db
       .select({
@@ -1072,11 +1089,12 @@ export const updateShiprocketCredentialsController = async (req: Request, res: R
       message: 'Shiprocket credentials updated successfully',
       data: {
         provider: 'shiprocket',
-        apiBase: saved?.apiBase || DEFAULT_SHIPROCKET_BASE_URL,
+        apiBase: saved?.apiBase || DEFAULT_SHIPROCKET_CARGO_BASE_URL,
         username: saved?.username || '',
-        hasPassword: Boolean((saved?.password || '').trim()),
-        hasApiKey: Boolean((saved?.apiKey || '').trim()),
-        apiKeyMasked: maskSecret(saved?.apiKey),
+        hasRefreshToken: Boolean((saved?.password || '').trim()),
+        refreshTokenMasked: maskSecret(saved?.password),
+        hasAccessToken: Boolean((saved?.apiKey || '').trim()),
+        accessTokenMasked: maskSecret(saved?.apiKey),
         hasWebhookSecret: Boolean((saved?.webhookSecret || '').trim()),
       },
     })
