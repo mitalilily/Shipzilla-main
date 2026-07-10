@@ -7,6 +7,7 @@ BACKEND_ENV="${BACKEND_ENV:-/etc/shipzilla/backend.env}"
 BACKEND_PORT="${BACKEND_PORT:-5002}"
 PM2_APP_NAME="${PM2_APP_NAME:-shipzilla-api}"
 LEGACY_PM2_APP_NAMES="${LEGACY_PM2_APP_NAMES:-dolphin-api}"
+EXPECTED_DB_NAME="${EXPECTED_DB_NAME:-shipzilla}"
 ENSURE_ADMIN_USER="${ENSURE_ADMIN_USER:-true}"
 PURGE_UNSUPPORTED_COURIERS="${PURGE_UNSUPPORTED_COURIERS:-true}"
 PURGE_UNSUPPORTED_COURIER_CREDENTIALS="${PURGE_UNSUPPORTED_COURIER_CREDENTIALS:-true}"
@@ -347,6 +348,15 @@ fi
 export SMTP_HOST="${SMTP_HOST:-smtp.gmail.com}"
 export SMTP_PORT="${SMTP_PORT:-587}"
 export SMTP_SECURE="${SMTP_SECURE:-false}"
+
+db_name_from_url="${DATABASE_URL##*/}"
+db_name_from_url="${db_name_from_url%%\?*}"
+
+if [ "$db_name_from_url" != "$EXPECTED_DB_NAME" ]; then
+  echo "Refusing to deploy: DATABASE_URL targets '$db_name_from_url', expected '$EXPECTED_DB_NAME'." >&2
+  echo "Update $BACKEND_ENV so Shipzilla points to the correct database before deploying." >&2
+  exit 1
+fi
 
 for legacy_app in $LEGACY_PM2_APP_NAMES; do
   if [ "$legacy_app" != "$PM2_APP_NAME" ] && pm2 describe "$legacy_app" >/dev/null 2>&1; then
