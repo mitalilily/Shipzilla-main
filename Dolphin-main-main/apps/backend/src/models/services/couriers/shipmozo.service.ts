@@ -303,6 +303,11 @@ export class ShipmozoService {
     }
   }
 
+  private isUnauthorizedResponse<T>(response?: ShipmozoApiResponse<T> | null) {
+    if (String(response?.result ?? '') !== '0') return false
+    return /unauthori[sz]ed request/i.test(trim(response?.message))
+  }
+
   async getApiKeys(forceLogin = false): Promise<ShipmozoKeys> {
     await this.ensureConfigLoaded()
     if (!forceLogin && ShipmozoService.cachedKeys) return ShipmozoService.cachedKeys
@@ -358,19 +363,36 @@ export class ShipmozoService {
   }
 
   private async get<T>(path: string, params?: Record<string, any>) {
-    const keys = await this.getApiKeys()
-    const response = await this.http(this.authHeaders(keys)).get<ShipmozoApiResponse<T>>(path, {
+    let keys = await this.getApiKeys()
+    let response = await this.http(this.authHeaders(keys)).get<ShipmozoApiResponse<T>>(path, {
       params,
     })
+
+    if (this.isUnauthorizedResponse(response.data)) {
+      keys = await this.getApiKeys(true)
+      response = await this.http(this.authHeaders(keys)).get<ShipmozoApiResponse<T>>(path, {
+        params,
+      })
+    }
+
     return response.data
   }
 
   private async post<T>(path: string, data: Record<string, any>) {
-    const keys = await this.getApiKeys()
-    const response = await this.http(this.authHeaders(keys)).post<ShipmozoApiResponse<T>>(
+    let keys = await this.getApiKeys()
+    let response = await this.http(this.authHeaders(keys)).post<ShipmozoApiResponse<T>>(
       path,
       data,
     )
+
+    if (this.isUnauthorizedResponse(response.data)) {
+      keys = await this.getApiKeys(true)
+      response = await this.http(this.authHeaders(keys)).post<ShipmozoApiResponse<T>>(
+        path,
+        data,
+      )
+    }
+
     return response.data
   }
 

@@ -28,7 +28,6 @@ import { useOrderCreationGuard } from '../../../hooks/useOrderCreationGuard'
 import { usePickupAddresses } from '../../../hooks/Pickup/usePickupAddresses'
 import { usePresignedDownloadMutation } from '../../../hooks/Uploads/usePresignedDownloadUrls'
 import type { B2COrder } from '../../../types/generic.types'
-import { getTodayDateInputValue } from '../../../utils/date'
 import { FilterBar, type FilterField } from '../../FilterBar'
 import { toast } from '../../UI/Toast'
 import StatusChip from '../../UI/chip/StatusChip'
@@ -126,7 +125,6 @@ const B2COrdersList = () => {
   else if (isSm) drawerWidth = '95%' // tablets
   else if (isMd) drawerWidth = '95%' // small desktops
   else if (isLgUp) drawerWidth = 1200 // large desktop fixed width
-  const todayDate = getTodayDateInputValue()
   const [page, setPage] = useState(1)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -139,7 +137,6 @@ const B2COrdersList = () => {
     status: '',
     sortBy: 'created_at',
     sortOrder: 'desc',
-    fromDate: todayDate,
   })
   const [selectedTab, setSelectedTab] = useState<string>('')
 
@@ -317,7 +314,7 @@ const B2COrdersList = () => {
     setFilters((prev) => ({
       ...prev,
       ...appliedFilters,
-      fromDate: appliedFilters.fromDate || todayDate,
+      fromDate: appliedFilters.fromDate || undefined,
       status: appliedFilters.status !== undefined ? appliedFilters.status : prev.status,
       sortBy: appliedFilters.sortBy !== undefined ? appliedFilters.sortBy : prev.sortBy,
       sortOrder: appliedFilters.sortOrder !== undefined ? appliedFilters.sortOrder : prev.sortOrder,
@@ -639,7 +636,6 @@ const B2COrdersList = () => {
   const defaultFilterValues: Record<string, unknown> = {
     sortBy: 'created_at',
     sortOrder: 'desc',
-    fromDate: todayDate,
     ...filters,
   }
 

@@ -27,17 +27,15 @@ export const formatDateInputValue = (date: Date) => {
 }
 
 export const getVisibleOrdersStartDate = () => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return today
+  const firstVisibleDate = new Date(0)
+  firstVisibleDate.setHours(0, 0, 0, 0)
+  return firstVisibleDate
 }
 
 export const clampOrdersFromDate = (value?: string | null) => {
-  const minimumDate = getVisibleOrdersStartDate()
-  const parsed = parseDateValue(value) ?? new Date(minimumDate)
+  const parsed = parseDateValue(value) ?? getVisibleOrdersStartDate()
   parsed.setHours(0, 0, 0, 0)
-
-  return parsed < minimumDate ? minimumDate : parsed
+  return parsed
 }
 
 export const getOrdersToDate = (value?: string | null) => {
