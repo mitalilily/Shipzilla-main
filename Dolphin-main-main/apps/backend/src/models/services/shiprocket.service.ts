@@ -389,6 +389,36 @@ async function fetchPickupWarehouseRecord(
   return warehouse ?? null
 }
 
+async function fetchPreferredPickupWarehouseRecord(
+  userId: string,
+  pickupLocationId?: string,
+): Promise<PickupWarehouseRecord | null> {
+  const requestedWarehouse = await fetchPickupWarehouseRecord(userId, pickupLocationId)
+  if (requestedWarehouse) return requestedWarehouse
+
+  const [primaryWarehouse] = await db
+    .select({
+      pickupId: pickupAddresses.id,
+      addressNickname: addresses.addressNickname,
+      addressLine1: addresses.addressLine1,
+      addressLine2: addresses.addressLine2,
+      city: addresses.city,
+      state: addresses.state,
+      pincode: addresses.pincode,
+      contactName: addresses.contactName,
+      contactPhone: addresses.contactPhone,
+      gstNumber: addresses.gstNumber,
+      country: addresses.country,
+    })
+    .from(pickupAddresses)
+    .innerJoin(addresses, eq(pickupAddresses.addressId, addresses.id))
+    .where(and(eq(pickupAddresses.userId, userId), eq(pickupAddresses.isPickupEnabled, true)))
+    .orderBy(desc(pickupAddresses.isPrimary))
+    .limit(1)
+
+  return primaryWarehouse ?? null
+}
+
 async function ensureUniqueMerchantOrderNumber(
   tx: PgTransaction<any, any, any>,
   userId: string,
@@ -4924,8 +4954,9 @@ export const createB2BShipmentService = async (
     params.invoice_date = normalizedInvoices[0].invoiceDate
   }
 
-  const pickupWarehouse = await fetchPickupWarehouseRecord(userId, params.pickup_location_id)
+  const pickupWarehouse = await fetchPreferredPickupWarehouseRecord(userId, params.pickup_location_id)
   if (pickupWarehouse) {
+    params.pickup_location_id = pickupWarehouse.pickupId
     params.pickup = buildPickupFromWarehouse(
       pickupWarehouse,
       params.pickup,
@@ -5140,6 +5171,13 @@ export const createB2BShipmentService = async (
 
   try {
     if (bookingIntegrationType === 'shiprocket') {
+      if (!pickupWarehouse) {
+        throw new HttpError(
+          400,
+          'No active pickup warehouse is available for this merchant. Add or enable a pickup address before creating a B2B shipment.',
+        )
+      }
+
       const pickupLocationName = String(
         params.pickup?.warehouse_name ||
           pickupWarehouse?.addressNickname ||
@@ -5246,7 +5284,9 @@ export const createB2BShipmentService = async (
         order_id: cargoOrderId,
         remarks: `Shipzilla B2B order ${normalizedOrderNumber}`,
         recipient_GST: params.consignee.gstin || null,
-        to_pay_amount: isCod ? Number(params.order_amount || invoiceValue) : '0',
+        // Cargo COD bookings carry the collection amount in cod_amount during order creation.
+        // Shiprocket rejects non-zero to_pay_amount for COD shipments.
+        to_pay_amount: '0',
         mode_id: cargoModeId,
         delivery_partner_id: cargoDeliveryPartnerId,
         pickup_date_time: `${pickupDate} ${pickupTime}`,

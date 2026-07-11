@@ -1759,6 +1759,7 @@ export const calculateB2BRate = async (params: {
     courierId,
     serviceProvider,
     effectiveDate,
+    planId: params.planId,
   })
 
   if (!rate) {
@@ -2729,6 +2730,7 @@ export const findZoneRate = async (params: {
   courierId: number | null
   serviceProvider: string | null
   effectiveDate?: Date
+  planId?: string
 }) => {
   const effectiveDate = params.effectiveDate ?? new Date()
   const scopes: (CourierScope | null)[] = [
@@ -2743,32 +2745,45 @@ export const findZoneRate = async (params: {
   for (const scope of scopes) {
     const { courierId, serviceProvider } = normalizeCourierScope(scope ?? undefined)
 
-    const [row] = await db
+    const filters = [
+      eq(b2bZoneToZoneRates.origin_zone_id, params.originZoneId),
+      eq(b2bZoneToZoneRates.destination_zone_id, params.destinationZoneId),
+      eq(b2bZoneToZoneRates.is_active, true),
+      or(
+        isNull(b2bZoneToZoneRates.effective_from),
+        lte(b2bZoneToZoneRates.effective_from, effectiveDate),
+      ),
+      or(
+        isNull(b2bZoneToZoneRates.effective_to),
+        gte(b2bZoneToZoneRates.effective_to, effectiveDate),
+      ),
+      courierId
+        ? eq(b2bZoneToZoneRates.courier_id, courierId)
+        : isNull(b2bZoneToZoneRates.courier_id),
+      serviceProvider
+        ? eq(b2bZoneToZoneRates.service_provider, serviceProvider)
+        : isNull(b2bZoneToZoneRates.service_provider),
+    ]
+
+    const planAwareFilter =
+      params.planId != null && params.planId !== ''
+        ? or(
+            eq(b2bZoneToZoneRates.plan_id, params.planId),
+            isNull(b2bZoneToZoneRates.plan_id),
+          )
+        : isNull(b2bZoneToZoneRates.plan_id)
+
+    const rows = await db
       .select()
       .from(b2bZoneToZoneRates)
-      .where(
-        and(
-          eq(b2bZoneToZoneRates.origin_zone_id, params.originZoneId),
-          eq(b2bZoneToZoneRates.destination_zone_id, params.destinationZoneId),
-          eq(b2bZoneToZoneRates.is_active, true),
-          or(
-            isNull(b2bZoneToZoneRates.effective_from),
-            lte(b2bZoneToZoneRates.effective_from, effectiveDate),
-          ),
-          or(
-            isNull(b2bZoneToZoneRates.effective_to),
-            gte(b2bZoneToZoneRates.effective_to, effectiveDate),
-          ),
-          courierId
-            ? eq(b2bZoneToZoneRates.courier_id, courierId)
-            : isNull(b2bZoneToZoneRates.courier_id),
-          serviceProvider
-            ? eq(b2bZoneToZoneRates.service_provider, serviceProvider)
-            : isNull(b2bZoneToZoneRates.service_provider),
-        ),
-      )
-      .orderBy(desc(b2bZoneToZoneRates.effective_from))
-      .limit(1)
+      .where(and(...filters, planAwareFilter))
+      .orderBy(desc(b2bZoneToZoneRates.plan_id), desc(b2bZoneToZoneRates.effective_from))
+      .limit(params.planId ? 2 : 1)
+
+    const row =
+      params.planId != null && params.planId !== ''
+        ? rows.find((candidate: any) => candidate.plan_id === params.planId) ?? rows[0]
+        : rows[0]
 
     if (row) return row
   }

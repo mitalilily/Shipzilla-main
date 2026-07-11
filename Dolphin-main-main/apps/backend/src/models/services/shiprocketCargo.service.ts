@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, Method } from 'axios'
 import {
+  DEFAULT_SHIPROCKET_BASE_URL,
   DEFAULT_SHIPROCKET_CARGO_BASE_URL,
   getEffectiveCourierConfig,
   ShiprocketConfig,
@@ -343,6 +344,17 @@ export type ShiprocketCargoAddAppointmentResponse = Record<string, unknown> | nu
 let cachedCargoAccessToken: string | null = null
 let cargoTokenExpiry: number | null = null
 
+const normalizeShiprocketCargoBaseUrl = (value?: string | null) => {
+  const normalized = String(value || '').trim().replace(/\/+$/, '')
+  if (!normalized) return ''
+
+  if (normalized === DEFAULT_SHIPROCKET_BASE_URL || /\/v1\/external$/i.test(normalized)) {
+    return DEFAULT_SHIPROCKET_CARGO_BASE_URL
+  }
+
+  return normalized
+}
+
 const parseJwtExpiry = (token: string): number | null => {
   const payload = token.split('.')[1]
   if (!payload) return null
@@ -382,12 +394,11 @@ const resolveShiprocketCargoCredentials = async (overrides?: ShiprocketCargoAuth
     savedConfig?.refreshToken?.trim() ||
     process.env.SHIPROCKET_CARGO_REFRESH_TOKEN?.trim() ||
     ''
-  const apiBase = (
-    overrides?.apiBase?.trim() ||
-    savedConfig?.apiBase?.trim() ||
-    process.env.SHIPROCKET_CARGO_API_BASE?.trim() ||
+  const apiBase =
+    normalizeShiprocketCargoBaseUrl(overrides?.apiBase) ||
+    normalizeShiprocketCargoBaseUrl(savedConfig?.apiBase) ||
+    normalizeShiprocketCargoBaseUrl(process.env.SHIPROCKET_CARGO_API_BASE) ||
     DEFAULT_SHIPROCKET_CARGO_BASE_URL
-  ).replace(/\/+$/, '')
   const clientId =
     savedConfig?.clientId?.trim() || process.env.SHIPROCKET_CARGO_CLIENT_ID?.trim() || ''
 
@@ -402,6 +413,26 @@ const resolveShiprocketCargoCredentials = async (overrides?: ShiprocketCargoAuth
 export const getShiprocketCargoClientId = async (): Promise<number> => {
   const { clientId } = await resolveShiprocketCargoCredentials()
   const parsedClientId = Number(clientId)
+
+  try {
+    const warehouseResponse = await getShiprocketCargoWarehouses(1, {
+      query: { page_size: 1 },
+    })
+    const discoveredClientId = Number(warehouseResponse?.results?.[0]?.client?.id)
+    if (Number.isInteger(discoveredClientId) && discoveredClientId > 0) {
+      if (parsedClientId > 0 && parsedClientId !== discoveredClientId) {
+        console.warn(
+          `[Shiprocket Cargo] Overriding configured client ID ${parsedClientId} with live warehouse client ID ${discoveredClientId}.`,
+        )
+      }
+      return discoveredClientId
+    }
+  } catch (error: any) {
+    console.warn(
+      '[Shiprocket Cargo] Unable to auto-discover client ID from warehouses, using configured value:',
+      error?.message || error,
+    )
+  }
 
   if (!Number.isInteger(parsedClientId) || parsedClientId <= 0) {
     throw new Error(
