@@ -5272,7 +5272,12 @@ export const createB2BShipmentService = async (
       const cargoOrderId = Number(cargoOrderData?.order_id)
       const cargoModeId = Number(cargoOrderData?.mode_id)
       const cargoDeliveryPartnerId = Number(cargoOrderData?.delivery_partner_id)
-      if (!cargoOrderId || !cargoModeId || !cargoDeliveryPartnerId) {
+      const selectedCargoDeliveryPartnerId = Number(params.courier_id)
+      const shipmentDeliveryPartnerId =
+        Number.isFinite(selectedCargoDeliveryPartnerId) && selectedCargoDeliveryPartnerId > 0
+          ? selectedCargoDeliveryPartnerId
+          : cargoDeliveryPartnerId
+      if (!cargoOrderId || !cargoModeId || !shipmentDeliveryPartnerId) {
         throw new HttpError(
           502,
           'Shiprocket Cargo order creation did not return the order, mode, and delivery partner identifiers required to create a shipment.',
@@ -5288,7 +5293,7 @@ export const createB2BShipmentService = async (
         // Shiprocket rejects non-zero to_pay_amount for COD shipments.
         to_pay_amount: '0',
         mode_id: cargoModeId,
-        delivery_partner_id: cargoDeliveryPartnerId,
+        delivery_partner_id: shipmentDeliveryPartnerId,
         pickup_date_time: `${pickupDate} ${pickupTime}`,
         eway_bill_no:
           String(
@@ -5347,22 +5352,22 @@ export const createB2BShipmentService = async (
     shipmentRecord?.awb ||
     ''
 
-  if (!awbNumber && bookingIntegrationType === 'shiprocket' && shipmentId) {
+  if (bookingIntegrationType === 'shiprocket' && shipmentId) {
     try {
-      const awbPayload = await getShiprocketCargoShipmentDetails(shipmentId)
-      shipmentRecord = { ...shipmentRecord, ...awbPayload }
+      const shipmentDetailsPayload = await getShiprocketCargoShipmentDetails(shipmentId)
+      shipmentRecord = { ...shipmentRecord, ...shipmentDetailsPayload }
       awbNumber =
-        awbPayload?.awb_code ||
-        awbPayload?.awb_number ||
-        awbPayload?.tracking_number ||
-        awbPayload?.waybill_no ||
-        awbPayload?.awb ||
+        shipmentDetailsPayload?.awb_code ||
+        shipmentDetailsPayload?.awb_number ||
+        shipmentDetailsPayload?.tracking_number ||
+        shipmentDetailsPayload?.waybill_no ||
+        shipmentDetailsPayload?.awb ||
         awbNumber
-    } catch (awbError: any) {
-      console.error('Failed to fetch Shiprocket Cargo AWB for B2B shipment', {
+    } catch (shipmentDetailsError: any) {
+      console.error('Failed to fetch Shiprocket Cargo shipment details for B2B shipment', {
         shipmentId,
         courierId: params.courier_id,
-        error: awbError?.message || awbError,
+        error: shipmentDetailsError?.message || shipmentDetailsError,
       })
     }
   }
@@ -5371,8 +5376,8 @@ export const createB2BShipmentService = async (
     shipmentRecord?.courier_company_service ||
     shipmentRecord?.courier_company ||
     shipmentRecord?.courier ||
-    cargoOrderRecord?.delivery_partner_name ||
     params.courier_partner ||
+    cargoOrderRecord?.delivery_partner_name ||
     'Shiprocket'
   const courierCost =
     shipmentRecord?.freight_charges ??
@@ -5381,7 +5386,13 @@ export const createB2BShipmentService = async (
     params.courier_cost ??
     chargesBreakdown?.total ??
     null
-  const labelUrl = shipmentRecord?.label ?? shipmentRecord?.label_url ?? null
+  const labelUrl =
+    shipmentRecord?.label ??
+    shipmentRecord?.label_url ??
+    shipmentRecord?.shipping_label_url ??
+    shipmentRecord?.labelUrl ??
+    shipmentRecord?.data?.label_url ??
+    null
   const manifestUrl = shipmentRecord?.manifest ?? shipmentRecord?.manifest_url ?? null
 
   if (!awbNumber && bookingIntegrationType !== 'shiprocket') {

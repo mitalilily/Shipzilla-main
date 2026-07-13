@@ -256,6 +256,7 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
           })) ?? [],
         courier_id: Number(data.courierPartnerId),
         courier_partner: data.courierPartner,
+        courier_option_key: data.courierOptionKey,
         is_insurance: !!data.isInsurance,
         is_rto_different: data.isRtoSame === false ? 'yes' : 'no',
         request_auto_pickup: 'no',
