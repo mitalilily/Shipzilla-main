@@ -117,6 +117,101 @@ const truncateColumnValue = (value: string, maxLength = 255) => {
 const getErrorStatusCode = (error: any, fallback = 500) =>
   typeof error?.statusCode === 'number' ? error.statusCode : fallback
 
+const isAmazonCourierName = (...values: unknown[]) =>
+  values.some((value) => /amazon/i.test(String(value ?? '')))
+
+const isShipmozoAmazonOrder = (order: any) => {
+  if (!isAmazonCourierName(order?.courier_partner, order?.courier_name, order?.courier_company)) {
+    return false
+  }
+
+  const provider = String(order?.integration_type || '').trim().toLowerCase()
+  return !provider || provider === 'shipmozo'
+}
+
+const extractHttpUrlDeep = (payload: any, keys: string[], depth = 0): string | null => {
+  if (!payload || depth > 4) return null
+
+  if (typeof payload === 'string') {
+    const trimmed = payload.trim()
+    return /^https?:\/\//i.test(trimmed) ? trimmed : null
+  }
+
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      const found = extractHttpUrlDeep(item, keys, depth + 1)
+      if (found) return found
+    }
+    return null
+  }
+
+  if (typeof payload === 'object') {
+    for (const key of keys) {
+      const found = extractHttpUrlDeep(payload[key], keys, depth + 1)
+      if (found) return found
+    }
+
+    for (const child of Object.values(payload)) {
+      const found = extractHttpUrlDeep(child, keys, depth + 1)
+      if (found) return found
+    }
+  }
+
+  return null
+}
+
+const fetchShipmozoProviderLabel = async (awbNumber?: string | number | null) => {
+  const normalizedAwb = String(awbNumber ?? '').trim()
+  if (!normalizedAwb) return null
+
+  const shipmozo = new ShipmozoService()
+  const response = await shipmozo.getOrderLabel(normalizedAwb)
+  return extractHttpUrlDeep(response?.data ?? response, [
+    'label',
+    'label_url',
+    'labelUrl',
+    'shipping_label',
+    'shipping_label_url',
+    'pdf',
+    'url',
+  ])
+}
+
+const saveProviderLabelUrlAsR2Key = async ({
+  labelUrl,
+  userId,
+  orderNumber,
+}: {
+  labelUrl?: string | null
+  userId: string
+  orderNumber: string
+}) => {
+  const normalizedUrl = String(labelUrl ?? '').trim()
+  if (!/^https?:\/\//i.test(normalizedUrl)) return normalizedUrl || null
+
+  const labelResponse = await axios.get(normalizedUrl, {
+    responseType: 'arraybuffer',
+    timeout: 60000,
+  })
+  const labelBuffer = Buffer.from(labelResponse.data)
+  const contentType =
+    String(labelResponse.headers?.['content-type'] || '').trim() || 'application/pdf'
+
+  const { uploadUrl, key } = await presignUpload({
+    filename: `amazon-label-${orderNumber}.pdf`,
+    contentType,
+    userId,
+    folderKey: 'labels',
+  })
+
+  await axios.put(Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl, labelBuffer, {
+    headers: { 'Content-Type': contentType },
+    timeout: 60000,
+  })
+
+  return Array.isArray(key) ? key[0] : key
+}
+
 const getUserFacingManifestError = (
   error: any,
   fallback = 'Failed to generate manifest. Please try again.',
@@ -4039,8 +4134,12 @@ export const createB2CShipmentService = async (
 
       shipmentSuccessPackage = {
         waybill: shipmozoWaybill,
-        label: shipmozoPackage?.label ?? null,
-        manifest: shipmozoPackage?.manifest ?? null,
+        label:
+          shipmozoPackage?.label ??
+          shipmozoPackage?.label_url ??
+          shipmozoPackage?.shipping_label_url ??
+          null,
+        manifest: shipmozoPackage?.manifest ?? shipmozoPackage?.manifest_url ?? null,
         courier_name: shipmozoCourierName,
         courier_id: params?.courier_id ?? null,
         status: shipmentData?.message ?? null,
@@ -4059,8 +4158,12 @@ export const createB2CShipmentService = async (
         awb_number: shipmozoWaybill,
         courier_name: shipmozoCourierName,
         courier_id: params.courier_id ? Number(params.courier_id) : null,
-        label: shipmozoPackage?.label ?? undefined,
-        manifest: shipmozoPackage?.manifest ?? undefined,
+        label:
+          shipmozoPackage?.label ??
+          shipmozoPackage?.label_url ??
+          shipmozoPackage?.shipping_label_url ??
+          undefined,
+        manifest: shipmozoPackage?.manifest ?? shipmozoPackage?.manifest_url ?? undefined,
         courier_cost: providerCourierCost,
         sort_code: providerSortCode,
       }
@@ -4108,6 +4211,30 @@ export const createB2CShipmentService = async (
 
 
     // 🔹 Recalculate freight using slab pricing (ignore incoming freight_charges)
+    if (
+      integrationType === 'shipmozo' &&
+      isAmazonCourierName(shipmentMeta?.courier_name) &&
+      shipmentMeta?.label
+    ) {
+      try {
+        const providerLabelKey = await saveProviderLabelUrlAsR2Key({
+          labelUrl: shipmentMeta.label,
+          userId,
+          orderNumber: params.order_number,
+        })
+        if (providerLabelKey) {
+          shipmentMeta.label = providerLabelKey
+        }
+      } catch (labelErr: any) {
+        console.error('Failed to persist original Shipmozo Amazon label', {
+          orderNumber: params.order_number,
+          awbNumber: shipmentMeta?.awb_number,
+          error: labelErr?.message || labelErr,
+        })
+        shipmentMeta.label = undefined
+      }
+    }
+
     const pickupPincode =
       (params.pickup as any)?.pincode ||
       (params.pickup_details as any)?.pincode ||
@@ -5386,7 +5513,7 @@ export const createB2BShipmentService = async (
     params.courier_cost ??
     chargesBreakdown?.total ??
     null
-  const labelUrl =
+  let labelUrl =
     shipmentRecord?.label ??
     shipmentRecord?.label_url ??
     shipmentRecord?.shipping_label_url ??
@@ -5394,6 +5521,27 @@ export const createB2BShipmentService = async (
     shipmentRecord?.data?.label_url ??
     null
   const manifestUrl = shipmentRecord?.manifest ?? shipmentRecord?.manifest_url ?? null
+
+  if (
+    bookingIntegrationType === 'shipmozo' &&
+    isAmazonCourierName(courierPartner) &&
+    labelUrl
+  ) {
+    try {
+      labelUrl = await saveProviderLabelUrlAsR2Key({
+        labelUrl: String(labelUrl),
+        userId,
+        orderNumber: normalizedOrderNumber,
+      })
+    } catch (labelErr: any) {
+      console.error('Failed to persist original Shipmozo Amazon B2B label', {
+        orderNumber: normalizedOrderNumber,
+        awbNumber,
+        error: labelErr?.message || labelErr,
+      })
+      labelUrl = null
+    }
+  }
 
   if (!awbNumber && bookingIntegrationType !== 'shiprocket') {
     await db
@@ -6092,8 +6240,35 @@ export const generateManifestService = async (params: {
               typeof freshOrder.label === 'string' && freshOrder.label.trim()
                 ? freshOrder.label.trim()
                 : null
+            const requiresShipmozoProviderLabel = isShipmozoAmazonOrder(freshOrder)
 
-            if (!labelKey && freshOrder.awb_number) {
+            if (!labelKey && requiresShipmozoProviderLabel && freshOrder.awb_number) {
+              try {
+                const providerLabel = await fetchShipmozoProviderLabel(freshOrder.awb_number)
+                labelKey = providerLabel
+                  ? await saveProviderLabelUrlAsR2Key({
+                      labelUrl: providerLabel,
+                      userId: freshOrder.user_id,
+                      orderNumber: freshOrder.order_number,
+                    })
+                  : null
+                if (!labelKey) {
+                  manifestWarnings.push(
+                    `${freshOrder.order_number}: Amazon provider label was not returned by Shipmozo.`,
+                  )
+                }
+              } catch (labelErr: any) {
+                console.error(
+                  `Failed to fetch Shipmozo Amazon label for order ${freshOrder.order_number}:`,
+                  labelErr?.message || labelErr,
+                )
+                manifestWarnings.push(
+                  `${freshOrder.order_number}: Amazon provider label could not be fetched from Shipmozo.`,
+                )
+              }
+            }
+
+            if (!labelKey && freshOrder.awb_number && !requiresShipmozoProviderLabel) {
               try {
                 labelKey = await generateLabelForOrder(freshOrder, freshOrder.user_id, tx)
                 if (labelKey) {
@@ -6119,10 +6294,8 @@ export const generateManifestService = async (params: {
             }
 
             if (labelKey && typeof labelKey === 'string' && labelKey.trim().length > 0) {
-              const normalizedLabel = normalizeToR2Key(labelKey.trim())
-              if (normalizedLabel) {
-                updateDataXpress.label = normalizedLabel
-              }
+              const trimmedLabel = labelKey.trim()
+              updateDataXpress.label = normalizeToR2Key(trimmedLabel) || trimmedLabel
             }
 
             await tx
@@ -7360,7 +7533,42 @@ export const generateManifestService = async (params: {
           )
 
           // 🖨️ Generate label if it doesn't exist and order has AWB
-          if (!order.label && order.awb_number) {
+          const requiresShipmozoProviderLabel = isShipmozoAmazonOrder(order)
+
+          if (!order.label && order.awb_number && requiresShipmozoProviderLabel) {
+            try {
+              const providerLabel = await fetchShipmozoProviderLabel(order.awb_number)
+              const providerLabelKey = providerLabel
+                ? await saveProviderLabelUrlAsR2Key({
+                    labelUrl: providerLabel,
+                    userId: order.user_id,
+                    orderNumber: order.order_number,
+                  })
+                : null
+              if (providerLabelKey) {
+                await tx
+                  .update(table)
+                  .set({
+                    label: providerLabelKey,
+                    updated_at: new Date(),
+                  })
+                  .where(eq(table.id, order.id))
+
+                console.log(
+                  `Original Shipmozo Amazon label saved for order ${order.order_number}`,
+                )
+              } else {
+                console.warn(
+                  `Shipmozo did not return an Amazon label for order ${order.order_number}; skipping custom label generation.`,
+                )
+              }
+            } catch (labelErr: any) {
+              console.error(
+                `Failed to fetch original Shipmozo Amazon label for order ${order.order_number}:`,
+                labelErr?.message || labelErr,
+              )
+            }
+          } else if (!order.label && order.awb_number) {
             try {
               console.log(
                 `🖨️ Generating label for order ${order.order_number} during manifest (AWB: ${order.awb_number})`,

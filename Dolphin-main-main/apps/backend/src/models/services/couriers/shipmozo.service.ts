@@ -55,7 +55,9 @@ export type ShipmozoShipmentResponse = {
     courier_company?: string
     courier_company_service?: string
     label?: string
+    label_url?: string
     manifest?: string
+    manifest_url?: string
   }
   message?: string
   raw?: any
@@ -783,6 +785,16 @@ export class ShipmozoService {
       trim(data?.courier_company) ||
       trim(data?.courier) ||
       'Shipmozo'
+    const label = this.extractDocumentUrl(data, [
+      'label',
+      'label_url',
+      'labelUrl',
+      'shipping_label',
+      'shipping_label_url',
+      'pdf',
+      'url',
+    ])
+    const manifest = this.extractDocumentUrl(data, ['manifest', 'manifest_url', 'manifestUrl'])
     return {
       status: Boolean(awb),
       data: {
@@ -793,10 +805,44 @@ export class ShipmozoService {
         courier,
         courier_company: trim(data?.courier_company) || courier,
         courier_company_service: trim(data?.courier_company_service) || courier,
+        label,
+        label_url: label,
+        manifest,
+        manifest_url: manifest,
       },
       message: raw?.message,
       raw,
     }
+  }
+
+  private extractDocumentUrl(payload: any, keys: string[]): string {
+    const visit = (value: any, depth = 0): string => {
+      if (!value || depth > 4) return ''
+      if (typeof value === 'string') {
+        const candidate = trim(value)
+        return /^https?:\/\//i.test(candidate) ? candidate : ''
+      }
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const found = visit(item, depth + 1)
+          if (found) return found
+        }
+        return ''
+      }
+      if (typeof value === 'object') {
+        for (const key of keys) {
+          const found = visit(value[key], depth + 1)
+          if (found) return found
+        }
+        for (const child of Object.values(value)) {
+          const found = visit(child, depth + 1)
+          if (found) return found
+        }
+      }
+      return ''
+    }
+
+    return visit(payload)
   }
 
   private async finalizeShipment(orderId: string, courierId?: string | number) {
@@ -837,6 +883,36 @@ export class ShipmozoService {
         502,
         'Shipmozo order was pushed, but no AWB was returned by assign/schedule/order-detail APIs.',
       )
+    }
+
+    const courierName = trim(
+      normalized.data?.courier_company_service ||
+        normalized.data?.courier_company ||
+        normalized.data?.courier,
+    )
+    if (/amazon/i.test(courierName)) {
+      try {
+        const labelRaw = await this.getOrderLabel(normalized.data.awb_number)
+        const providerLabel = this.extractDocumentUrl(labelRaw?.data ?? labelRaw, [
+          'label',
+          'label_url',
+          'labelUrl',
+          'shipping_label',
+          'shipping_label_url',
+          'pdf',
+          'url',
+        ])
+        if (providerLabel) {
+          normalized.data.label = providerLabel
+          normalized.data.label_url = providerLabel
+        }
+      } catch (err: any) {
+        this.log('Amazon provider label could not be fetched after AWB creation', {
+          orderId,
+          awbNumber: normalized.data.awb_number,
+          message: err?.message || err,
+        })
+      }
     }
 
     return normalized
