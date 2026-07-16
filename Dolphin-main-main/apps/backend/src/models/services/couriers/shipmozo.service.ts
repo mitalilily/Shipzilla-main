@@ -166,6 +166,146 @@ const toWeightKg = (value: unknown) => {
   return numeric > 50 ? Number((numeric / 1000).toFixed(3)) : numeric
 }
 
+const SHIPMOZO_ADDRESS_LINE_MAX_LENGTH = 120
+
+const squeezeSpaces = (value: unknown) => trim(value).replace(/\s+/g, ' ')
+
+type ShipmozoAddressLines = {
+  lineOne: string
+  lineTwo: string
+}
+
+const splitLongAddress = (value: string): ShipmozoAddressLines => {
+  if (value.length <= SHIPMOZO_ADDRESS_LINE_MAX_LENGTH) {
+    return { lineOne: value, lineTwo: '' }
+  }
+
+  const commaParts = value
+    .split(',')
+    .map((part) => squeezeSpaces(part))
+    .filter(Boolean)
+
+  if (commaParts.length > 1) {
+    let lineOne = commaParts.shift() || ''
+    const lineTwoParts: string[] = []
+
+    while (
+      commaParts.length &&
+      `${lineOne}, ${commaParts[0]}`.length <= SHIPMOZO_ADDRESS_LINE_MAX_LENGTH
+    ) {
+      lineOne = `${lineOne}, ${commaParts.shift()}`
+    }
+
+    lineTwoParts.push(...commaParts)
+    if (lineOne.length > SHIPMOZO_ADDRESS_LINE_MAX_LENGTH) {
+      const fallback = splitLongAddress(lineOne.replace(/,/g, ' '))
+      return {
+        lineOne: fallback.lineOne,
+        lineTwo: [fallback.lineTwo, ...lineTwoParts]
+          .filter(Boolean)
+          .join(', ')
+          .slice(0, SHIPMOZO_ADDRESS_LINE_MAX_LENGTH),
+      }
+    }
+
+    return {
+      lineOne,
+      lineTwo: lineTwoParts.join(', ').slice(0, SHIPMOZO_ADDRESS_LINE_MAX_LENGTH),
+    }
+  }
+
+  const cutAt =
+    value.lastIndexOf(' ', SHIPMOZO_ADDRESS_LINE_MAX_LENGTH) > 20
+      ? value.lastIndexOf(' ', SHIPMOZO_ADDRESS_LINE_MAX_LENGTH)
+      : SHIPMOZO_ADDRESS_LINE_MAX_LENGTH
+
+  return {
+    lineOne: value.slice(0, cutAt).trim(),
+    lineTwo: value.slice(cutAt).trim().slice(0, SHIPMOZO_ADDRESS_LINE_MAX_LENGTH),
+  }
+}
+
+export const getShipmozoConsigneeAddressLines = (consignee: any) => {
+  const explicitLineOne = squeezeSpaces(
+    consignee?.address_line_one ||
+      consignee?.addressLine1 ||
+      consignee?.shipping_address_line_one ||
+      consignee?.shippingAddressLine1,
+  )
+  const explicitLineTwo = squeezeSpaces(
+    consignee?.address_line_two ||
+      consignee?.address_2 ||
+      consignee?.addressLine2 ||
+      consignee?.shipping_address_line_two ||
+      consignee?.shippingAddressLine2,
+  )
+
+  if (explicitLineOne) {
+    return {
+      lineOne: explicitLineOne.slice(0, SHIPMOZO_ADDRESS_LINE_MAX_LENGTH),
+      lineTwo: explicitLineTwo.slice(0, SHIPMOZO_ADDRESS_LINE_MAX_LENGTH),
+    }
+  }
+
+  const rawAddress = trim(
+    consignee?.address ||
+      consignee?.shipping_address ||
+      consignee?.shippingAddress ||
+      consignee?.buyer_address ||
+      consignee?.buyerAddress,
+  )
+  const addressParts = rawAddress
+    .split(/\r?\n/)
+    .map((part) => squeezeSpaces(part))
+    .filter(Boolean)
+
+  if (addressParts.length > 1) {
+    return {
+      lineOne: addressParts[0].slice(0, SHIPMOZO_ADDRESS_LINE_MAX_LENGTH),
+      lineTwo: addressParts.slice(1).join(', ').slice(0, SHIPMOZO_ADDRESS_LINE_MAX_LENGTH),
+    }
+  }
+
+  const splitAddress = splitLongAddress(squeezeSpaces(rawAddress))
+  return {
+    lineOne: splitAddress.lineOne,
+    lineTwo: explicitLineTwo || splitAddress.lineTwo,
+  }
+}
+
+export const buildShipmozoForwardOrderPayload = (payload: any, warehouseId: string | number) => {
+  const paymentType = payload?.payment_type === 'cod' ? 'COD' : 'PREPAID'
+  const { lineOne: consigneeAddressLineOne, lineTwo: consigneeAddressLineTwo } =
+    getShipmozoConsigneeAddressLines(payload?.consignee)
+
+  return {
+    order_id: trim(payload.order_number),
+    order_date: toDateOnly(payload.order_date),
+    order_type: trim(payload.order_type || payload.category_of_goods) || 'ESSENTIALS',
+    consignee_name: trim(payload?.consignee?.name),
+    consignee_phone: toPhone(payload?.consignee?.phone),
+    consignee_alternate_phone: payload?.consignee?.alternate_phone
+      ? toPhone(payload.consignee.alternate_phone)
+      : undefined,
+    consignee_email: trim(payload?.consignee?.email),
+    consignee_address_line_one: consigneeAddressLineOne,
+    consignee_address_line_two: consigneeAddressLineTwo,
+    consignee_pin_code: toPincode(payload?.consignee?.pincode),
+    consignee_city: trim(payload?.consignee?.city),
+    consignee_state: trim(payload?.consignee?.state),
+    product_detail: ShipmozoService.buildProductDetail(payload),
+    payment_type: paymentType,
+    cod_amount: paymentType === 'COD' ? String(payload?.collectable_amount ?? payload?.order_amount ?? 0) : '',
+    weight: toWeightGrams(payload?.package_weight ?? payload?.weight),
+    length: toNumber(payload?.package_length ?? payload?.length, 10),
+    width: toNumber(payload?.package_breadth ?? payload?.breadth, 10),
+    height: toNumber(payload?.package_height ?? payload?.height, 10),
+    warehouse_id: warehouseId,
+    gst_ewaybill_number: trim(payload?.gst_ewaybill_number || payload?.ewbn || payload?.ewaybill_number),
+    gstin_number: trim(payload?.gstin_number || payload?.company?.gst),
+  }
+}
+
 const mask = (value: string) =>
   value.length > 8 ? `${value.slice(0, 4)}...${value.slice(-4)}` : value ? '***' : ''
 
@@ -620,7 +760,7 @@ export class ShipmozoService {
     return warehouseId
   }
 
-  private buildProductDetail(payload: any) {
+  static buildProductDetail(payload: any) {
     const directProducts = Array.isArray(payload?.product_detail) ? payload.product_detail : []
     if (directProducts.length) {
       return directProducts.map((item: any) => ({
@@ -662,39 +802,7 @@ export class ShipmozoService {
 
   private async pushOrder(payload: any) {
     const warehouseId = await this.resolveWarehouseId(payload)
-    const paymentType = payload?.payment_type === 'cod' ? 'COD' : 'PREPAID'
-    const consigneeAddressLineOne = trim(payload?.consignee?.address)
-    const consigneeAddressLineTwo = trim(payload?.consignee?.address_2)
-    const consigneeFullAddress = [consigneeAddressLineOne, consigneeAddressLineTwo]
-      .filter(Boolean)
-      .join(', ')
-    const raw = await this.post<any>('/push-order', {
-      order_id: trim(payload.order_number),
-      order_date: toDateOnly(payload.order_date),
-      order_type: trim(payload.order_type || payload.category_of_goods) || 'ESSENTIALS',
-      consignee_name: trim(payload?.consignee?.name),
-      consignee_phone: toPhone(payload?.consignee?.phone),
-      consignee_alternate_phone: payload?.consignee?.alternate_phone
-        ? toPhone(payload.consignee.alternate_phone)
-        : undefined,
-      consignee_email: trim(payload?.consignee?.email),
-      consignee_address: consigneeFullAddress || consigneeAddressLineOne,
-      consignee_address_line_one: consigneeAddressLineOne,
-      consignee_address_line_two: consigneeAddressLineTwo,
-      consignee_pin_code: toPincode(payload?.consignee?.pincode),
-      consignee_city: trim(payload?.consignee?.city),
-      consignee_state: trim(payload?.consignee?.state),
-      product_detail: this.buildProductDetail(payload),
-      payment_type: paymentType,
-      cod_amount: paymentType === 'COD' ? String(payload?.collectable_amount ?? payload?.order_amount ?? 0) : '',
-      weight: toWeightGrams(payload?.package_weight ?? payload?.weight),
-      length: toNumber(payload?.package_length ?? payload?.length, 10),
-      width: toNumber(payload?.package_breadth ?? payload?.breadth, 10),
-      height: toNumber(payload?.package_height ?? payload?.height, 10),
-      warehouse_id: warehouseId,
-      gst_ewaybill_number: trim(payload?.gst_ewaybill_number || payload?.ewbn || payload?.ewaybill_number),
-      gstin_number: trim(payload?.gstin_number || payload?.company?.gst),
-    })
+    const raw = await this.post<any>('/push-order', buildShipmozoForwardOrderPayload(payload, warehouseId))
     return this.assertSuccess(raw, 'Shipmozo push order')
   }
 
@@ -719,7 +827,7 @@ export class ShipmozoService {
       ),
       pickup_city: trim(payload?.pickup_city || payload?.consignee?.city || payload?.pickup?.city),
       pickup_state: trim(payload?.pickup_state || payload?.consignee?.state || payload?.pickup?.state),
-      product_detail: this.buildProductDetail(payload),
+      product_detail: ShipmozoService.buildProductDetail(payload),
       payment_type: normalizedPaymentType,
       weight: toWeightKg(payload?.weight ?? payload?.package_weight ?? payload?.packageWeight),
       length: toNumber(payload?.length ?? payload?.package_length, 10),
