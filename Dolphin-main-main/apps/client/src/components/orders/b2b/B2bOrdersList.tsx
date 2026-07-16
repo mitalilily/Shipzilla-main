@@ -1,13 +1,18 @@
-import { Link, Stack, Typography } from '@mui/material'
+import { useQueryClient } from '@tanstack/react-query'
+import { Alert, AlertTitle, Box, Button, Link, Stack, Typography } from '@mui/material'
+import { saveAs } from 'file-saver'
 import moment from 'moment'
 import { useState } from 'react'
 import { MdLocalShipping, MdVisibility } from 'react-icons/md'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { bulkDownloadOrderDocumentsService } from '../../../api/order.service'
 import { useB2BOrdersByUser, useGenerateManifest } from '../../../hooks/Orders/useOrders'
 import type { B2BOrder } from '../../../types/generic.types'
+import { toast } from '../../UI/Toast'
 import StatusChip from '../../UI/chip/StatusChip'
 import DataTable, { type Column } from '../../UI/table/DataTable'
 import TableSkeleton from '../../UI/table/TableSkeleton'
+import { getActionableErrorMessage } from '../bulkActionUtils'
 import { OrderExpandedRow } from '../OrderExpandedRow'
 import OrderActionsMenu, { type OrderActionMenuItem } from '../OrderActionsMenu'
 import { buildOrderTrackingPath } from '../orderNavigation'
@@ -30,6 +35,12 @@ interface B2BOrdersListProps {
   filters: any
 }
 
+type BulkFeedback = {
+  severity: 'info' | 'success' | 'error' | 'warning'
+  title: string
+  message: string
+}
+
 const B2BOrdersList = ({
   page,
   rowsPerPage,
@@ -38,9 +49,21 @@ const B2BOrdersList = ({
   filters,
 }: B2BOrdersListProps) => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { data, isLoading, isError } = useB2BOrdersByUser(page, rowsPerPage, filters)
   const { mutate: triggerManifest, isPending: isGeneratingManifest } = useGenerateManifest()
   const [manifestingAwb, setManifestingAwb] = useState<string | null>(null)
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Array<B2BOrder['id']>>([])
+  const [selectionResetToken, setSelectionResetToken] = useState(0)
+  const [bulkFeedback, setBulkFeedback] = useState<BulkFeedback | null>(null)
+  const [downloadingLabels, setDownloadingLabels] = useState(false)
+  const orders: B2BOrder[] = data?.orders || []
+  const selectedOrders = orders.filter((order) => selectedOrderIds.includes(order.id))
+
+  const clearSelection = () => {
+    setSelectedOrderIds([])
+    setSelectionResetToken((current) => current + 1)
+  }
 
   const handleGenerateManifest = (order: B2BOrder) => {
     if (!order.awb_number) return
@@ -60,6 +83,66 @@ const B2BOrdersList = ({
 
   const hasInvoiceGenerated = (row: B2BOrder) =>
     Boolean(String(row.invoice_url || row.invoice_key || row.invoice_link || '').trim())
+
+  const handleBulkLabelDownload = async () => {
+    if (!selectedOrders.length) {
+      const message = 'Select at least one B2B order to download labels.'
+      setBulkFeedback({
+        severity: 'error',
+        title: 'No orders selected',
+        message,
+      })
+      toast.open({ message, severity: 'error' })
+      return
+    }
+
+    setDownloadingLabels(true)
+    setBulkFeedback({
+      severity: 'info',
+      title: 'Downloading labels',
+      message: `Preparing ${selectedOrders.length} selected B2B order(s) in one PDF.`,
+    })
+
+    try {
+      const result = await bulkDownloadOrderDocumentsService(
+        selectedOrders.map((order) => order.id),
+        'label',
+      )
+
+      saveAs(result.blob, result.fileName)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['b2bOrdersByUser'] }),
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+      ])
+
+      const warningMessage = result.warnings.length
+        ? ` ${result.warnings.slice(0, 3).join(' ')}${
+            result.warnings.length > 3 ? ` +${result.warnings.length - 3} more issue(s).` : ''
+          }`
+        : ''
+      const message = `Downloaded one PDF with ${result.mergedCount || selectedOrders.length} label(s).${warningMessage}`
+      setBulkFeedback({
+        severity: result.warnings.length ? 'warning' : 'success',
+        title: result.warnings.length ? 'Labels downloaded with warnings' : 'Labels downloaded',
+        message,
+      })
+      toast.open({ message, severity: result.warnings.length ? 'info' : 'success' })
+    } catch (error) {
+      console.error('Bulk B2B label download failed:', error)
+      const message = getActionableErrorMessage(
+        error,
+        'Failed to download selected B2B labels. Please try again.',
+      )
+      setBulkFeedback({
+        severity: 'error',
+        title: 'Label download failed',
+        message,
+      })
+      toast.open({ message, severity: 'error' })
+    } finally {
+      setDownloadingLabels(false)
+    }
+  }
 
   const columns: Column<B2BOrder>[] = [
     {
@@ -219,24 +302,91 @@ const B2BOrdersList = ({
 
   return (
     <Stack spacing={2}>
+      {bulkFeedback && (
+        <Alert
+          severity={bulkFeedback.severity}
+          onClose={() => setBulkFeedback(null)}
+          sx={{ alignItems: 'flex-start' }}
+        >
+          <AlertTitle>{bulkFeedback.title}</AlertTitle>
+          {bulkFeedback.message}
+        </Alert>
+      )}
+
+      <Box
+        sx={{
+          p: 2,
+          borderRadius: '10px',
+          border: '1px solid rgba(51, 51, 105, 0.14)',
+          backgroundColor: 'rgba(51, 51, 105, 0.04)',
+        }}
+      >
+        <Stack
+          direction={{ xs: 'column', lg: 'row' }}
+          alignItems={{ xs: 'flex-start', lg: 'center' }}
+          justifyContent="space-between"
+          gap={2}
+        >
+          <Box>
+            <Typography sx={{ fontWeight: 700, color: '#5D2394', fontSize: '15px' }}>
+              {selectedOrders.length} B2B order{selectedOrders.length > 1 ? 's' : ''} selected
+            </Typography>
+            <Typography sx={{ color: '#6E6483', fontSize: '13px', mt: 0.5 }}>
+              Bulk labels download as one PDF. Missing labels are generated during download.
+            </Typography>
+          </Box>
+
+          <Stack direction={{ xs: 'column', sm: 'row' }} gap={1} flexWrap="wrap">
+            <Button
+              variant="outlined"
+              onClick={handleBulkLabelDownload}
+              disabled={downloadingLabels || !selectedOrders.length}
+              sx={{ textTransform: 'none' }}
+            >
+              {downloadingLabels ? 'Downloading...' : 'Download Labels'}
+            </Button>
+            <Button
+              variant="text"
+              onClick={() => {
+                clearSelection()
+                setBulkFeedback(null)
+              }}
+              sx={{ textTransform: 'none' }}
+            >
+              Clear
+            </Button>
+          </Stack>
+        </Stack>
+      </Box>
+
       {isLoading ? (
         <TableSkeleton />
       ) : (
         <DataTable<B2BOrder>
-          rows={data?.orders || []}
+          rows={orders}
           columns={columns}
           title="My B2B Orders"
           pagination
+          selectable
           currentPage={page}
           expandable
           renderExpandedRow={(row) => <OrderExpandedRow type="b2b" row={row} />}
           defaultRowsPerPage={rowsPerPage}
           totalCount={data?.totalCount || 0}
-          onPageChange={setPage}
+          onPageChange={(newPage) => {
+            setPage(newPage)
+            clearSelection()
+            setBulkFeedback(null)
+          }}
           onRowsPerPageChange={(newLimit) => {
             setRowsPerPage(newLimit)
             setPage(1)
+            clearSelection()
+            setBulkFeedback(null)
           }}
+          onSelectRows={(ids) => setSelectedOrderIds(ids)}
+          selectedRowIds={selectedOrderIds}
+          selectionResetToken={selectionResetToken}
         />
       )}
     </Stack>

@@ -10,11 +10,15 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { saveAs } from 'file-saver'
 import moment from 'moment'
 import { useState } from 'react'
 import { MdCancel, MdDescription, MdLocalShipping, MdRefresh, MdVisibility } from 'react-icons/md'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { generateManifestService } from '../../../api/order.service'
+import {
+  bulkDownloadOrderDocumentsService,
+  generateManifestService,
+} from '../../../api/order.service'
 import { useAllCouriersWithDetails } from '../../../hooks/Integrations/useCouriers'
 import {
   useB2COrdersByUser,
@@ -490,6 +494,35 @@ const B2COrdersList = () => {
     })
 
     try {
+      if (type === 'label') {
+        const result = await bulkDownloadOrderDocumentsService(
+          selectedOrders.map((order) => order.id),
+          'label',
+        )
+
+        saveAs(result.blob, result.fileName)
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['b2cOrdersByUser'] }),
+          queryClient.invalidateQueries({ queryKey: ['orders'] }),
+        ])
+
+        const warningMessage = result.warnings.length
+          ? ` ${result.warnings.slice(0, 3).join(' ')}${
+              result.warnings.length > 3 ? ` +${result.warnings.length - 3} more issue(s).` : ''
+            }`
+          : ''
+        const message = `Downloaded one PDF with ${result.mergedCount || selectedOrders.length} label(s).${warningMessage}`
+        setBulkFeedback({
+          severity: result.warnings.length ? 'warning' : 'success',
+          title: result.warnings.length
+            ? 'Labels downloaded with warnings'
+            : 'Labels downloaded',
+          message,
+        })
+        toast.open({ message, severity: result.warnings.length ? 'info' : 'success' })
+        return
+      }
+
       const documentEntries = selectedOrders.reduce((entries: DocumentEntry[], order: B2COrder) => {
         const { key, url } = getDocumentReference(order, type)
         if (!key && !url) return entries
@@ -959,8 +992,7 @@ const B2COrdersList = () => {
         </Alert>
       )}
 
-      {selectedOrders.length > 0 && (
-        <Box
+      <Box
           sx={{
             p: 2,
             borderRadius: '10px',
@@ -993,7 +1025,9 @@ const B2COrdersList = () => {
               <Button
                 variant="contained"
                 onClick={handleBulkManifest}
-                disabled={bulkManifesting || Boolean(manifestValidationMessage)}
+                disabled={
+                  bulkManifesting || !selectedOrders.length || Boolean(manifestValidationMessage)
+                }
                 sx={{ textTransform: 'none', minWidth: 170 }}
               >
                 {bulkManifesting ? 'Manifesting...' : 'Manifest Selected'}
@@ -1001,7 +1035,7 @@ const B2COrdersList = () => {
               <Button
                 variant="outlined"
                 onClick={() => handleBulkDownload('label')}
-                disabled={downloadingDocumentType !== null}
+                disabled={downloadingDocumentType !== null || !selectedOrders.length}
                 sx={{ textTransform: 'none' }}
               >
                 {downloadingDocumentType === 'label' ? 'Downloading...' : 'Download Labels'}
@@ -1009,7 +1043,7 @@ const B2COrdersList = () => {
               <Button
                 variant="outlined"
                 onClick={() => handleBulkDownload('invoice')}
-                disabled={downloadingDocumentType !== null}
+                disabled={downloadingDocumentType !== null || !selectedOrders.length}
                 sx={{ textTransform: 'none' }}
               >
                 {downloadingDocumentType === 'invoice' ? 'Downloading...' : 'Download Invoices'}
@@ -1017,7 +1051,7 @@ const B2COrdersList = () => {
               <Button
                 variant="outlined"
                 onClick={() => handleBulkDownload('manifest')}
-                disabled={downloadingDocumentType !== null}
+                disabled={downloadingDocumentType !== null || !selectedOrders.length}
                 sx={{ textTransform: 'none' }}
               >
                 {downloadingDocumentType === 'manifest' ? 'Downloading...' : 'Download Manifests'}
@@ -1034,8 +1068,7 @@ const B2COrdersList = () => {
               </Button>
             </Stack>
           </Stack>
-        </Box>
-      )}
+      </Box>
 
       {/* ðŸ”¹ Data Table */}
       {isLoading ? (

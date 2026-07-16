@@ -835,8 +835,7 @@ const AllOrders = () => {
           </Alert>
         )}
 
-        {selectedOrders.length > 0 && (
-          <Box
+        <Box
             sx={{
               mt: 2,
               mx: { xs: 1.4, md: 2.1 },
@@ -871,7 +870,9 @@ const AllOrders = () => {
                 <Button
                   variant="contained"
                   onClick={handleBulkManifest}
-                  disabled={bulkManifesting || Boolean(manifestValidationMessage)}
+                  disabled={
+                    bulkManifesting || !selectedOrders.length || Boolean(manifestValidationMessage)
+                  }
                   sx={{ textTransform: 'none', minWidth: 170 }}
                 >
                   {bulkManifesting ? 'Manifesting...' : 'Manifest Selected'}
@@ -879,7 +880,7 @@ const AllOrders = () => {
                 <Button
                   variant="outlined"
                   onClick={() => handleBulkDownload('label')}
-                  disabled={downloadingDocumentType !== null}
+                  disabled={downloadingDocumentType !== null || !selectedOrders.length}
                   sx={{ textTransform: 'none' }}
                 >
                   {downloadingDocumentType === 'label' ? 'Downloading...' : 'Download Labels'}
@@ -887,7 +888,7 @@ const AllOrders = () => {
                 <Button
                   variant="outlined"
                   onClick={() => handleBulkDownload('invoice')}
-                  disabled={downloadingDocumentType !== null}
+                  disabled={downloadingDocumentType !== null || !selectedOrders.length}
                   sx={{ textTransform: 'none' }}
                 >
                   {downloadingDocumentType === 'invoice' ? 'Downloading...' : 'Download Invoices'}
@@ -895,7 +896,7 @@ const AllOrders = () => {
                 <Button
                   variant="outlined"
                   onClick={() => handleBulkDownload('manifest')}
-                  disabled={downloadingDocumentType !== null}
+                  disabled={downloadingDocumentType !== null || !selectedOrders.length}
                   sx={{ textTransform: 'none' }}
                 >
                   {downloadingDocumentType === 'manifest' ? 'Downloading...' : 'Download Manifests'}
@@ -912,8 +913,7 @@ const AllOrders = () => {
                 </Button>
               </Stack>
             </Stack>
-          </Box>
-        )}
+        </Box>
       </Box>
 
       <Box
