@@ -66,6 +66,8 @@ export interface CreateShipmentParams {
     tax_rate: number
   }[]
   courier_id?: number
+  courier_name?: string
+  courier_partner?: string
   is_insurance?: 0 | 1
   tags?: string
   pickup_date?: string

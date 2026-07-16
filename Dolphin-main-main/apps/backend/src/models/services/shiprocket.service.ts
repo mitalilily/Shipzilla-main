@@ -129,6 +129,23 @@ const isShipmozoAmazonOrder = (order: any) => {
   return !provider || provider === 'shipmozo'
 }
 
+export const shouldFetchShipmozoAmazonOriginalLabel = ({
+  integrationType,
+  awbNumber,
+  returnedCourierName,
+  selectedCourierName,
+  courierPartner,
+}: {
+  integrationType?: unknown
+  awbNumber?: unknown
+  returnedCourierName?: unknown
+  selectedCourierName?: unknown
+  courierPartner?: unknown
+}) =>
+  String(integrationType || '').trim().toLowerCase() === 'shipmozo' &&
+  Boolean(String(awbNumber || '').trim()) &&
+  isAmazonCourierName(returnedCourierName, selectedCourierName, courierPartner)
+
 const extractHttpUrlDeep = (payload: any, keys: string[], depth = 0): string | null => {
   if (!payload || depth > 4) return null
 
@@ -210,6 +227,31 @@ const saveProviderLabelUrlAsR2Key = async ({
   })
 
   return Array.isArray(key) ? key[0] : key
+}
+
+const fetchAndSaveShipmozoAmazonLabel = async ({
+  awbNumber,
+  existingLabelUrl,
+  userId,
+  orderNumber,
+}: {
+  awbNumber?: string | number | null
+  existingLabelUrl?: string | null
+  userId: string
+  orderNumber: string
+}) => {
+  const providerLabelUrl =
+    String(existingLabelUrl || '').trim() || (await fetchShipmozoProviderLabel(awbNumber))
+
+  if (!providerLabelUrl) {
+    throw new Error('Shipmozo did not return the original Amazon label.')
+  }
+
+  return saveProviderLabelUrlAsR2Key({
+    labelUrl: providerLabelUrl,
+    userId,
+    orderNumber,
+  })
 }
 
 const getUserFacingManifestError = (
@@ -2831,6 +2873,8 @@ export interface ShipmentParams {
   package_height?: number
   integration_type?: 'delhivery' | 'ekart' | 'xpressbees' | 'shipmozo' | string
   provider_code?: string // Opaque provider code (alternative to integration_type)
+  courier_name?: string
+  courierPartner?: string
   request_auto_pickup?: 'yes' | 'no'
   shipping_charges?: number
   other_charges?: number // Other charges from courier serviceability API (e.g. fuel surcharge, handling, etc.)
@@ -4227,14 +4271,17 @@ export const createB2CShipmentService = async (
 
 
     // 🔹 Recalculate freight using slab pricing (ignore incoming freight_charges)
-    if (
-      integrationType === 'shipmozo' &&
-      isAmazonCourierName(shipmentMeta?.courier_name) &&
-      shipmentMeta?.label
-    ) {
+    if (shouldFetchShipmozoAmazonOriginalLabel({
+      integrationType,
+      awbNumber: shipmentMeta?.awb_number,
+      returnedCourierName: shipmentMeta?.courier_name,
+      selectedCourierName: params.courier_name,
+      courierPartner: params.courier_partner || params.courierPartner,
+    })) {
       try {
-        const providerLabelKey = await saveProviderLabelUrlAsR2Key({
-          labelUrl: shipmentMeta.label,
+        const providerLabelKey = await fetchAndSaveShipmozoAmazonLabel({
+          awbNumber: shipmentMeta.awb_number,
+          existingLabelUrl: shipmentMeta.label ? String(shipmentMeta.label) : null,
           userId,
           orderNumber: params.order_number,
         })

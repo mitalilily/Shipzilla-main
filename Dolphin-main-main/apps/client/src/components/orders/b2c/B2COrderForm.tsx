@@ -254,6 +254,8 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
           tax_rate: p.taxRate ?? 0,
         })),
         courier_id: Number(data.courierPartnerId),
+        courier_name: data.courierPartner,
+        courier_partner: data.courierPartner,
         courier_option_key: data.courierOptionKey,
         selected_max_slab_weight:
           data.selectedMaxSlabWeight !== undefined && data.selectedMaxSlabWeight !== null
