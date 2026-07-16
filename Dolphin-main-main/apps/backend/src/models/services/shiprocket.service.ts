@@ -1325,10 +1325,7 @@ async function filterCouriersByBusinessType(
       businessTypeMap.get(makeKey(c.id, providerKey)) || fallbackBusinessTypeMap.get(Number(c.id)) || []
     const hasBusinessType = Array.isArray(types) && types.includes(expectedBusinessType)
     const isLiveShiprocketB2B =
-      expectedBusinessType === 'b2b' &&
-      providerKey === 'shiprocket' &&
-      c.provider_serviceability &&
-      (!Array.isArray(types) || types.length === 0)
+      expectedBusinessType === 'b2b' && providerKey === 'shiprocket' && c.provider_serviceability
 
     if (isLiveShiprocketB2B) {
       return true
@@ -2555,8 +2552,22 @@ export const fetchAvailableCouriersWithRatesB2B = async (
     ])
 
     // Step 6: Build courier list with rates
+    const makeShiprocketLiveCourierKey = (courier: ShiprocketLiveCourierOption) => {
+      const modePart =
+        String(courier.modeName || '').trim().toLowerCase() ||
+        (courier.modeId ? `mode-${courier.modeId}` : '') ||
+        String(courier.transporterId || '').trim().toLowerCase() ||
+        'default'
+      return `shiprocket__${courier.id}__${modePart}`
+    }
+
     const courierMap = new Map<string, any>()
-    const liveShiprocketById = new Map(shiprocketLiveCouriers.map((courier) => [courier.id, courier]))
+    const liveShiprocketById = new Map<number, ShiprocketLiveCourierOption[]>()
+    for (const courier of shiprocketLiveCouriers) {
+      const existing = liveShiprocketById.get(courier.id) || []
+      existing.push(courier)
+      liveShiprocketById.set(courier.id, existing)
+    }
 
     for (const rate of zoneToZoneRates) {
       if (!rate.courierId) continue
@@ -2579,7 +2590,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
 
         if (!courierRow) continue
 
-        const liveShiprocketCourier = liveShiprocketById.get(Number(rate.courierId))
+        const liveShiprocketCourier = liveShiprocketById.get(Number(rate.courierId))?.[0]
 
         let calculatedRate: Awaited<ReturnType<typeof calculateB2BRate>> | null = null
         try {
@@ -2695,7 +2706,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
     }
 
     for (const liveCourier of shiprocketLiveCouriers) {
-      const courierKey = `shiprocket__${liveCourier.id}`
+      const courierKey = makeShiprocketLiveCourierKey(liveCourier)
       if (courierMap.has(courierKey)) continue
 
       const freightCharges = Math.max(
