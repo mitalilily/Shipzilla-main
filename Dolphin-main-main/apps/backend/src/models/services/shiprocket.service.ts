@@ -2568,8 +2568,13 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       existing.push(courier)
       liveShiprocketById.set(courier.id, existing)
     }
+    const useLiveShiprocketCargoRates = shiprocketLiveCouriers.length > 0
 
     for (const rate of zoneToZoneRates) {
+      if (useLiveShiprocketCargoRates) {
+        break
+      }
+
       if (!rate.courierId) continue
 
       // Check if courier is enabled
