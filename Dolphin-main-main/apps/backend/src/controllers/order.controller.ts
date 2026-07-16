@@ -13,7 +13,10 @@ import {
   trackByAwbService,
   trackByOrderService,
 } from '../models/services/shiprocket.service'
-import { regenerateOrderDocumentsServiceAdmin } from '../models/services/adminOrders.service'
+import {
+  generateBulkOrderDocumentsPdfService,
+  regenerateOrderDocumentsServiceAdmin,
+} from '../models/services/adminOrders.service'
 
 export const createB2CShipmentController = async (req: any, res: Response) => {
   try {
@@ -372,6 +375,39 @@ export const regenerateOrderDocumentsController = async (req: any, res: Response
     return res.status(statusCode).json({
       success: false,
       message: error?.message || 'Failed to regenerate order documents',
+    })
+  }
+}
+
+export const generateBulkOrderDocumentsController = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.sub
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' })
+    }
+
+    const orderIds = Array.isArray(req.body?.orderIds) ? req.body.orderIds : []
+    const documentType = req.body?.documentType || 'label'
+
+    const result = await generateBulkOrderDocumentsPdfService({
+      orderIds,
+      documentType,
+      expectedUserId: userId,
+    })
+
+    res.setHeader('Content-Type', result.contentType)
+    res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`)
+    res.setHeader('X-Merged-Document-Count', String(result.mergedCount))
+    if (result.warnings.length) {
+      res.setHeader('X-Bulk-Document-Warnings', encodeURIComponent(result.warnings.join(' | ')))
+    }
+
+    return res.status(200).send(result.buffer)
+  } catch (error: any) {
+    const statusCode = /not found/i.test(error?.message || '') ? 404 : 400
+    return res.status(statusCode).json({
+      success: false,
+      message: error?.message || 'Failed to prepare bulk documents.',
     })
   }
 }

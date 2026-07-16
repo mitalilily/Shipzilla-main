@@ -253,6 +253,31 @@ export const regenerateOrderDocumentsService = async (
   return res.data
 }
 
+export const bulkDownloadOrderDocumentsService = async (
+  orderIds: Array<string | number>,
+  documentType: 'label' | 'invoice' | 'manifest' = 'label',
+) => {
+  const res = await axiosInstance.post('/orders/bulk-documents', {
+    orderIds,
+    documentType,
+  }, {
+    responseType: 'blob',
+    timeout: 300000,
+  })
+
+  const disposition = String(res.headers?.['content-disposition'] || '')
+  const fileNameMatch = disposition.match(/filename="?([^"]+)"?/i)
+
+  return {
+    blob: res.data as Blob,
+    fileName: fileNameMatch?.[1] || `bulk-${documentType}s.pdf`,
+    mergedCount: Number(res.headers?.['x-merged-document-count'] || 0),
+    warnings: res.headers?.['x-bulk-document-warnings']
+      ? decodeURIComponent(String(res.headers['x-bulk-document-warnings'])).split(' | ')
+      : [],
+  }
+}
+
 interface FetchOrdersParams {
   page?: number
   limit?: number

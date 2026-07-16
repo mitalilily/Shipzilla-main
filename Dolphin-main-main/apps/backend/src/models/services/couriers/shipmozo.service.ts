@@ -663,6 +663,11 @@ export class ShipmozoService {
   private async pushOrder(payload: any) {
     const warehouseId = await this.resolveWarehouseId(payload)
     const paymentType = payload?.payment_type === 'cod' ? 'COD' : 'PREPAID'
+    const consigneeAddressLineOne = trim(payload?.consignee?.address)
+    const consigneeAddressLineTwo = trim(payload?.consignee?.address_2)
+    const consigneeFullAddress = [consigneeAddressLineOne, consigneeAddressLineTwo]
+      .filter(Boolean)
+      .join(', ')
     const raw = await this.post<any>('/push-order', {
       order_id: trim(payload.order_number),
       order_date: toDateOnly(payload.order_date),
@@ -673,8 +678,9 @@ export class ShipmozoService {
         ? toPhone(payload.consignee.alternate_phone)
         : undefined,
       consignee_email: trim(payload?.consignee?.email),
-      consignee_address_line_one: trim(payload?.consignee?.address),
-      consignee_address_line_two: trim(payload?.consignee?.address_2),
+      consignee_address: consigneeFullAddress || consigneeAddressLineOne,
+      consignee_address_line_one: consigneeAddressLineOne,
+      consignee_address_line_two: consigneeAddressLineTwo,
       consignee_pin_code: toPincode(payload?.consignee?.pincode),
       consignee_city: trim(payload?.consignee?.city),
       consignee_state: trim(payload?.consignee?.state),

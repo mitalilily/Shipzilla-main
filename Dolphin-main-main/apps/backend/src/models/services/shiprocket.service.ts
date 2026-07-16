@@ -5094,12 +5094,7 @@ export const createB2BShipmentService = async (
 
   const pickupDetails = normalizeJsonValue(params.pickup) ?? {}
   const rtoDetails = normalizeJsonValue(params.rto)
-  const rateScopeProvider =
-    bookingProviderInput === 'shiprocket'
-      ? 'shiprocket'
-      : bookingIntegrationType === 'shipmozo'
-        ? 'shiprocket'
-        : bookingIntegrationType
+  const rateScopeProvider = bookingIntegrationType || bookingProviderInput
 
   const courierId =
     params.courier_id !== undefined && params.courier_id !== null

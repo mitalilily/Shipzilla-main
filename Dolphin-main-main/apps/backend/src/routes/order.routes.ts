@@ -3,6 +3,7 @@ import {
   checkOrderNumberAvailabilityController,
   createB2BShipmentController,
   createB2CShipmentController,
+  generateBulkOrderDocumentsController,
   generateManifestController,
   getAllOrdersController,
   getB2BOrdersController,
@@ -21,6 +22,7 @@ router.post('/b2b/create', requireAuth, createB2BShipmentController)
 router.get('/check-order-number', requireAuth, checkOrderNumberAvailabilityController)
 router.get('/b2c/list', requireAuth, getB2COrdersController)
 router.get('/b2b/list', requireAuth, getB2BOrdersController)
+router.post('/bulk-documents', requireAuth, generateBulkOrderDocumentsController)
 router.post('/b2c/manifest', requireAuth, generateManifestController)
 router.post('/b2c/:orderId/retry-manifest', requireAuth, retryFailedManifestController)
 router.post('/:orderId/regenerate-documents', requireAuth, regenerateOrderDocumentsController)

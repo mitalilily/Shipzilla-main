@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { eq, inArray } from 'drizzle-orm'
+import { PDFDocument } from 'pdf-lib'
 import { db } from '../client'
 import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
@@ -21,13 +22,14 @@ import {
   loadInvoiceAssets,
   normalizePickupDetails,
 } from './invoiceHelpers'
-import { presignDownload, presignUpload } from './upload.service'
+import { downloadAndUploadToR2, presignDownload, presignUpload } from './upload.service'
 import { resolveInvoiceNumber } from './invoiceNumber.service'
 import { logTrackingEvent } from './trackingEvents.service'
 import { createNotificationService } from './notifications.service'
 import { sendWebhookEvent } from '../../services/webhookDelivery.service'
 import { recordRtoEvent } from './rto.service'
 import { applyRtoChargeOnce } from './webhookProcessor'
+import { ShipmozoService } from './couriers/shipmozo.service'
 
 const ADMIN_EDITABLE_ORDER_STATUSES = new Set([
   'pending',
@@ -177,6 +179,131 @@ const toNumber = (value: unknown, fallback = 0): number => {
   return Number.isFinite(n) ? n : fallback
 }
 
+const isHttpUrl = (value?: string | null) => typeof value === 'string' && /^https?:\/\//i.test(value)
+
+const isAmazonCourierName = (...values: unknown[]) =>
+  values.some((value) => /amazon/i.test(String(value ?? '')))
+
+const isShipmozoAmazonOrder = (order: any) => {
+  if (!isAmazonCourierName(order?.courier_partner, order?.courier_name, order?.courier_company)) {
+    return false
+  }
+
+  const provider = String(order?.integration_type || '').trim().toLowerCase()
+  return !provider || provider === 'shipmozo'
+}
+
+const extractHttpUrlDeep = (payload: any, keys: string[], depth = 0): string | null => {
+  if (!payload || depth > 4) return null
+
+  if (typeof payload === 'string') {
+    const trimmed = payload.trim()
+    return isHttpUrl(trimmed) ? trimmed : null
+  }
+
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      const found = extractHttpUrlDeep(item, keys, depth + 1)
+      if (found) return found
+    }
+    return null
+  }
+
+  if (typeof payload === 'object') {
+    for (const key of keys) {
+      const found = extractHttpUrlDeep(payload[key], keys, depth + 1)
+      if (found) return found
+    }
+
+    for (const child of Object.values(payload)) {
+      const found = extractHttpUrlDeep(child, keys, depth + 1)
+      if (found) return found
+    }
+  }
+
+  return null
+}
+
+const fetchShipmozoProviderLabel = async (awbNumber?: string | number | null) => {
+  const normalizedAwb = String(awbNumber ?? '').trim()
+  if (!normalizedAwb) return null
+
+  const response = await new ShipmozoService().getOrderLabel(normalizedAwb)
+  return extractHttpUrlDeep(response?.data ?? response, [
+    'label',
+    'label_url',
+    'labelUrl',
+    'shipping_label',
+    'shipping_label_url',
+    'pdf',
+    'url',
+  ])
+}
+
+const getOrderDocumentReference = (order: any, type: 'label' | 'invoice' | 'manifest') => {
+  if (type === 'label') {
+    const label = String(order?.label || '').trim()
+    return {
+      key: String(order?.label_key || '').trim() || (!isHttpUrl(label) ? label : ''),
+      url: String(order?.label_url || '').trim() || (isHttpUrl(label) ? label : ''),
+    }
+  }
+
+  if (type === 'manifest') {
+    const manifest = String(order?.manifest || '').trim()
+    return {
+      key: String(order?.manifest_key || '').trim() || (!isHttpUrl(manifest) ? manifest : ''),
+      url: String(order?.manifest_url || '').trim() || (isHttpUrl(manifest) ? manifest : ''),
+    }
+  }
+
+  const invoice = String(order?.invoice_link || '').trim()
+  return {
+    key: String(order?.invoice_key || '').trim() || (!isHttpUrl(invoice) ? invoice : ''),
+    url: String(order?.invoice_url || '').trim() || (isHttpUrl(invoice) ? invoice : ''),
+  }
+}
+
+const ensureOrderLabel = async (order: any, orderType: 'b2c' | 'b2b') => {
+  const existing = getOrderDocumentReference(order, 'label')
+
+  const userId = String(order?.user_id || '').trim()
+  if (!userId) throw new Error(`${order?.order_number || order?.id}: user is missing.`)
+
+  let labelKey: string | null = null
+
+  if (isShipmozoAmazonOrder(order) && order?.awb_number) {
+    const providerLabelUrl = await fetchShipmozoProviderLabel(order.awb_number)
+    if (!providerLabelUrl) {
+      throw new Error(`${order?.order_number || order?.id}: Shipmozo did not return the original Amazon label.`)
+    }
+
+    labelKey = await downloadAndUploadToR2({
+      url: providerLabelUrl,
+      userId,
+      filename: `shipmozo-amazon-label-${order.order_number || order.id}.pdf`,
+      folderKey: 'labels',
+      contentType: 'application/pdf',
+    })
+  } else {
+    if (existing.key || existing.url) return existing
+
+    labelKey = await generateLabelForOrder(order, userId, db)
+  }
+
+  if (!labelKey || typeof labelKey !== 'string' || !labelKey.trim()) {
+    throw new Error(`${order?.order_number || order?.id}: label could not be generated.`)
+  }
+
+  const table = orderType === 'b2c' ? b2c_orders : b2b_orders
+  await db
+    .update(table)
+    .set({ label: labelKey.trim(), updated_at: new Date() } as any)
+    .where(eq(table.id, order.id))
+
+  return { key: labelKey.trim(), url: '' }
+}
+
 const normalizeProducts = (rawProducts: unknown, fallbackAmount = 0): Product[] => {
   let productsData: any[] = []
   if (Array.isArray(rawProducts)) {
@@ -248,8 +375,9 @@ export const regenerateOrderDocumentsServiceAdmin = async ({
   let newInvoiceKey: string | null = null
 
   if (regenerateLabel) {
-    const labelKey = await generateLabelForOrder(order, userId, db)
-    if (!labelKey || typeof labelKey !== 'string') {
+    const labelRef = await ensureOrderLabel(order, orderType)
+    const labelKey = labelRef.key || labelRef.url
+    if (!labelKey || typeof labelKey !== 'string' || !labelKey.trim()) {
       throw new Error('Label regeneration failed')
     }
     newLabelKey = labelKey.trim()
@@ -412,6 +540,115 @@ export const regenerateOrderDocumentsServiceAdmin = async ({
     orderType,
     label: newLabelKey,
     invoice_link: newInvoiceKey,
+  }
+}
+
+export const generateBulkOrderDocumentsPdfService = async ({
+  orderIds,
+  documentType = 'label',
+  expectedUserId,
+}: {
+  orderIds: string[]
+  documentType?: 'label' | 'invoice' | 'manifest'
+  expectedUserId: string
+}) => {
+  const normalizedOrderIds = Array.from(
+    new Set(orderIds.map((value) => String(value || '').trim()).filter(Boolean)),
+  )
+
+  if (!normalizedOrderIds.length) {
+    throw new Error('At least one order must be selected.')
+  }
+
+  if (!['label', 'invoice', 'manifest'].includes(documentType)) {
+    throw new Error('Unsupported document type.')
+  }
+
+  const [b2cRows, b2bRows] = await Promise.all([
+    db.select().from(b2c_orders).where(inArray(b2c_orders.id, normalizedOrderIds)),
+    db.select().from(b2b_orders).where(inArray(b2b_orders.id, normalizedOrderIds)),
+  ])
+
+  const orderById = new Map<string, { order: any; orderType: 'b2c' | 'b2b' }>()
+  b2cRows.forEach((order) => orderById.set(String(order.id), { order, orderType: 'b2c' }))
+  b2bRows.forEach((order) => orderById.set(String(order.id), { order, orderType: 'b2b' }))
+
+  const missingOrderIds = normalizedOrderIds.filter((id) => !orderById.has(id))
+  if (missingOrderIds.length) {
+    throw new Error(`Some selected orders were not found: ${missingOrderIds.join(', ')}`)
+  }
+
+  const mergedPdf = await PDFDocument.create()
+  const warnings: string[] = []
+  let mergedCount = 0
+
+  for (const orderId of normalizedOrderIds) {
+    const entry = orderById.get(orderId)
+    if (!entry) continue
+
+    const { order, orderType } = entry
+    if (String(order.user_id || '') !== expectedUserId) {
+      throw new Error('One or more selected orders were not found.')
+    }
+
+    try {
+      const reference =
+        documentType === 'label'
+          ? await ensureOrderLabel(order, orderType)
+          : getOrderDocumentReference(order, documentType)
+
+      const source = reference.url || reference.key
+      if (!source) {
+        warnings.push(`${order.order_number || order.id}: ${documentType} is missing.`)
+        continue
+      }
+
+      const downloadUrl = reference.url
+        ? reference.url
+        : await presignDownload(reference.key, {
+            disposition: 'inline',
+            contentType: 'application/pdf',
+          })
+
+      const resolvedUrl = Array.isArray(downloadUrl) ? downloadUrl[0] : downloadUrl
+      if (!resolvedUrl) {
+        warnings.push(`${order.order_number || order.id}: ${documentType} could not be opened.`)
+        continue
+      }
+
+      const response = await axios.get(resolvedUrl, {
+        responseType: 'arraybuffer',
+        timeout: 60000,
+      })
+      const sourcePdf = await PDFDocument.load(Buffer.from(response.data), {
+        ignoreEncryption: true,
+      })
+      const copiedPages = await mergedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices())
+      copiedPages.forEach((page) => mergedPdf.addPage(page))
+      mergedCount += 1
+    } catch (error: any) {
+      warnings.push(
+        `${order.order_number || order.id}: ${
+          error?.message || `${documentType} could not be prepared.`
+        }`,
+      )
+    }
+  }
+
+  if (!mergedCount || mergedPdf.getPageCount() === 0) {
+    throw new Error(`No ${documentType} PDFs could be prepared for the selected orders.`)
+  }
+
+  const pdfBytes = await mergedPdf.save()
+  const buffer = Buffer.from(pdfBytes)
+  const fileName = `bulk-${documentType}s-${dayjs().format('YYYYMMDD-HHmmss')}.pdf`
+
+  return {
+    buffer,
+    fileName,
+    contentType: 'application/pdf',
+    mergedCount,
+    warnings,
   }
 }
 

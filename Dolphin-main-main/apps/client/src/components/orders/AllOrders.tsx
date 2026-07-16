@@ -1,11 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Alert, AlertTitle, Box, Button, Link, Stack, Typography } from '@mui/material'
+import { saveAs } from 'file-saver'
 import moment from 'moment'
 import { useEffect, useState } from 'react'
-import { MdDescription, MdLocalShipping, MdRefresh, MdVisibility } from 'react-icons/md'
+import { MdCancel, MdDescription, MdLocalShipping, MdRefresh, MdVisibility } from 'react-icons/md'
 import { TbFilter, TbPlus, TbRefresh } from 'react-icons/tb'
 import { Link as RouterLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { generateManifestService } from '../../api/order.service'
+import {
+  bulkDownloadOrderDocumentsService,
+  generateManifestService,
+} from '../../api/order.service'
+import { cancelShipment } from '../../api/pickups'
 import { useOrderCreationGuard } from '../../hooks/useOrderCreationGuard'
 import {
   useAllOrders,
@@ -66,6 +71,13 @@ type BulkFeedback = {
 const isManifestEligible = (order: Order) => {
   return order.type === 'b2c' ? isB2CManifestEligible(order) : false
 }
+
+const CANCELLABLE_STATUSES = new Set(['booked', 'pending', 'confirmed', 'pickup_initiated'])
+
+const isOrderCancellable = (order: Order) =>
+  order.type === 'b2c' &&
+  CANCELLABLE_STATUSES.has(String(order.order_status || '').trim().toLowerCase()) &&
+  String(order.integration_type || '').trim().toLowerCase() === 'shipmozo'
 
 const AllOrders = () => {
   const [searchParams] = useSearchParams()
@@ -325,6 +337,36 @@ const AllOrders = () => {
     })
 
     try {
+      if (type === 'label') {
+        const result = await bulkDownloadOrderDocumentsService(
+          selectedOrders.map((order) => order.id),
+          'label',
+        )
+
+        saveAs(result.blob, result.fileName)
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['b2cOrdersByUser'] }),
+          queryClient.invalidateQueries({ queryKey: ['b2bOrdersByUser'] }),
+          queryClient.invalidateQueries({ queryKey: ['orders'] }),
+        ])
+
+        const warningMessage = result.warnings.length
+          ? ` ${result.warnings.slice(0, 3).join(' ')}${
+              result.warnings.length > 3 ? ` +${result.warnings.length - 3} more issue(s).` : ''
+            }`
+          : ''
+        const message = `Downloaded one PDF with ${result.mergedCount || selectedOrders.length} label(s).${warningMessage}`
+        setBulkFeedback({
+          severity: result.warnings.length ? 'warning' : 'success',
+          title: result.warnings.length
+            ? 'Labels downloaded with warnings'
+            : 'Labels downloaded',
+          message,
+        })
+        toast.open({ message, severity: result.warnings.length ? 'info' : 'success' })
+        return
+      }
+
       const documentEntries = selectedOrders.reduce<DocumentEntry[]>((entries, order) => {
         const { key, url } = getDocumentReference(order, type)
         if (!key && !url) return entries
@@ -445,6 +487,23 @@ const AllOrders = () => {
     await syncShipmentTracking(trackingParams)
   }
 
+  const handleCancelOrder = async (order: Order) => {
+    try {
+      await cancelShipment(String(order.id))
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['b2cOrdersByUser'] }),
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+      ])
+      toast.open({ message: 'Order cancellation requested successfully.', severity: 'success' })
+    } catch (error) {
+      console.error('Cancel order failed:', error)
+      toast.open({
+        message: getActionableErrorMessage(error, 'Failed to cancel order.'),
+        severity: 'error',
+      })
+    }
+  }
+
   const handleDownloadDocument = async (order: Order, type: DocumentType) => {
     const { key, url } = getDocumentReference(order, type)
     if (!key && !url) return
@@ -548,6 +607,7 @@ const AllOrders = () => {
         const hasManifestDocument = Boolean(
           String(row.manifest_url || row.manifest_key || row.manifest || '').trim(),
         )
+        const canCancel = isOrderCancellable(row)
 
         const actions: OrderActionMenuItem[] = [
           ...(trackingPath
@@ -632,6 +692,16 @@ const AllOrders = () => {
                   label: 'Sync Live Status',
                   icon: <MdRefresh size={18} />,
                   onClick: () => handleSyncLiveStatus(row),
+                },
+              ]
+            : []),
+          ...(canCancel
+            ? [
+                {
+                  key: 'cancel-order',
+                  label: 'Cancel Order',
+                  icon: <MdCancel size={18} />,
+                  onClick: () => handleCancelOrder(row),
                 },
               ]
             : []),
