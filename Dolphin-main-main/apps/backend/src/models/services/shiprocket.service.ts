@@ -198,10 +198,12 @@ const saveProviderLabelUrlAsR2Key = async ({
   labelUrl,
   userId,
   orderNumber,
+  filenamePrefix = 'amazon-label',
 }: {
   labelUrl?: string | null
   userId: string
   orderNumber: string
+  filenamePrefix?: string
 }) => {
   const normalizedUrl = String(labelUrl ?? '').trim()
   if (!/^https?:\/\//i.test(normalizedUrl)) return normalizedUrl || null
@@ -215,7 +217,7 @@ const saveProviderLabelUrlAsR2Key = async ({
     String(labelResponse.headers?.['content-type'] || '').trim() || 'application/pdf'
 
   const { uploadUrl, key } = await presignUpload({
-    filename: `amazon-label-${orderNumber}.pdf`,
+    filename: `${filenamePrefix}-${orderNumber}.pdf`,
     contentType,
     userId,
     folderKey: 'labels',
@@ -2756,10 +2758,73 @@ export const fetchAvailableCouriersWithRatesB2B = async (
       const courierKey = makeShiprocketLiveCourierKey(liveCourier)
       if (courierMap.has(courierKey)) continue
 
-      const freightCharges = Math.max(
-        0,
-        liveCourier.rate - liveCourier.codCharges - liveCourier.otherCharges,
+      let calculatedRate: Awaited<ReturnType<typeof calculateB2BRate>> | null = null
+      let rateCalculationError: string | null = null
+      const rateScopes: Array<{ courierId?: number; serviceProvider?: string }> = [
+        { courierId: liveCourier.id, serviceProvider: 'shiprocket' },
+        { serviceProvider: 'shiprocket' },
+      ]
+
+      for (const courierScope of rateScopes) {
+        try {
+          calculatedRate = await calculateB2BRate({
+            originPincode: originPincode ?? '',
+            destinationPincode: destinationPincode ?? '',
+            weightKg: normalizedActualWeightKg,
+            length: normalizedLength,
+            width: normalizedBreadth,
+            height: normalizedHeight,
+            pieceCount:
+              Number(params.pieceCount ?? 0) > 0 ? Number(params.pieceCount) : undefined,
+            invoiceValue: Number(params.order_amount ?? params.orderAmount ?? 0),
+            paymentMode:
+              String(params.payment_type ?? '').toLowerCase() === 'cod' ? 'COD' : 'PREPAID',
+            courierScope,
+            planId: activePlanId ?? undefined,
+          })
+          rateCalculationError = null
+          break
+        } catch (calculationError: any) {
+          rateCalculationError = calculationError?.message || String(calculationError)
+        }
+      }
+
+      if (!calculatedRate) {
+        console.error('[fetchAvailableCouriersWithRatesB2B] live Shiprocket rate-card calculation failed', {
+          courierId: liveCourier.id,
+          courierName: liveCourier.name,
+          error: rateCalculationError,
+        })
+      }
+
+      const billableWeightKg = Number(
+        calculatedRate?.calculation?.billableWeight ?? normalizedActualWeightKg ?? 0,
       )
+      const volumetricWeightKg = Number(calculatedRate?.calculation?.volumetricWeight ?? 0)
+      const calculatedOverheads = calculatedRate?.charges?.overheads || []
+      const hasCalculatedBreakdown = Boolean(calculatedRate?.charges)
+      const calculatedCodCharges = calculatedOverheads.reduce((sum: number, charge: any) => {
+        const code = String(charge?.code ?? '').toUpperCase()
+        return code.includes('COD') ? sum + Number(charge?.amount ?? 0) : sum
+      }, 0)
+      const calculatedOtherCharges = calculatedOverheads.reduce((sum: number, charge: any) => {
+        const code = String(charge?.code ?? '').toUpperCase()
+        return code.includes('COD') ? sum : sum + Number(charge?.amount ?? 0)
+      }, Number(calculatedRate?.charges?.demurrage ?? 0))
+      const totalRate = Number(hasCalculatedBreakdown ? calculatedRate?.charges?.total : liveCourier.rate)
+      const codCharges =
+        String(params.payment_type ?? '').toLowerCase() === 'cod'
+          ? hasCalculatedBreakdown
+            ? calculatedCodCharges
+            : Number(liveCourier.codCharges ?? 0)
+          : 0
+      const otherCharges = hasCalculatedBreakdown
+        ? Math.max(0, calculatedOtherCharges)
+        : Math.max(0, Number(liveCourier.otherCharges ?? 0))
+      const freightCharges = hasCalculatedBreakdown
+        ? Number(calculatedRate?.charges?.baseFreight ?? 0)
+        : Math.max(0, liveCourier.rate - liveCourier.codCharges - liveCourier.otherCharges)
+
       courierMap.set(courierKey, {
         id: liveCourier.id,
         courier_option_key: courierKey,
@@ -2767,26 +2832,29 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         displayName: liveCourier.name,
         integration_type: 'shiprocket',
         serviceProvider: 'shiprocket',
-        rate: liveCourier.rate,
+        rate: totalRate,
         freight_charges: freightCharges,
-        cod_charges: liveCourier.codCharges,
-        other_charges: liveCourier.otherCharges,
+        cod_charges: codCharges,
+        other_charges: otherCharges,
         courier_cost_estimate: liveCourier.rate,
-        chargeable_weight: liveCourier.chargeableWeightG,
-        volumetric_weight: liveCourier.volumetricWeightG,
+        chargeable_weight: liveCourier.chargeableWeightG ?? Math.round(billableWeightKg * 1000),
+        volumetric_weight: liveCourier.volumetricWeightG ?? Math.round(volumetricWeightKg * 1000),
         localRates: {
           forward: {
-            rate: liveCourier.rate,
-            cod_charges: liveCourier.codCharges,
-            other_charges: liveCourier.otherCharges,
+            rate: totalRate,
+            cod_charges: codCharges,
+            other_charges: otherCharges,
             mode: 'b2b',
           },
         },
         billing_breakdown: buildB2BBillingBreakdown({
           freightCharges,
-          codCharges: liveCourier.codCharges,
-          otherCharges: liveCourier.otherCharges,
-          total: liveCourier.rate,
+          codCharges,
+          otherCharges,
+          total: totalRate,
+          otherChargeItems: calculatedOverheads.filter(
+            (charge: any) => !String(charge?.code ?? '').toUpperCase().includes('COD'),
+          ),
         }),
         approxZone: {
           id: destinationZoneDetails[0]?.id ?? destinationZoneId,
@@ -2802,6 +2870,7 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         estimated_delivery_days: liveCourier.estimatedDeliveryDays,
         edd: liveCourier.estimatedDeliveryDays,
         provider_serviceability: liveCourier.raw,
+        rate_card_error: rateCalculationError,
       })
     }
 
@@ -5579,15 +5648,35 @@ export const createB2BShipmentService = async (
     shipmentRecord?.data?.label_url ??
     null
   const manifestUrl = shipmentRecord?.manifest ?? shipmentRecord?.manifest_url ?? null
+  let persistedLabel = labelUrl ? String(labelUrl) : null
+
+  if (bookingIntegrationType === 'shiprocket' && /^https?:\/\//i.test(String(persistedLabel || ''))) {
+    try {
+      persistedLabel = await saveProviderLabelUrlAsR2Key({
+        labelUrl: persistedLabel,
+        userId,
+        orderNumber: normalizedOrderNumber,
+        filenamePrefix: 'shiprocket-b2b-label',
+      })
+    } catch (labelErr: any) {
+      console.error('Failed to persist Shiprocket Cargo B2B label URL', {
+        orderNumber: normalizedOrderNumber,
+        shipmentId,
+        awbNumber,
+        error: labelErr?.message || labelErr,
+      })
+      persistedLabel = null
+    }
+  }
 
   if (
     bookingIntegrationType === 'shipmozo' &&
     isAmazonCourierName(courierPartner) &&
-    labelUrl
+    persistedLabel
   ) {
     try {
-      labelUrl = await saveProviderLabelUrlAsR2Key({
-        labelUrl: String(labelUrl),
+      persistedLabel = await saveProviderLabelUrlAsR2Key({
+        labelUrl: String(persistedLabel),
         userId,
         orderNumber: normalizedOrderNumber,
       })
@@ -5597,7 +5686,7 @@ export const createB2BShipmentService = async (
         awbNumber,
         error: labelErr?.message || labelErr,
       })
-      labelUrl = null
+      persistedLabel = null
     }
   }
 
@@ -5621,7 +5710,7 @@ export const createB2BShipmentService = async (
       awb_number: String(awbNumber),
       courier_partner: String(courierPartner),
       courier_id: params.courier_id != null ? String(params.courier_id) : null,
-      label: labelUrl ? String(labelUrl) : null,
+      label: persistedLabel ? String(persistedLabel) : null,
       manifest: manifestUrl ? String(manifestUrl) : null,
       courier_cost: courierCost != null ? String(Number(courierCost)) : null,
       delivery_message: String(
@@ -5634,13 +5723,44 @@ export const createB2BShipmentService = async (
     })
     .where(eq(b2b_orders.id, pendingOrder.id))
 
+  if (!persistedLabel) {
+    try {
+      const [freshOrder] = await db
+        .select()
+        .from(b2b_orders)
+        .where(eq(b2b_orders.id, pendingOrder.id))
+        .limit(1)
+
+      if (freshOrder) {
+        const generatedLabelKey = await generateLabelForOrder(freshOrder, userId, db)
+        if (generatedLabelKey && String(generatedLabelKey).trim()) {
+          persistedLabel = String(generatedLabelKey).trim()
+          await db
+            .update(b2b_orders)
+            .set({
+              label: persistedLabel,
+              updated_at: new Date(),
+            })
+            .where(eq(b2b_orders.id, pendingOrder.id))
+        }
+      }
+    } catch (labelErr: any) {
+      console.error('Failed to generate Shipzilla B2B label after booking', {
+        orderNumber: normalizedOrderNumber,
+        shipmentId,
+        awbNumber,
+        error: labelErr?.message || labelErr,
+      })
+    }
+  }
+
   return {
     order_id: pendingOrder.id,
     shipment_id: shipmentId ? String(shipmentId) : null,
     awb_number: String(awbNumber),
     courier_partner: String(courierPartner),
     courier_id: params.courier_id ?? null,
-    label: labelUrl ? String(labelUrl) : null,
+    label: persistedLabel ? String(persistedLabel) : null,
     manifest: manifestUrl ? String(manifestUrl) : null,
     courier_cost: courierCost != null ? Number(courierCost) : null,
     provider: rateScopeProvider,
