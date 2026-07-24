@@ -9,7 +9,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
-import { useRef, useState } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import { AiTwotoneThunderbolt } from 'react-icons/ai'
 import { CgCalculator, CgTrack } from 'react-icons/cg'
 import { FaTicket } from 'react-icons/fa6'
@@ -31,7 +31,7 @@ const QuickActions = () => {
   const navigate = useNavigate()
   const { guardOrderCreation, isReady } = useOrderCreationGuard()
 
-  const actions = [
+  const actions = useMemo(() => [
     {
       icon: <TbTruckDelivery size={18} />,
       name: 'Create Shipment',
@@ -64,13 +64,14 @@ const QuickActions = () => {
       color: TEAL,
       bg: alpha(TEAL, 0.12),
     },
-  ]
+  ], [])
 
   return (
     <>
-      <Box ref={anchorRef} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <Box ref={anchorRef}>
         <IconButton
           aria-label="Quick actions"
+          onClick={() => setOpen((prev) => !prev)}
           sx={{
             width: 42,
             height: 42,
@@ -91,32 +92,31 @@ const QuickActions = () => {
         </IconButton>
       </Box>
 
-      <Popper
-        open={open}
-        anchorEl={anchorRef.current}
-        placement="bottom-end"
-        transition
-        sx={{ zIndex: 2200 }}
-        modifiers={[{ name: 'offset', options: { offset: [0, 10] } }]}
-      >
-        {({ TransitionProps }) => (
-          <Grow {...TransitionProps} timeout={200}>
-            <Box>
-              <ClickAwayListener onClickAway={() => setOpen(false)}>
-                <Paper
-                  elevation={0}
-                  onMouseEnter={() => setOpen(true)}
-                  onMouseLeave={() => setOpen(false)}
-                  sx={{
-                    minWidth: 280,
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    border: `1px solid ${alpha(INK, 0.08)}`,
-                    background:
-                      'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%)',
-                    boxShadow: `0 20px 40px ${alpha(INK, 0.12)}`,
-                  }}
-                >
+      {open ? (
+        <Popper
+          open={open}
+          anchorEl={anchorRef.current}
+          placement="bottom-end"
+          transition
+          sx={{ zIndex: 2200 }}
+          modifiers={[{ name: 'offset', options: { offset: [0, 10] } }]}
+        >
+          {({ TransitionProps }) => (
+            <Grow {...TransitionProps} timeout={120}>
+              <Box>
+                <ClickAwayListener onClickAway={() => setOpen(false)}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      minWidth: 280,
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      border: `1px solid ${alpha(INK, 0.08)}`,
+                      background:
+                        'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%)',
+                      boxShadow: `0 14px 28px ${alpha(INK, 0.1)}`,
+                    }}
+                  >
                   <Box
                     sx={{
                       px: 1.5,
@@ -203,14 +203,15 @@ const QuickActions = () => {
                       )
                     })}
                   </Stack>
-                </Paper>
-              </ClickAwayListener>
-            </Box>
-          </Grow>
-        )}
-      </Popper>
+                  </Paper>
+                </ClickAwayListener>
+              </Box>
+            </Grow>
+          )}
+        </Popper>
+      ) : null}
     </>
   )
 }
 
-export default QuickActions
+export default memo(QuickActions)

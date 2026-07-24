@@ -10,7 +10,17 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type PointerEvent,
+  type SetStateAction,
+} from 'react'
 import { BiInfoCircle, BiListPlus } from 'react-icons/bi'
 import { CgTrack } from 'react-icons/cg'
 import { FaBalanceScaleLeft } from 'react-icons/fa'
@@ -65,6 +75,7 @@ interface SidebarProps {
 }
 
 export const COLLAPSED_WIDTH = 80
+const SIDEBAR_TRANSITION = '140ms ease'
 
 const STANDARD_ICON_SIZE = 19
 const navItems: NavItem[] = [
@@ -232,10 +243,11 @@ const navItems: NavItem[] = [
   },
 ]
 
-export default function Sidebar({ role = 'customer', pinned, hovered, setHovered }: SidebarProps) {
+function Sidebar({ role = 'customer', pinned, hovered, setHovered }: SidebarProps) {
   const location = useLocation()
   const theme = useTheme()
   const isSidebarExpanded = pinned || hovered
+  const hoverTimerRef = useRef<number | null>(null)
 
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
 
@@ -243,16 +255,49 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
     if (!isSidebarExpanded) setExpandedItems({})
   }, [isSidebarExpanded])
 
-  const toggleExpand = (key: string) => {
+  useEffect(
+    () => () => {
+      if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current)
+    },
+    [],
+  )
+
+  const toggleExpand = useCallback((key: string) => {
     setExpandedItems((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+  }, [])
+
+  const handlePointerEnter = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (pinned || event.pointerType !== 'mouse') return
+      if (hoverTimerRef.current) window.clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = window.setTimeout(() => setHovered(true), 80)
+    },
+    [pinned, setHovered],
+  )
+
+  const handlePointerLeave = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== 'mouse') return
+      if (hoverTimerRef.current) {
+        window.clearTimeout(hoverTimerRef.current)
+        hoverTimerRef.current = null
+      }
+      setHovered(false)
+    },
+    [setHovered],
+  )
+
+  const visibleNavItems = useMemo(
+    () => navItems.filter((item) => item.roles.includes(role || 'customer')),
+    [role],
+  )
 
   const activeItemSx = {
     background: brandGradients.button,
     color: '#FFFFFF',
     '& .MuiListItemIcon-root': { color: '#FFFFFF' },
     '& .MuiListItemText-primary': { fontWeight: 800 },
-    boxShadow: '0 16px 28px rgba(93,35,148,0.2)',
+    boxShadow: '0 8px 18px rgba(93,35,148,0.16)',
   }
 
   const navItemSx = {
@@ -263,7 +308,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
     px: 1.6,
     color: brand.inkSoft,
     border: '1px solid transparent',
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    transition: `background-color ${SIDEBAR_TRANSITION}, color ${SIDEBAR_TRANSITION}, border-color ${SIDEBAR_TRANSITION}`,
     '&:hover': {
       bgcolor: brand.primarySoft,
       color: brand.primary,
@@ -326,7 +371,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
               <MdExpandMore
                 style={{
                   transform: showExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.3s',
+                  transition: `transform ${SIDEBAR_TRANSITION}`,
                   color: showExpanded ? brand.primary : 'inherit',
                 }}
               />
@@ -345,7 +390,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
             )}
 
             {hasChildren && isSidebarExpanded && (
-              <Collapse in={showExpanded} timeout="auto" unmountOnExit>
+              <Collapse in={showExpanded} timeout={140} unmountOnExit>
                 <List disablePadding sx={{ ml: 3.9, mt: 0.5, mb: 0.85 }}>
                   {item.children?.map((sub) => {
                     const subActive = isActive(location.pathname, sub.path)
@@ -393,7 +438,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
         height: '100vh',
         background: 'linear-gradient(180deg, rgba(255,255,255,0.99) 0%, rgba(247,243,251,0.99) 100%)',
         borderRight: `1px solid ${alpha(brand.primary, 0.1)}`,
-        transition: 'width 0.2s ease',
+        transition: `width ${SIDEBAR_TRANSITION}`,
         display: 'flex',
         flexDirection: 'column',
         zIndex: theme.zIndex.drawer,
@@ -401,15 +446,14 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
         left: 0,
         top: 0,
         overflowX: 'hidden',
-        boxShadow: '16px 0 40px rgba(67,22,109,0.08)',
+        boxShadow: '10px 0 24px rgba(67,22,109,0.06)',
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',
         contain: 'layout paint',
-        willChange: 'width',
         transform: 'translateZ(0)',
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
     >
       <Box sx={{ p: 1.25, mb: 0.85 }}>
         <Box
@@ -464,7 +508,7 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
             border: `1px solid ${alpha(brand.primary, 0.08)}`,
           }}
         >
-          {renderNavList(navItems.filter((item) => item.roles.includes(role || 'customer')))}
+          {renderNavList(visibleNavItems)}
         </Box>
       </Box>
 
@@ -499,3 +543,5 @@ export default function Sidebar({ role = 'customer', pinned, hovered, setHovered
     </Box>
   )
 }
+
+export default memo(Sidebar)

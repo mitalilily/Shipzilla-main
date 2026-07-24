@@ -1,6 +1,6 @@
 import { Box, Button, IconButton, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { motion } from 'framer-motion'
+import { memo, useMemo } from 'react'
 import { FiArrowUpRight } from 'react-icons/fi'
 import {
   TbLayoutSidebarLeftCollapseFilled,
@@ -39,23 +39,18 @@ const getSectionLabel = (pathname: string) =>
     ] as const
   ).find((section) => pathname.startsWith(section.match))?.label || 'Dashboard'
 
-export default function Navbar({ handleDrawerToggle, pinned }: NavbarProps) {
+function Navbar({ handleDrawerToggle, pinned }: NavbarProps) {
   const theme = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const isTablet = useMediaQuery(theme.breakpoints.down('lg'))
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const activeSection = getSectionLabel(location.pathname)
+  const activeSection = useMemo(() => getSectionLabel(location.pathname), [location.pathname])
   const { guardOrderCreation, isLoading } = useOrderCreationGuard()
 
   return (
     <BrandTopBar sx={{ zIndex: (muiTheme) => muiTheme.zIndex.appBar }}>
-      <motion.div
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-        style={{ width: '100%' }}
-      >
+      <Box sx={{ width: '100%' }}>
         <Stack
           direction={{ xs: 'column', lg: 'row' }}
           spacing={{ xs: 1, lg: 1.25 }}
@@ -159,7 +154,9 @@ export default function Navbar({ handleDrawerToggle, pinned }: NavbarProps) {
             <UserMenu />
           </Stack>
         </Stack>
-      </motion.div>
+      </Box>
     </BrandTopBar>
   )
 }
+
+export default memo(Navbar)

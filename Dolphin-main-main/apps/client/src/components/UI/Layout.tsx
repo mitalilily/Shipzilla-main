@@ -1,5 +1,5 @@
 import { alpha, Box, Container, Drawer, Stack, useMediaQuery, useTheme } from '@mui/material'
-import { Suspense, useState } from 'react'
+import { Suspense, useCallback, useMemo, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { brand, brandGradients } from '../../theme/brand'
 import { DRAWER_WIDTH } from '../../utils/constants'
@@ -16,10 +16,26 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [hovered, setHovered] = useState(false)
 
-  const handleDrawerToggle = () => {
-    if (isMobile) setMobileOpen(!mobileOpen)
+  const handleDrawerToggle = useCallback(() => {
+    if (isMobile) setMobileOpen((prev) => !prev)
     else setPinned((prev) => !prev)
-  }
+  }, [isMobile])
+
+  const handleMobileDrawerClose = useCallback(() => {
+    setMobileOpen(false)
+  }, [])
+
+  const sidebar = useMemo(
+    () => (
+      <Sidebar
+        hovered={hovered}
+        setHovered={setHovered}
+        pinned={isMobile ? true : pinned}
+        handleDrawerToggle={handleDrawerToggle}
+      />
+    ),
+    [handleDrawerToggle, hovered, isMobile, pinned],
+  )
 
   return (
     <Box
@@ -37,7 +53,7 @@ export default function Layout() {
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
+          onClose={handleMobileDrawerClose}
           ModalProps={{ keepMounted: true }}
           sx={{
             '& .MuiDrawer-paper': {
@@ -48,12 +64,7 @@ export default function Layout() {
             },
           }}
         >
-          <Sidebar
-            hovered={hovered}
-            setHovered={setHovered}
-            pinned
-            handleDrawerToggle={handleDrawerToggle}
-          />
+          {sidebar}
         </Drawer>
       ) : (
         <Box
@@ -61,18 +72,12 @@ export default function Layout() {
             width: pinned ? DRAWER_WIDTH : COLLAPSED_WIDTH,
             minWidth: pinned ? DRAWER_WIDTH : COLLAPSED_WIDTH,
             flexShrink: 0,
-            transition: 'width 200ms ease',
-            willChange: 'width',
+            transition: 'width 140ms ease',
             position: 'relative',
             zIndex: (muiTheme) => muiTheme.zIndex.drawer + 2,
           }}
         >
-          <Sidebar
-            hovered={hovered}
-            setHovered={setHovered}
-            pinned={pinned}
-            handleDrawerToggle={handleDrawerToggle}
-          />
+          {sidebar}
         </Box>
       )}
 
