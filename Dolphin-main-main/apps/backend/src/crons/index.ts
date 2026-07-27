@@ -4,6 +4,7 @@ import { generateAutoBillingInvoices } from './invoiceGenerator'
 import { processPendingWebhooks } from './processPendingWebhooks'
 import { reconcileWalletTopups } from './reconcileWalletTopups'
 import { seedHolidaysCron } from './seedHolidays'
+import { recoverMissingShiprocketCargoAwbs } from './shiprocketCargoAwbRecovery'
 import {
   sendDailyWeightReconciliationEmails,
   sendWeeklyWeightReconciliationEmails,
@@ -24,6 +25,23 @@ if (isRazorpayConfigured) {
 
 cron.schedule('*/1 * * * *', () => {
   processPendingWebhooks().catch((err) => console.error('Error in cron webhook processor', err))
+})
+
+let shiprocketCargoAwbRecoveryRunning = false
+cron.schedule('*/2 * * * *', async () => {
+  if (shiprocketCargoAwbRecoveryRunning) return
+
+  shiprocketCargoAwbRecoveryRunning = true
+  try {
+    const result = await recoverMissingShiprocketCargoAwbs()
+    if (result.checked || result.updated) {
+      console.log('[Cron] Shiprocket Cargo AWB recovery complete', result)
+    }
+  } catch (err) {
+    console.error('[Cron] Shiprocket Cargo AWB recovery failed:', err)
+  } finally {
+    shiprocketCargoAwbRecoveryRunning = false
+  }
 })
 
 cron.schedule('0 2 * * *', () => generateAutoBillingInvoices())
