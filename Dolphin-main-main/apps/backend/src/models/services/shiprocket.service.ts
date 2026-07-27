@@ -93,6 +93,7 @@ import {
   getShiprocketCargoClientId,
   getShiprocketCargoShipmentCharges,
   getShiprocketCargoShipmentDetails,
+  trackShiprocketCargoShipment,
 } from './shiprocketCargo.service'
 
 // Load correct .env based on NODE_ENV
@@ -8952,6 +8953,74 @@ const mapShipmozoTracking = (raw: any, order: OrderSummary): ProviderNormalizedT
   }
 }
 
+const mapShiprocketCargoTracking = (raw: any, order: OrderSummary): ProviderNormalizedTracking => {
+  const data = raw?.data ?? raw?.shipment ?? raw ?? {}
+  const history: TrackingHistoryItem[] = []
+  const statusHistory = Array.isArray(data?.status_history)
+    ? data.status_history
+    : Array.isArray(data?.tracking_history)
+      ? data.tracking_history
+      : Array.isArray(data?.history)
+        ? data.history
+        : []
+
+  statusHistory.forEach((event: any) => {
+    pushHistoryEvent(history, {
+      statusCode:
+        event?.status_dp ??
+        event?.status_code ??
+        event?.status ??
+        event?.current_status ??
+        event?.reason,
+      message:
+        event?.reason ??
+        event?.status_dp ??
+        event?.status ??
+        event?.message ??
+        event?.remarks ??
+        event?.current_status,
+      location: event?.location ?? event?.city ?? event?.hub,
+      time:
+        event?.created_at ??
+        event?.event_time ??
+        event?.status_time ??
+        event?.scan_time ??
+        event?.date,
+    })
+  })
+
+  const currentStatus = sanitizeString(
+    data?.status_dp ?? data?.status ?? data?.current_status ?? order.order_status,
+    order.order_status ?? 'In Transit',
+  )
+
+  if (!history.length) {
+    pushHistoryEvent(history, {
+      statusCode: currentStatus,
+      message: currentStatus,
+      location: '',
+      time: data?.created_at_date ?? data?.add_date ?? order.updated_at ?? order.created_at,
+    })
+  }
+
+  return {
+    history,
+    status: currentStatus,
+    edd: sanitizeString(data?.edd_date ?? data?.edd ?? data?.original_edd ?? order.edd ?? '') || null,
+    shipment_info:
+      sanitizeString(data?.reason ?? data?.message ?? data?.status_dp ?? data?.status ?? '') ||
+      null,
+    courier_name: sanitizeString(
+      data?.delivery_partner_name ??
+        data?.courier_name ??
+        data?.courier_partner ??
+        order.courier_partner ??
+        'Shiprocket Cargo',
+      'Shiprocket Cargo',
+    ),
+  }
+}
+
 const buildTrackingResponse = (
   order: OrderSummary,
   providerData: ProviderNormalizedTracking,
@@ -9063,11 +9132,12 @@ const findOrderByAwb = async (awb: string): Promise<OrderSummary | null> => {
     .limit(1)
 
   if (b2b) {
+    const b2bCourierPartner = sanitizeString(b2b.courier_partner ?? '').toLowerCase()
     return {
       id: b2b.id,
       order_id: b2b.order_id,
       order_number: b2b.order_number,
-      integration_type: 'shipmozo',
+      integration_type: b2bCourierPartner.includes('shipmozo') ? 'shipmozo' : 'shiprocket_cargo',
       courier_partner: b2b.courier_partner,
       courier_id: b2b.courier_id ? Number(b2b.courier_id) : null,
       awb_number: b2b.awb_number ?? awb,
@@ -9108,6 +9178,9 @@ export const trackByAwbService = async (awb: string): Promise<TrackingServiceRes
       const shipmozoService = new ShipmozoService()
       const raw = await shipmozoService.trackOrder(normalizedAwb)
       providerData = mapShipmozoTracking(raw, order)
+    } else if (providerKey === 'shiprocket_cargo' || providerKey === 'shiprocket') {
+      const raw = await trackShiprocketCargoShipment(normalizedAwb)
+      providerData = mapShiprocketCargoTracking(raw, order)
     } else {
       if (localTrackingData.history.length) {
         return buildTrackingResponse(order, localTrackingData)
