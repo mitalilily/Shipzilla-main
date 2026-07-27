@@ -84,6 +84,8 @@ import { calculateFreight } from './pricing/chargeableFreight'
 import {
   createForwardShipment,
   generateAwb,
+  generatePickupManifest as generateShiprocketPickupManifest,
+  requestShipmentPickup,
 } from './shiprocketExtended.service'
 import {
   createShiprocketCargoOrder,
@@ -6356,6 +6358,9 @@ export const generateManifestService = async (params: {
   awbs: string[]
   type: 'b2c' | 'b2b'
   userId?: string
+  pickupDate?: string
+  pickupTime?: string
+  shipmentCount?: number
 }): Promise<{
   manifest_id: string | null
   manifest_url: string | null
@@ -6398,11 +6403,16 @@ export const generateManifestService = async (params: {
                 user_id: b2b_orders.user_id,
                 order_number: b2b_orders.order_number,
                 awb_number: b2b_orders.awb_number,
+                shipment_id: b2b_orders.shipment_id,
+                order_id: b2b_orders.order_id,
+                courier_partner: b2b_orders.courier_partner,
               }
 
         const orderMatchCondition = or(
           inArray(table.awb_number, normalizedRefs),
           inArray(table.order_number, normalizedRefs),
+          inArray(table.order_id, normalizedRefs),
+          inArray(table.shipment_id, normalizedRefs),
         )
 
         const scopedOrderCondition = params.userId
@@ -6422,8 +6432,12 @@ export const generateManifestService = async (params: {
         orders.forEach((order) => {
           const awbNumber = String(order.awb_number ?? '').trim()
           const orderNumber = String(order.order_number ?? '').trim()
+          const orderId = String((order as { order_id?: string }).order_id ?? '').trim()
+          const shipmentId = String((order as { shipment_id?: string }).shipment_id ?? '').trim()
           if (awbNumber) matchedRefs.add(awbNumber)
           if (orderNumber) matchedRefs.add(orderNumber)
+          if (orderId) matchedRefs.add(orderId)
+          if (shipmentId) matchedRefs.add(shipmentId)
         })
 
         const missingRefs = normalizedRefs.filter((ref) => !matchedRefs.has(ref))
@@ -6440,6 +6454,306 @@ export const generateManifestService = async (params: {
 
         if (orderUserIds.length > 1) {
           throw new HttpError(400, 'Manifest can only be generated for one merchant at a time.')
+        }
+
+        const normalizeScheduleDate = (value: unknown) => {
+          const raw = String(value || '').trim()
+          const parsed = raw ? dayjs(raw) : dayjs()
+          return parsed.isValid() ? parsed.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')
+        }
+
+        const normalizeScheduleTime = (value: unknown) => {
+          const raw = String(value || '').trim()
+          if (/^\d{2}:\d{2}:\d{2}$/.test(raw)) return raw
+          if (/^\d{2}:\d{2}$/.test(raw)) return `${raw}:00`
+          return '11:00:00'
+        }
+
+        if (params.type === 'b2b') {
+          const fetchedOrders: any[] = []
+          for (const order of orders) {
+            const [fullOrder] = await tx.select().from(b2b_orders).where(eq(b2b_orders.id, order.id))
+            if (fullOrder) fetchedOrders.push(fullOrder)
+          }
+
+          if (!fetchedOrders.length) {
+            throw new HttpError(404, 'Unable to load selected B2B orders for manifest generation.')
+          }
+
+          const warnings: string[] = []
+
+          for (const order of fetchedOrders) {
+            const shipmentId = String(order.shipment_id || '').trim()
+            if (order.awb_number || !shipmentId) continue
+
+            try {
+              const details = await getShiprocketCargoShipmentDetails(shipmentId)
+              const recoveredAwb = extractShiprocketCargoAwb(details)
+              if (recoveredAwb) {
+                order.awb_number = recoveredAwb
+                await tx
+                  .update(b2b_orders)
+                  .set({
+                    awb_number: recoveredAwb,
+                    delivery_message: 'AWB recovered during manifest generation',
+                    updated_at: new Date(),
+                  })
+                  .where(eq(b2b_orders.id, order.id))
+              } else {
+                warnings.push(`${order.order_number}: AWB is still pending from Shiprocket Cargo.`)
+              }
+            } catch (awbErr: any) {
+              warnings.push(
+                `${order.order_number}: AWB recovery failed (${awbErr?.message || 'courier error'}).`,
+              )
+            }
+          }
+
+          const shipmentIds = Array.from(
+            new Set(
+              fetchedOrders
+                .map((order) => String(order.shipment_id || order.order_id || '').trim())
+                .filter(Boolean),
+            ),
+          )
+
+          if (!shipmentIds.length) {
+            throw new HttpError(
+              400,
+              'Shiprocket pickup needs a shipment ID. Please wait until the B2B shipment is fully booked.',
+            )
+          }
+
+          const pickupDetails = normalizePickupDetails(fetchedOrders[0]?.pickup_details) as
+            | (ReturnType<typeof normalizePickupDetails> & {
+                pickup_date?: string
+                pickup_time?: string
+              })
+            | null
+          const pickupDate = normalizeScheduleDate(
+            params.pickupDate || pickupDetails?.pickup_date || new Date(),
+          )
+          const pickupTime = normalizeScheduleTime(params.pickupTime || pickupDetails?.pickup_time)
+          const expectedShipments =
+            Number.isFinite(Number(params.shipmentCount)) && Number(params.shipmentCount) > 0
+              ? Number(params.shipmentCount)
+              : fetchedOrders.length
+
+          try {
+            await generateShiprocketPickupManifest({ shipment_id: shipmentIds })
+          } catch (manifestErr: any) {
+            throw new HttpError(
+              getErrorStatusCode(manifestErr, 502),
+              manifestErr?.message || 'Shiprocket manifest generation failed.',
+            )
+          }
+
+          try {
+            await requestShipmentPickup({
+              shipment_id: shipmentIds,
+              pickup_date: [pickupDate],
+            })
+          } catch (pickupErr: any) {
+            throw new HttpError(
+              getErrorStatusCode(pickupErr, 502),
+              pickupErr?.message || 'Shiprocket pickup request failed.',
+            )
+          }
+
+          const createManifestCard = (order: any) => ({
+            width: '48%',
+            margin: [0, 0, 0, 12],
+            stack: [
+              {
+                canvas: [
+                  {
+                    type: 'rect',
+                    x: 0,
+                    y: 0,
+                    w: 245,
+                    h: 118,
+                    r: 8,
+                    lineColor: '#d8deee',
+                    fillColor: '#fbfcff',
+                    lineWidth: 1,
+                  },
+                ],
+              },
+              {
+                margin: [12, -108, 12, 0],
+                stack: [
+                  {
+                    columns: [
+                      {
+                        text: order.order_number ?? '-',
+                        bold: true,
+                        fontSize: 11,
+                        color: '#1f2a44',
+                      },
+                      {
+                        text: (order.order_type ?? '').toUpperCase() || '-',
+                        fontSize: 8,
+                        bold: true,
+                        color: '#4c67a1',
+                        alignment: 'right',
+                      },
+                    ],
+                  },
+                  {
+                    text: `AWB: ${order.awb_number ?? 'Pending'}`,
+                    fontSize: 9,
+                    color: '#42506b',
+                    margin: [0, 6, 0, 0],
+                  },
+                  {
+                    text: `Shipment ID: ${order.shipment_id ?? '-'}`,
+                    fontSize: 9,
+                    color: '#42506b',
+                    margin: [0, 4, 0, 0],
+                  },
+                  {
+                    text: `Consignee: ${order.buyer_name ?? '-'}`,
+                    fontSize: 9,
+                    color: '#42506b',
+                    margin: [0, 4, 0, 0],
+                  },
+                  {
+                    text: `City: ${order.city ?? '-'}${order.state ? `, ${order.state}` : ''}`,
+                    fontSize: 9,
+                    color: '#42506b',
+                    margin: [0, 4, 0, 0],
+                  },
+                  {
+                    text: `Address: ${order.address ?? '-'}`,
+                    fontSize: 8,
+                    color: '#667085',
+                    margin: [0, 8, 0, 0],
+                  },
+                ],
+              },
+            ],
+          })
+
+          const manifestCards = fetchedOrders.reduce((rows: any[], order, index) => {
+            if (index % 2 === 0) {
+              rows.push({
+                columns: [
+                  createManifestCard(order),
+                  fetchedOrders[index + 1]
+                    ? createManifestCard(fetchedOrders[index + 1])
+                    : { width: '48%', text: '' },
+                ],
+                columnGap: 12,
+              })
+            }
+            return rows
+          }, [])
+
+          const printer = new PdfPrinter(pdfFonts)
+          const docDefinition: any = {
+            defaultStyle: { font: 'Helvetica' },
+            pageSize: 'A4',
+            pageMargins: [30, 40, 30, 40],
+            content: [
+              {
+                text: 'Shiprocket B2B Manifest',
+                fontSize: 16,
+                bold: true,
+                alignment: 'center',
+                margin: [0, 0, 0, 10],
+              },
+              {
+                columns: [
+                  {
+                    stack: [
+                      { text: `Generated On: ${new Date().toLocaleString()}`, fontSize: 9 },
+                      {
+                        text: `Pickup Schedule: ${pickupDate} ${pickupTime}`,
+                        fontSize: 9,
+                        margin: [0, 4, 0, 0],
+                      },
+                      {
+                        text: `Shipment Count: ${expectedShipments}`,
+                        fontSize: 9,
+                        margin: [0, 4, 0, 0],
+                      },
+                    ],
+                  },
+                  {
+                    stack: [
+                      {
+                        text: `Pickup Location: ${pickupDetails?.warehouse_name ?? '-'}`,
+                        fontSize: 9,
+                        alignment: 'right',
+                      },
+                      {
+                        text: `Shiprocket Shipment IDs: ${shipmentIds.join(', ')}`,
+                        fontSize: 8,
+                        alignment: 'right',
+                        margin: [0, 4, 0, 0],
+                      },
+                    ],
+                  },
+                ],
+                margin: [0, 0, 0, 12],
+              },
+              {
+                text: 'Shipments',
+                fontSize: 11,
+                bold: true,
+                color: '#24324d',
+                margin: [0, 0, 0, 10],
+              },
+              ...manifestCards,
+            ],
+          }
+
+          const pdfDoc = printer.createPdfKitDocument(docDefinition)
+          const chunks: Buffer[] = []
+          const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
+            pdfDoc.on('data', (chunk) => chunks.push(chunk))
+            pdfDoc.on('end', () => resolve(Buffer.concat(chunks)))
+            pdfDoc.on('error', (err) => reject(err))
+            pdfDoc.end()
+          })
+
+          const { uploadUrl, key } = await presignUpload({
+            filename: `manifest-shiprocket-b2b-${Date.now()}.pdf`,
+            contentType: 'application/pdf',
+            userId: fetchedOrders[0].user_id,
+            folderKey: 'manifests',
+          })
+          await axios.put(Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl, pdfBuffer, {
+            headers: { 'Content-Type': 'application/pdf' },
+            timeout: 60000,
+          })
+
+          const manifestKey = Array.isArray(key) ? key[0] : key
+          const signedManifestUrl = await presignDownload(manifestKey)
+          const manifestDownloadUrl = Array.isArray(signedManifestUrl)
+            ? (signedManifestUrl[0] ?? null)
+            : signedManifestUrl
+
+          await Promise.all(
+            fetchedOrders.map((order) =>
+              tx
+                .update(b2b_orders)
+                .set({
+                  manifest: manifestKey,
+                  order_status: 'pickup_initiated',
+                  delivery_message: `Pickup requested for ${pickupDate}`.slice(0, 100),
+                  updated_at: new Date(),
+                })
+                .where(eq(b2b_orders.id, order.id)),
+            ),
+          )
+
+          return {
+            manifest_id: manifestKey,
+            manifest_url: manifestDownloadUrl,
+            manifest_key: manifestKey,
+            warnings: warnings.length ? Array.from(new Set(warnings)) : undefined,
+          }
         }
 
         const integrationTypes =
@@ -7393,6 +7707,12 @@ export const generateManifestService = async (params: {
           if (expectedPackageCount === 0) {
             expectedPackageCount = fetchedOrders.length
           }
+          if (
+            Number.isFinite(Number(params.shipmentCount)) &&
+            Number(params.shipmentCount) > 0
+          ) {
+            expectedPackageCount = Number(params.shipmentCount)
+          }
 
           const pickupDetails = normalizeDetails(fetchedOrders[0]?.pickup_details)
           const pickupLocationName = String(pickupDetails?.warehouse_name || '').trim()
@@ -7403,9 +7723,12 @@ export const generateManifestService = async (params: {
             (order) => String(order.order_status || '').toLowerCase() === 'manifest_failed',
           )
           const pickupDateRaw =
-            pickupDetails?.pickup_date || fetchedOrders[0]?.order_date || new Date().toISOString()
+            params.pickupDate ||
+            pickupDetails?.pickup_date ||
+            fetchedOrders[0]?.order_date ||
+            new Date().toISOString()
           const pickupDate = normalizePickupDateForRetry(pickupDateRaw, isManifestRetry)
-          const pickupTimeRaw = String(pickupDetails?.pickup_time || '11:00:00').trim()
+          const pickupTimeRaw = String(params.pickupTime || pickupDetails?.pickup_time || '11:00:00').trim()
           const pickupTime = /^\d{2}:\d{2}:\d{2}$/.test(pickupTimeRaw)
             ? pickupTimeRaw
             : /^\d{2}:\d{2}$/.test(pickupTimeRaw)

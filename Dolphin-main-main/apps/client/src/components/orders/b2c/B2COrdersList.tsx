@@ -40,6 +40,7 @@ import { SmartTabs } from '../../UI/tab/Tabs'
 import DataTable, { type Column } from '../../UI/table/DataTable'
 import TableSkeleton from '../../UI/table/TableSkeleton'
 import CustomSelect from '../../UI/inputs/CustomSelect'
+import ManifestScheduleDialog, { type ManifestSchedulePayload } from '../ManifestScheduleDialog'
 import OrderActionsMenu, { type OrderActionMenuItem } from '../OrderActionsMenu'
 import { buildOrderTrackingParams, buildOrderTrackingPath } from '../orderNavigation'
 import {
@@ -77,6 +78,11 @@ type BulkFeedback = {
   title: string
   message: string
 }
+
+type ManifestDialogTarget =
+  | { mode: 'single'; order: B2COrder }
+  | { mode: 'bulk'; orders: B2COrder[] }
+  | null
 
 const renderDateTimeCell = (value: unknown) => {
   if (!value) return '-'
@@ -151,6 +157,7 @@ const B2COrdersList = () => {
   const [downloadingDocumentType, setDownloadingDocumentType] = useState<DocumentType | null>(null)
   const [bulkManifesting, setBulkManifesting] = useState(false)
   const [bulkFeedback, setBulkFeedback] = useState<BulkFeedback | null>(null)
+  const [manifestDialog, setManifestDialog] = useState<ManifestDialogTarget>(null)
   const [filters, setFilters] = useState<OrderFilters>({
     status: '',
     sortBy: 'created_at',
@@ -196,7 +203,7 @@ const B2COrdersList = () => {
   }
 
   /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-  const handleGenerateManifest = async (order: B2COrder) => {
+  const handleGenerateManifest = async (order: B2COrder, schedule: ManifestSchedulePayload) => {
     const manifestRef = getB2CManifestIdentifier(order)
     if (!manifestRef) {
       const message = `Manifest cannot be started for ${order.order_number} yet.`
@@ -214,7 +221,11 @@ const B2COrdersList = () => {
         title: 'Manifest in progress',
         message: `Processing ${order.order_number}.`,
       })
-      const response = await generateManifestService({ awbs: [manifestRef], type: 'b2c' })
+      const response = await generateManifestService({
+        awbs: [manifestRef],
+        type: 'b2c',
+        ...schedule,
+      })
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['b2cOrdersByUser'] }),
         queryClient.invalidateQueries({ queryKey: ['orders'] }),
@@ -364,7 +375,7 @@ const B2COrdersList = () => {
     // Keep status filtering local; do not sync status to URL params.
   }
 
-  const handleBulkManifest = async () => {
+  const openBulkManifestDialog = () => {
     if (!selectedOrders.length) {
       const message = 'Select up to 5 eligible orders to manifest.'
       setBulkFeedback({
@@ -386,15 +397,22 @@ const B2COrdersList = () => {
       return
     }
 
+    setManifestDialog({ mode: 'bulk', orders: selectedOrders })
+  }
+
+  const handleBulkManifest = async (
+    manifestOrders: B2COrder[],
+    schedule: ManifestSchedulePayload,
+  ) => {
     setBulkManifesting(true)
     setBulkFeedback({
       severity: 'info',
       title: 'Manifest in progress',
-      message: `Processing ${selectedOrders.length} selected order(s).`,
+      message: `Processing ${manifestOrders.length} selected order(s).`,
     })
 
     try {
-      const manifestGroups = selectedOrders.reduce<Record<string, B2COrder[]>>((groups, order) => {
+      const manifestGroups = manifestOrders.reduce<Record<string, B2COrder[]>>((groups, order) => {
         const manifestIdentifier = getB2CManifestIdentifier(order)
         if (!manifestIdentifier) return groups
 
@@ -417,7 +435,11 @@ const B2COrdersList = () => {
         if (!identifiers.length) continue
 
         try {
-          const response = await generateManifestService({ awbs: identifiers, type: 'b2c' })
+          const response = await generateManifestService({
+            awbs: identifiers,
+            type: 'b2c',
+            ...schedule,
+          })
           successCount += providerOrders.length
           if (response.warnings?.length) {
             warningMessages.push(...response.warnings)
@@ -842,7 +864,7 @@ const B2COrdersList = () => {
                   label: bulkManifesting ? 'Manifest unavailable' : 'Generate Manifest',
                   icon: <MdLocalShipping size={18} />,
                   disabled: bulkManifesting,
-                  onClick: () => handleGenerateManifest(row),
+                  onClick: () => setManifestDialog({ mode: 'single', order: row }),
                 },
               ]
             : []),
@@ -1038,7 +1060,7 @@ const B2COrdersList = () => {
             <Stack direction={{ xs: 'column', sm: 'row' }} gap={1} flexWrap="wrap">
               <Button
                 variant="contained"
-                onClick={handleBulkManifest}
+                onClick={openBulkManifestDialog}
                 disabled={
                   bulkManifesting || !selectedOrders.length || Boolean(manifestValidationMessage)
                 }
@@ -1122,6 +1144,34 @@ const B2COrdersList = () => {
         onConfirm={(payload) => {
           createReverse(payload)
           setReverseOrder(null)
+        }}
+      />
+
+      <ManifestScheduleDialog
+        open={Boolean(manifestDialog)}
+        title={
+          manifestDialog?.mode === 'single'
+            ? `Generate Manifest - ${manifestDialog.order.order_number}`
+            : 'Generate Manifest for selected orders'
+        }
+        orderCount={manifestDialog?.mode === 'bulk' ? manifestDialog.orders.length : 1}
+        loading={bulkManifesting}
+        onClose={() => setManifestDialog(null)}
+        onSubmit={async (schedule) => {
+          if (!manifestDialog) return
+          if (manifestDialog.mode === 'single') {
+            setBulkManifesting(true)
+            try {
+              await handleGenerateManifest(manifestDialog.order, schedule)
+              setManifestDialog(null)
+            } finally {
+              setBulkManifesting(false)
+            }
+            return
+          }
+
+          await handleBulkManifest(manifestDialog.orders, schedule)
+          setManifestDialog(null)
         }}
       />
 

@@ -25,6 +25,7 @@ import {
   getDocumentReference,
   getDownloadFileName,
 } from '../bulkActionUtils'
+import ManifestScheduleDialog, { type ManifestSchedulePayload } from '../ManifestScheduleDialog'
 import OrderActionsMenu, { type OrderActionMenuItem } from '../OrderActionsMenu'
 import { buildOrderTrackingPath } from '../orderNavigation'
 
@@ -83,6 +84,7 @@ const B2BOrdersList = ({
   const { mutate: cancelShipment, isPending: cancellingShipment } = useCancelShipment()
   const { mutateAsync: presignDownloads } = usePresignedDownloadMutation()
   const [manifestingAwb, setManifestingAwb] = useState<string | null>(null)
+  const [manifestDialogOrder, setManifestDialogOrder] = useState<B2BOrder | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<Array<B2BOrder['id']>>([])
   const [selectionResetToken, setSelectionResetToken] = useState(0)
   const [bulkFeedback, setBulkFeedback] = useState<BulkFeedback | null>(null)
@@ -95,14 +97,26 @@ const B2BOrdersList = ({
     setSelectionResetToken((current) => current + 1)
   }
 
-  const handleGenerateManifest = (order: B2BOrder) => {
-    if (!order.awb_number) return
-    setManifestingAwb(order.awb_number)
+  const getB2BManifestIdentifier = (order: B2BOrder) =>
+    String(order.awb_number || order.shipment_id || order.order_id || order.order_number || '').trim()
+
+  const handleGenerateManifest = (order: B2BOrder, schedule: ManifestSchedulePayload) => {
+    const manifestRef = getB2BManifestIdentifier(order)
+    if (!manifestRef) {
+      toast.open({
+        message: `Manifest cannot be started for ${order.order_number} yet.`,
+        severity: 'error',
+      })
+      return
+    }
+
+    setManifestingAwb(manifestRef)
     triggerManifest(
-      { awbs: [order.awb_number], type: 'b2b' },
+      { awbs: [manifestRef], type: 'b2b', ...schedule },
       {
         onSettled: () => {
-          setManifestingAwb((current) => (current === order.awb_number ? null : current))
+          setManifestingAwb((current) => (current === manifestRef ? null : current))
+          setManifestDialogOrder(null)
         },
       },
     )
@@ -337,19 +351,13 @@ const B2BOrdersList = ({
       sticky: 'right',
       stickyOffset: 0,
       render: (_, row) => {
-        const courierText = String(row.courier_partner || '').toLowerCase()
-        const integrationText = String(
-          (row as B2BOrder & { integration_type?: string }).integration_type || '',
-        ).toLowerCase()
-        const isXpressbees =
-          integrationText === 'xpressbees' || courierText.includes('xpressbees')
-        const isEkart = integrationText === 'ekart' || courierText.includes('ekart')
-        const canManifest = Boolean(row.awb_number) && !row.manifest && (isXpressbees || isEkart)
         const trackingPath = buildOrderTrackingPath(row)
-        const isThisManifesting = isGeneratingManifest && manifestingAwb === row.awb_number
+        const manifestRef = getB2BManifestIdentifier(row)
+        const isThisManifesting = isGeneratingManifest && manifestingAwb === manifestRef
         const hasLabelDocument = hasLabelGenerated(row)
         const hasInvoiceDocument = hasInvoiceGenerated(row)
         const hasManifestDocument = hasManifestGenerated(row)
+        const canManifest = Boolean(manifestRef) && !hasManifestDocument
 
         const actions: OrderActionMenuItem[] = [
           ...(trackingPath
@@ -375,7 +383,7 @@ const B2BOrdersList = ({
                   label: isThisManifesting ? 'Manifesting...' : 'Generate Manifest',
                   icon: <MdLocalShipping size={18} />,
                   disabled: isThisManifesting,
-                  onClick: () => handleGenerateManifest(row),
+                  onClick: () => setManifestDialogOrder(row),
                 },
               ]
             : []),
@@ -547,6 +555,18 @@ const B2BOrdersList = ({
           selectionResetToken={selectionResetToken}
         />
       )}
+
+      <ManifestScheduleDialog
+        open={Boolean(manifestDialogOrder)}
+        title={`Generate Manifest - ${manifestDialogOrder?.order_number || ''}`}
+        orderCount={1}
+        loading={isGeneratingManifest}
+        onClose={() => setManifestDialogOrder(null)}
+        onSubmit={(schedule) => {
+          if (!manifestDialogOrder) return
+          handleGenerateManifest(manifestDialogOrder, schedule)
+        }}
+      />
     </Stack>
   )
 }

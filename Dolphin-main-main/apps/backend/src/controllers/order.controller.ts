@@ -266,7 +266,16 @@ export const generateManifestController = async (req: any, res: Response) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' })
     }
 
-    const { awbs, type = 'b2c' } = req.body
+    const {
+      awbs,
+      type = 'b2c',
+      pickupDate,
+      pickupTime,
+      shipmentCount,
+      pickup_date,
+      pickup_time,
+      shipment_count,
+    } = req.body
 
     if (!awbs || !Array.isArray(awbs) || awbs.length === 0) {
       return res.status(400).json({ success: false, message: 'AWBs are required' })
@@ -274,6 +283,16 @@ export const generateManifestController = async (req: any, res: Response) => {
 
     if (!['b2c', 'b2b'].includes(type)) {
       return res.status(400).json({ success: false, message: 'Invalid manifest type' })
+    }
+
+    const requestedShipmentCount = shipmentCount ?? shipment_count
+    if (
+      requestedShipmentCount !== undefined &&
+      (!Number.isFinite(Number(requestedShipmentCount)) || Number(requestedShipmentCount) <= 0)
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Shipment count must be greater than 0' })
     }
 
     // Manifest generation can take a while when couriers process multiple orders.
@@ -285,6 +304,10 @@ export const generateManifestController = async (req: any, res: Response) => {
       awbs,
       type,
       userId,
+      pickupDate: pickupDate ?? pickup_date,
+      pickupTime: pickupTime ?? pickup_time,
+      shipmentCount:
+        requestedShipmentCount !== undefined ? Number(requestedShipmentCount) : undefined,
     })
 
     const { manifest_id, manifest_url, manifest_key, warnings } = (await Promise.race([
