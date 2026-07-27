@@ -116,6 +116,10 @@ const DEFAULT_LABEL_SETTINGS = {
 }
 
 function mergeSettings(prefs: any) {
+  const rawPoweredBy = String(prefs?.powered_by ?? DEFAULT_LABEL_SETTINGS.powered_by).trim()
+  const poweredBy =
+    /dolphin|meracourierwala/i.test(rawPoweredBy) ? DEFAULT_LABEL_SETTINGS.powered_by : rawPoweredBy
+
   if (!prefs) return DEFAULT_LABEL_SETTINGS
   return {
     printer_type: prefs.printer_type ?? DEFAULT_LABEL_SETTINGS.printer_type,
@@ -130,7 +134,7 @@ function mergeSettings(prefs: any) {
       ...(DEFAULT_LABEL_SETTINGS.product_info as any),
       ...(prefs.product_info || {}),
     },
-    powered_by: prefs.powered_by ?? DEFAULT_LABEL_SETTINGS.powered_by,
+    powered_by: poweredBy || DEFAULT_LABEL_SETTINGS.powered_by,
   }
 }
 
