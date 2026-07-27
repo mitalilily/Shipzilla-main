@@ -1,5 +1,6 @@
-import { eq } from 'drizzle-orm'
+import { eq, or } from 'drizzle-orm'
 import { db } from '../client'
+import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
 import { ShipmozoService } from './couriers/shipmozo.service'
 import { applyCancellationRefundOnce } from './webhookProcessor'
@@ -7,9 +8,35 @@ import { applyCancellationRefundOnce } from './webhookProcessor'
 export async function cancelOrderShipment(orderId: string) {
   console.log('🔍 Starting cancellation for orderId:', orderId)
 
-  const [order] = await db.select().from(b2c_orders).where(eq(b2c_orders.id, orderId))
+  const [order] = await db
+    .select()
+    .from(b2c_orders)
+    .where(or(eq(b2c_orders.id, orderId), eq(b2c_orders.order_number, orderId)))
 
   if (!order) {
+    const [b2bOrder] = await db
+      .select({
+        id: b2b_orders.id,
+        order_number: b2b_orders.order_number,
+        awb_number: b2b_orders.awb_number,
+        shipment_id: b2b_orders.shipment_id,
+        courier_partner: b2b_orders.courier_partner,
+        order_status: b2b_orders.order_status,
+      })
+      .from(b2b_orders)
+      .where(or(eq(b2b_orders.id, orderId), eq(b2b_orders.order_number, orderId)))
+
+    if (b2bOrder) {
+      console.error('B2B cancellation requested but no supported B2B cancellation provider is configured:', {
+        orderId: b2bOrder.id,
+        orderNumber: b2bOrder.order_number,
+        awbNumber: b2bOrder.awb_number,
+        shipmentId: b2bOrder.shipment_id,
+        courierPartner: b2bOrder.courier_partner,
+        currentStatus: b2bOrder.order_status,
+      })
+      throw new Error('B2B Shiprocket Cargo cancellation is not supported yet. Please cancel it from the Shiprocket Cargo panel or contact support.')
+    }
     console.error('❌ Order not found:', orderId)
     throw new Error('Order not found')
   }

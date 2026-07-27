@@ -3,12 +3,11 @@ import { Alert, AlertTitle, Box, Button, Link, Stack, Typography } from '@mui/ma
 import { saveAs } from 'file-saver'
 import moment from 'moment'
 import { useState } from 'react'
-import { MdCancel, MdDescription, MdLocalShipping, MdVisibility } from 'react-icons/md'
+import { MdDescription, MdLocalShipping, MdVisibility } from 'react-icons/md'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { bulkDownloadOrderDocumentsService } from '../../../api/order.service'
 import {
   useB2BOrdersByUser,
-  useCancelShipment,
   useGenerateManifest,
   useRegenerateOrderDocuments,
 } from '../../../hooks/Orders/useOrders'
@@ -80,7 +79,6 @@ const B2BOrdersList = ({
   const { mutate: triggerManifest, isPending: isGeneratingManifest } = useGenerateManifest()
   const { mutateAsync: regenerateDocuments, isPending: regeneratingDocuments } =
     useRegenerateOrderDocuments()
-  const { mutate: cancelShipment, isPending: cancellingShipment } = useCancelShipment()
   const { mutateAsync: presignDownloads } = usePresignedDownloadMutation()
   const [manifestingAwb, setManifestingAwb] = useState<string | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<Array<B2BOrder['id']>>([])
@@ -116,12 +114,6 @@ const B2BOrdersList = ({
 
   const hasManifestGenerated = (row: B2BOrder) =>
     Boolean(String(row.manifest_url || row.manifest_key || row.manifest || '').trim())
-
-  const isCancellable = (row: B2BOrder) => {
-    const status = String(row.order_status || '').toLowerCase()
-    const cancellableStatuses = new Set(['pending', 'booked', 'shipment_booked', 'pickup_initiated'])
-    return Boolean(row.awb_number || row.shipment_id || row.order_id) && cancellableStatuses.has(status)
-  }
 
   const handleRegenerateDocuments = async (
     order: B2BOrder,
@@ -418,18 +410,6 @@ const B2BOrdersList = ({
                   icon: <MdVisibility size={18} />,
                   onClick: () =>
                     window.open(String(row.manifest), '_blank', 'noopener,noreferrer'),
-                },
-              ]
-            : []),
-          ...(isCancellable(row)
-            ? [
-                {
-                  key: 'cancel-shipment',
-                  label: cancellingShipment ? 'Cancelling...' : 'Cancel Shipment',
-                  icon: <MdCancel size={18} />,
-                  danger: true,
-                  disabled: cancellingShipment,
-                  onClick: () => cancelShipment(String(row.id)),
                 },
               ]
             : []),

@@ -793,6 +793,57 @@ const readFirstStringPath = (payload: any, paths: string[][]) => {
   return null
 }
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const extractShiprocketCargoAwb = (payload: any) =>
+  readFirstStringPath(payload, [
+    ['awb_number'],
+    ['awb_code'],
+    ['tracking_number'],
+    ['waybill_no'],
+    ['awb'],
+    ['lrn'],
+    ['shipment_p', 'waybill_no'],
+    ['shipment_p', 'awb_number'],
+    ['data', 'awb_number'],
+    ['data', 'awb_code'],
+    ['data', 'tracking_number'],
+    ['data', 'waybill_no'],
+    ['data', 'awb'],
+    ['data', 'lrn'],
+    ['data', 'shipment', 'awb_number'],
+    ['data', 'shipment', 'waybill_no'],
+    ['data', 'shipment_p', 'awb_number'],
+    ['data', 'shipment_p', 'waybill_no'],
+    ['result', 'awb_number'],
+    ['result', 'awb_code'],
+    ['result', 'waybill_no'],
+    ['result', 'shipment', 'awb_number'],
+    ['result', 'shipment', 'waybill_no'],
+    ['child_waybill_nos', '0'],
+  ])
+
+const fetchShiprocketCargoShipmentDetailsWithAwb = async (
+  shipmentId: string | number,
+  initialAwb?: string | null,
+) => {
+  let latestPayload: any = null
+  let awbNumber = String(initialAwb || '').trim()
+  const retryDelaysMs = [0, 1000, 2500, 5000]
+
+  for (const delayMs of retryDelaysMs) {
+    if (delayMs > 0) await wait(delayMs)
+
+    const shipmentDetailsPayload = await getShiprocketCargoShipmentDetails(shipmentId)
+    latestPayload = shipmentDetailsPayload
+    awbNumber = extractShiprocketCargoAwb(shipmentDetailsPayload) || awbNumber
+
+    if (awbNumber) break
+  }
+
+  return { shipmentDetailsPayload: latestPayload, awbNumber }
+}
+
 const extractShiprocketCargoOrderMeta = (
   cargoOrderData: any,
   selectedCourier: ShiprocketLiveCourierOption,
@@ -5871,14 +5922,14 @@ export const createB2BShipmentService = async (
 
   if (bookingIntegrationType === 'shiprocket' && shipmentId) {
     try {
-      const shipmentDetailsPayload = await getShiprocketCargoShipmentDetails(shipmentId)
+      const {
+        shipmentDetailsPayload,
+        awbNumber: resolvedAwbNumber,
+      } = await fetchShiprocketCargoShipmentDetailsWithAwb(shipmentId, awbNumber)
       shipmentRecord = { ...shipmentRecord, ...shipmentDetailsPayload }
       awbNumber =
-        shipmentDetailsPayload?.awb_code ||
-        shipmentDetailsPayload?.awb_number ||
-        shipmentDetailsPayload?.tracking_number ||
-        shipmentDetailsPayload?.waybill_no ||
-        shipmentDetailsPayload?.awb ||
+        resolvedAwbNumber ||
+        extractShiprocketCargoAwb(shipmentDetailsPayload) ||
         awbNumber
     } catch (shipmentDetailsError: any) {
       console.error('Failed to fetch Shiprocket Cargo shipment details for B2B shipment', {
