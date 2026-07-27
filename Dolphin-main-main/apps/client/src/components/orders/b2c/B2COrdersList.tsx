@@ -56,7 +56,6 @@ import {
   summarizeMessages,
   summarizeOrderNumbers,
 } from '../bulkActionUtils'
-import { OrderExpandedRow } from '../OrderExpandedRow'
 import ReverseModal from '../reverse/ReverseModal'
 import B2COrderFormSteps from './B2COrderForm'
 
@@ -77,6 +76,21 @@ type BulkFeedback = {
   severity: 'info' | 'success' | 'error' | 'warning'
   title: string
   message: string
+}
+
+const renderDateTimeCell = (value: unknown) => {
+  if (!value) return '-'
+  const parsed = moment(value)
+  if (!parsed.isValid()) return '-'
+
+  return (
+    <Stack spacing={0.15}>
+      <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{parsed.format('DD MMM YYYY')}</Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+        {parsed.format('hh:mm:ss A')}
+      </Typography>
+    </Stack>
+  )
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Status Color Mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -782,12 +796,12 @@ const B2COrdersList = () => {
     {
       label: 'Created At',
       id: 'created_at',
-      render: (v) => moment(v).format('DD MMM YYYY, hh:mm A'),
+      render: (v) => renderDateTimeCell(v),
     },
     {
       label: 'Tracking Updated At',
       id: 'updated_at',
-      render: (v) => moment(v).format('DD MMM YYYY, hh:mm A'),
+      render: (v) => renderDateTimeCell(v),
     },
     {
       label: 'Action',
@@ -1098,8 +1112,6 @@ const B2COrdersList = () => {
           onSelectRows={(ids) => setSelectedOrderIds(ids)}
           selectedRowIds={selectedOrderIds}
           selectionResetToken={selectionResetToken}
-          expandable
-          renderExpandedRow={(row) => <OrderExpandedRow row={row} />}
         />
       )}
 

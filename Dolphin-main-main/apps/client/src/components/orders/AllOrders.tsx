@@ -42,7 +42,6 @@ import {
   summarizeMessages,
   summarizeOrderNumbers,
 } from './bulkActionUtils'
-import { OrderExpandedRow } from './OrderExpandedRow'
 
 interface Order {
   id: string | number
@@ -78,6 +77,21 @@ const isOrderCancellable = (order: Order) =>
   order.type === 'b2c' &&
   CANCELLABLE_STATUSES.has(String(order.order_status || '').trim().toLowerCase()) &&
   String(order.integration_type || '').trim().toLowerCase() === 'shipmozo'
+
+const renderDateTimeCell = (value: unknown) => {
+  if (!value) return '-'
+  const parsed = moment(value)
+  if (!parsed.isValid()) return '-'
+
+  return (
+    <Stack spacing={0.15}>
+      <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{parsed.format('DD MMM YYYY')}</Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+        {parsed.format('hh:mm:ss A')}
+      </Typography>
+    </Stack>
+  )
+}
 
 const AllOrders = () => {
   const [searchParams] = useSearchParams()
@@ -574,7 +588,12 @@ const AllOrders = () => {
     {
       id: 'created_at',
       label: 'Created At',
-      render: (v) => moment(v).format('DD MMM YYYY, hh:mm A'),
+      render: (v) => renderDateTimeCell(v),
+    },
+    {
+      id: 'updated_at',
+      label: 'Last Updated',
+      render: (v) => renderDateTimeCell(v),
     },
     {
       id: 'id',
@@ -966,8 +985,6 @@ const AllOrders = () => {
             onSelectRows={(ids) => setSelectedOrderIds(ids as Array<Order['id']>)}
             selectedRowIds={selectedOrderIds}
             selectionResetToken={selectionResetToken}
-            expandable
-            renderExpandedRow={(row) => <OrderExpandedRow row={row} />}
           />
         )}
       </Box>

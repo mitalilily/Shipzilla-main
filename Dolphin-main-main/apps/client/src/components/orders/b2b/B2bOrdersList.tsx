@@ -25,7 +25,6 @@ import {
   getDocumentReference,
   getDownloadFileName,
 } from '../bulkActionUtils'
-import { OrderExpandedRow } from '../OrderExpandedRow'
 import OrderActionsMenu, { type OrderActionMenuItem } from '../OrderActionsMenu'
 import { buildOrderTrackingPath } from '../orderNavigation'
 
@@ -51,6 +50,21 @@ type BulkFeedback = {
   severity: 'info' | 'success' | 'error' | 'warning'
   title: string
   message: string
+}
+
+const renderDateTimeCell = (value: unknown) => {
+  if (!value) return '-'
+  const parsed = moment(value)
+  if (!parsed.isValid()) return '-'
+
+  return (
+    <Stack spacing={0.15}>
+      <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{parsed.format('DD MMM YYYY')}</Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+        {parsed.format('hh:mm:ss A')}
+      </Typography>
+    </Stack>
+  )
 }
 
 const B2BOrdersList = ({
@@ -301,8 +315,8 @@ const B2BOrdersList = ({
       stickyOffset: 360,
       render: (v) => <StatusChip label={v} status={statusColorMap[String(v)] || 'info'} />,
     },
-    { label: 'Order Date', id: 'order_date', render: (v) => moment(v).format('DD MMM YYYY') },
-    { label: 'Last Updated', id: 'updated_at', render: (v) => moment(v).format('DD MMM YYYY') },
+    { label: 'Order Date', id: 'order_date', render: (v) => renderDateTimeCell(v) },
+    { label: 'Last Updated', id: 'updated_at', render: (v) => renderDateTimeCell(v) },
     {
       label: 'Actions',
       id: 'id',
@@ -502,8 +516,6 @@ const B2BOrdersList = ({
           pagination
           selectable
           currentPage={page}
-          expandable
-          renderExpandedRow={(row) => <OrderExpandedRow type="b2b" row={row} />}
           defaultRowsPerPage={rowsPerPage}
           totalCount={data?.totalCount || 0}
           onPageChange={(newPage) => {
