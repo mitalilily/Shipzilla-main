@@ -3,7 +3,98 @@ import { db } from '../client'
 import { b2b_orders } from '../schema/b2bOrders'
 import { b2c_orders } from '../schema/b2cOrders'
 import { ShipmozoService } from './couriers/shipmozo.service'
+import { cancelOrders as cancelShiprocketOrders, cancelShipmentsByAwb } from './shiprocketExtended.service'
 import { applyCancellationRefundOnce } from './webhookProcessor'
+
+const isProviderCancellationAccepted = (payload: any) => {
+  const statusText = String(payload?.status || payload?.message || payload?.remark || '').toLowerCase()
+  return (
+    payload?.success === true ||
+    payload?.status === true ||
+    payload?.result === '1' ||
+    statusText.includes('cancel') ||
+    statusText.includes('success') ||
+    Array.isArray(payload?.data) ||
+    Array.isArray(payload?.response)
+  )
+}
+
+const cancelB2BShiprocketShipment = async (orderId: string) => {
+  const [order] = await db
+    .select()
+    .from(b2b_orders)
+    .where(or(eq(b2b_orders.id, orderId), eq(b2b_orders.order_number, orderId)))
+
+  if (!order) return null
+
+  const status = String(order.order_status || '').trim().toLowerCase()
+  const cancellableStatuses = new Set([
+    'pending',
+    'booked',
+    'shipment_booked',
+    'pickup_initiated',
+    'pickup_scheduled',
+  ])
+
+  if (!cancellableStatuses.has(status)) {
+    throw new Error(`B2B shipment cannot be cancelled in current status: ${order.order_status || '-'}`)
+  }
+
+  const providerAttempts: Array<() => Promise<any>> = []
+  const shiprocketOrderId = Number(order.order_id)
+  const awbNumber = String(order.awb_number || '').trim()
+
+  if (Number.isFinite(shiprocketOrderId) && shiprocketOrderId > 0) {
+    providerAttempts.push(() => cancelShiprocketOrders({ ids: [shiprocketOrderId] }))
+  }
+
+  if (awbNumber) {
+    providerAttempts.push(() => cancelShipmentsByAwb({ awbs: [awbNumber] }))
+  }
+
+  if (!providerAttempts.length) {
+    throw new Error('Cancellation requires AWB or Shiprocket order ID. Please wait for AWB generation and try again.')
+  }
+
+  let lastError: any = null
+  let cancellationResult: any = null
+
+  for (const attempt of providerAttempts) {
+    try {
+      cancellationResult = await attempt()
+      if (isProviderCancellationAccepted(cancellationResult)) break
+    } catch (error: any) {
+      lastError = error
+      cancellationResult = null
+    }
+  }
+
+  if (!cancellationResult || !isProviderCancellationAccepted(cancellationResult)) {
+    throw new Error(
+      lastError?.message ||
+        cancellationResult?.message ||
+        'Shiprocket did not accept the B2B cancellation request.',
+    )
+  }
+
+  await db
+    .update(b2b_orders)
+    .set({
+      order_status: 'cancelled',
+      delivery_message: 'Cancellation requested',
+      updated_at: new Date(),
+    })
+    .where(eq(b2b_orders.id, order.id))
+
+  return {
+    provider: 'shiprocket',
+    type: 'b2b',
+    orderId: order.id,
+    orderNumber: order.order_number,
+    awbNumber,
+    result: cancellationResult,
+  }
+}
 
 export async function cancelOrderShipment(orderId: string) {
   console.log('🔍 Starting cancellation for orderId:', orderId)
@@ -14,29 +105,9 @@ export async function cancelOrderShipment(orderId: string) {
     .where(or(eq(b2c_orders.id, orderId), eq(b2c_orders.order_number, orderId)))
 
   if (!order) {
-    const [b2bOrder] = await db
-      .select({
-        id: b2b_orders.id,
-        order_number: b2b_orders.order_number,
-        awb_number: b2b_orders.awb_number,
-        shipment_id: b2b_orders.shipment_id,
-        courier_partner: b2b_orders.courier_partner,
-        order_status: b2b_orders.order_status,
-      })
-      .from(b2b_orders)
-      .where(or(eq(b2b_orders.id, orderId), eq(b2b_orders.order_number, orderId)))
+    const b2bCancellationResult = await cancelB2BShiprocketShipment(orderId)
+    if (b2bCancellationResult) return b2bCancellationResult
 
-    if (b2bOrder) {
-      console.error('B2B cancellation requested but no supported B2B cancellation provider is configured:', {
-        orderId: b2bOrder.id,
-        orderNumber: b2bOrder.order_number,
-        awbNumber: b2bOrder.awb_number,
-        shipmentId: b2bOrder.shipment_id,
-        courierPartner: b2bOrder.courier_partner,
-        currentStatus: b2bOrder.order_status,
-      })
-      throw new Error('B2B Shiprocket Cargo cancellation is not supported yet. Please cancel it from the Shiprocket Cargo panel or contact support.')
-    }
     console.error('❌ Order not found:', orderId)
     throw new Error('Order not found')
   }

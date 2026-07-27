@@ -6007,6 +6007,7 @@ export const createB2BShipmentService = async (
     .update(b2b_orders)
     .set({
       order_status: 'booked',
+      order_id: cargoOrderRecord?.order_id ? String(cargoOrderRecord.order_id) : null,
       shipment_id: shipmentId ? String(shipmentId) : null,
       awb_number: String(awbNumber),
       courier_partner: String(courierPartner),
