@@ -127,6 +127,9 @@ const CustomDrawer: React.FC<GlassDrawerProps> = ({
         sx={{
           overflowY: 'auto',
           height: '100%',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          scrollbarGutter: 'stable',
           backgroundColor: alpha('#ffffff', 0.42),
           '&::-webkit-scrollbar': {
             width: '8px',

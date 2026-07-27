@@ -17,7 +17,7 @@ body,
     radial-gradient(circle at 82% 6%, rgba(122, 61, 180, 0.1), transparent 24%),
     radial-gradient(circle at 100% 0%, rgba(86, 232, 19, 0.08), transparent 22%),
     linear-gradient(180deg, #ffffff 0%, #faf9fc 38%, #f7f3fb 100%);
-  background-attachment: fixed;
+  background-attachment: scroll;
   background-repeat: no-repeat;
   color: #1d1730;
   font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
@@ -28,6 +28,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
 }
 
 a {
@@ -70,4 +71,12 @@ textarea {
   box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: rgba(93, 35, 148, 0.9) rgba(255, 255, 255, 0.72);
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
 }

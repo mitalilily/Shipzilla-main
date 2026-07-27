@@ -36,7 +36,8 @@ export default function AdminNavbar(props) {
       boxShadow={navbarShadow}
       bg={navbarBg}
       border={navbarBorder}
-      backdropFilter="blur(14px)"
+      backdropFilter="none"
+      WebkitBackdropFilter="none"
       transition="all 0.3s ease"
       alignItems="center"
       borderRadius="20px"

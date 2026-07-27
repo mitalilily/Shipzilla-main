@@ -292,7 +292,8 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
           bg={panelBg}
           border="1px solid"
           borderColor={dividerColor}
-          backdropFilter="blur(12px)"
+          backdropFilter="none"
+          WebkitBackdropFilter="none"
         >
           {renderLinks(routes)}
         </Box>

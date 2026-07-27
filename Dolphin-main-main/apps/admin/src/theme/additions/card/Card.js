@@ -26,7 +26,8 @@ const Card = {
           : '0 18px 36px rgba(67, 22, 109, 0.08)',
       borderRadius: '8px',
       overflow: 'hidden',
-      backdropFilter: 'blur(10px)',
+      backdropFilter: 'none',
+      WebkitBackdropFilter: 'none',
     }),
   },
   defaultProps: {

@@ -323,7 +323,7 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
         <Box
           component="form"
           onSubmit={handleSubmit(onSubmit)}
-          sx={{ flex: 1, overflowY: 'auto', p: 2 }}
+          sx={{ flex: 1, overflowY: 'visible', minHeight: 0, p: 2 }}
         >
           <Box
             sx={{

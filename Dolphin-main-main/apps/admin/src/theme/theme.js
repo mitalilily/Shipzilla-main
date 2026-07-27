@@ -172,7 +172,8 @@ const componentOverrides = {
           boxShadow: '0 34px 72px rgba(67,22,109,0.18)',
           bg: 'rgba(255, 255, 255, 0.98)',
           overflow: 'hidden',
-          backdropFilter: 'blur(16px)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
         },
         header: {
           fontWeight: '800',
@@ -189,7 +190,8 @@ const componentOverrides = {
         },
         overlay: {
           bg: 'rgba(29, 23, 48, 0.38)',
-          backdropFilter: 'blur(10px)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
         },
       },
     },

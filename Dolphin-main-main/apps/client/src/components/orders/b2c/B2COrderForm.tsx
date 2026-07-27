@@ -432,7 +432,8 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
           onSubmit={(e) => e.preventDefault()}
           sx={{
             flex: 1,
-            overflowY: 'auto',
+            overflowY: 'visible',
+            minHeight: 0,
             p: { xs: 0.5, sm: 1, md: 1.5 },
             pr: { xs: 1, sm: 2, md: 2.5 },
             '&::-webkit-scrollbar': {

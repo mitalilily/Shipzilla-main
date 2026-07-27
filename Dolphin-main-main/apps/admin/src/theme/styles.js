@@ -16,7 +16,8 @@ export const globalStyles = {
           adminBrand.pageGradient,
           'radial-gradient(circle at 8% 6%, rgba(93,35,148,0.22) 0%, transparent 26%), radial-gradient(circle at 92% 4%, rgba(86,232,19,0.10) 0%, transparent 24%), linear-gradient(180deg, #171036 0%, #241039 100%)',
         ),
-        backgroundAttachment: 'fixed',
+        backgroundAttachment: 'scroll',
+        overscrollBehaviorY: 'none',
       },
       html: {
         fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
@@ -26,6 +27,9 @@ export const globalStyles = {
         minHeight: '100vh',
       },
       '*': {
+        boxSizing: 'border-box',
+      },
+      '*::before, *::after': {
         boxSizing: 'border-box',
       },
       '::selection': {

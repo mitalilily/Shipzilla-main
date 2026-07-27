@@ -142,10 +142,11 @@ const theme = createTheme({
       styleOverrides: {
         body: {
           backgroundImage: brandGradients.page,
-          backgroundAttachment: 'fixed',
+          backgroundAttachment: 'scroll',
           backgroundRepeat: 'no-repeat',
           color: brand.ink,
           fontFamily: brandFonts.body,
+          overscrollBehaviorY: 'none',
         },
         '#root': {
           minHeight: '100vh',
@@ -390,7 +391,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: alpha(brand.primaryDark, 0.42),
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'none',
+          WebkitBackdropFilter: 'none',
         },
       },
     },
