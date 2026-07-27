@@ -26,6 +26,7 @@ import StatusChip from '../UI/chip/StatusChip'
 import DataTable, { type Column } from '../UI/table/DataTable'
 import TableSkeleton from '../UI/table/TableSkeleton'
 import { statusColorMap } from './b2c/B2COrdersList'
+import ManifestScheduleDialog, { type ManifestSchedulePayload } from './ManifestScheduleDialog'
 import OrderActionsMenu, { type OrderActionMenuItem } from './OrderActionsMenu'
 import { buildOrderTrackingPath, buildOrderTrackingParams } from './orderNavigation'
 import {
@@ -67,8 +68,24 @@ type BulkFeedback = {
   message: string
 }
 
+type ManifestDialogTarget =
+  | { mode: 'single'; order: Order }
+  | { mode: 'bulk'; orders: Order[] }
+  | null
+
+const hasManifestDocument = (order: Order) =>
+  Boolean(String(order.manifest_url || order.manifest_key || order.manifest || '').trim())
+
+const getB2BManifestIdentifier = (order: Order) =>
+  String(order.awb_number || order.shipment_id || order.order_id || order.order_number || '').trim()
+
+const getManifestIdentifier = (order: Order) =>
+  order.type === 'b2b' ? getB2BManifestIdentifier(order) : getB2CManifestIdentifier(order)
+
 const isManifestEligible = (order: Order) => {
-  return order.type === 'b2c' ? isB2CManifestEligible(order) : false
+  if (order.type === 'b2c') return isB2CManifestEligible(order)
+  if (order.type === 'b2b') return Boolean(getB2BManifestIdentifier(order)) && !hasManifestDocument(order)
+  return false
 }
 
 const CANCELLABLE_STATUSES = new Set(['booked', 'pending', 'confirmed', 'pickup_initiated'])
@@ -106,6 +123,7 @@ const AllOrders = () => {
   )
   const [bulkManifesting, setBulkManifesting] = useState(false)
   const [bulkFeedback, setBulkFeedback] = useState<BulkFeedback | null>(null)
+  const [manifestDialog, setManifestDialog] = useState<ManifestDialogTarget>(null)
   const [filters, setFilters] = useState<OrdersFilters>({
     status: undefined,
     fromDate: undefined,
@@ -205,7 +223,7 @@ const AllOrders = () => {
           ? 'Some selected orders are not ready for manifest yet.'
           : ''
 
-  const handleBulkManifest = async () => {
+  const openBulkManifestDialog = () => {
     if (!selectedOrders.length) {
       const message = 'Select up to 5 eligible orders to manifest.'
       setBulkFeedback({
@@ -227,21 +245,27 @@ const AllOrders = () => {
       return
     }
 
+    setManifestDialog({ mode: 'bulk', orders: selectedOrders })
+  }
+
+  const handleBulkManifest = async (
+    manifestOrders: Order[],
+    schedule: ManifestSchedulePayload,
+  ) => {
     setBulkManifesting(true)
     setBulkFeedback({
       severity: 'info',
       title: 'Manifest in progress',
-      message: `Processing ${selectedOrders.length} selected order(s).`,
+      message: `Processing ${manifestOrders.length} selected order(s).`,
     })
 
     try {
-      const b2cManifestGroups = selectedOrders.reduce<Record<string, Order[]>>((groups, order) => {
-        if (order.type !== 'b2c') return groups
-
-        const manifestIdentifier = getB2CManifestIdentifier(order)
+      const manifestGroups = manifestOrders.reduce<Record<string, Order[]>>((groups, order) => {
+        const manifestIdentifier = getManifestIdentifier(order)
         if (!manifestIdentifier) return groups
 
-        const providerKey = getB2CManifestProvider(order)
+        const providerKey =
+          order.type === 'b2b' ? 'b2b:shiprocket' : `b2c:${getB2CManifestProvider(order)}`
         if (!groups[providerKey]) groups[providerKey] = []
         groups[providerKey].push(order)
         return groups
@@ -252,15 +276,19 @@ const AllOrders = () => {
       const warningMessages: string[] = []
       let successCount = 0
 
-      for (const [providerKey, providerOrders] of Object.entries(b2cManifestGroups)) {
+      for (const [providerKey, providerOrders] of Object.entries(manifestGroups)) {
         const identifiers = providerOrders
-          .map((order) => getB2CManifestIdentifier(order))
+          .map((order) => getManifestIdentifier(order))
           .filter((value): value is string => Boolean(value))
 
         if (!identifiers.length) continue
 
         try {
-          const response = await generateManifestService({ awbs: identifiers, type: 'b2c' })
+          const response = await generateManifestService({
+            awbs: identifiers,
+            type: providerOrders[0]?.type === 'b2b' ? 'b2b' : 'b2c',
+            ...schedule,
+          })
           successCount += providerOrders.length
           if (response.warnings?.length) {
             warningMessages.push(...response.warnings)
@@ -603,29 +631,12 @@ const AllOrders = () => {
       stickyOffset: 0,
       render: (_v, row) => {
         const trackingPath = buildOrderTrackingPath(row)
-        const courierText = String(row.courier_partner || '').toLowerCase()
-        const integrationText = String(row.integration_type || '').toLowerCase()
-        const isB2C = row.type === 'b2c'
-        const isB2B = row.type === 'b2b'
-        const canB2BManifest =
-          Boolean(row.awb_number) &&
-          !row.manifest &&
-          (integrationText.includes('xpressbees') ||
-            integrationText.includes('ekart') ||
-            courierText.includes('xpressbees') ||
-            courierText.includes('ekart'))
-        const canManifest = isB2C
-          ? isB2CManifestEligible(row)
-          : isB2B
-            ? canB2BManifest
-            : false
+        const canManifest = isManifestEligible(row)
         const hasLabelDocument = Boolean(String(row.label_url || row.label_key || row.label || '').trim())
         const hasInvoiceDocument = Boolean(
           String(row.invoice_url || row.invoice_key || row.invoice_link || '').trim(),
         )
-        const hasManifestDocument = Boolean(
-          String(row.manifest_url || row.manifest_key || row.manifest || '').trim(),
-        )
+        const rowHasManifestDocument = hasManifestDocument(row)
         const canCancel = isOrderCancellable(row)
 
         const actions: OrderActionMenuItem[] = [
@@ -645,14 +656,7 @@ const AllOrders = () => {
                   key: 'generate-manifest',
                   label: 'Generate Manifest',
                   icon: <MdLocalShipping size={18} />,
-                  onClick: () => {
-                    const awb = String(row.awb_number || row.order_number || '').trim()
-                    if (!awb) return
-                    void generateManifestService({
-                      awbs: [awb],
-                      type: isB2B ? 'b2b' : 'b2c',
-                    })
-                  },
+                  onClick: () => setManifestDialog({ mode: 'single', order: row }),
                 },
               ]
             : []),
@@ -688,7 +692,7 @@ const AllOrders = () => {
                 },
               ]
             : []),
-          ...(hasManifestDocument
+          ...(rowHasManifestDocument
             ? [
                 {
                   key: 'download-manifest',
@@ -888,7 +892,7 @@ const AllOrders = () => {
               <Stack direction={{ xs: 'column', sm: 'row' }} gap={1} flexWrap="wrap">
                 <Button
                   variant="contained"
-                  onClick={handleBulkManifest}
+                  onClick={openBulkManifestDialog}
                   disabled={
                     bulkManifesting || !selectedOrders.length || Boolean(manifestValidationMessage)
                   }
@@ -988,6 +992,49 @@ const AllOrders = () => {
           />
         )}
       </Box>
+
+      <ManifestScheduleDialog
+        open={Boolean(manifestDialog)}
+        title={
+          manifestDialog?.mode === 'single'
+            ? `Generate Manifest - ${manifestDialog.order.order_number || manifestDialog.order.id}`
+            : 'Generate Manifest for selected orders'
+        }
+        orderCount={manifestDialog?.mode === 'bulk' ? manifestDialog.orders.length : 1}
+        loading={bulkManifesting}
+        onClose={() => setManifestDialog(null)}
+        onSubmit={async (schedule) => {
+          if (!manifestDialog) return
+
+          setBulkManifesting(true)
+          try {
+            if (manifestDialog.mode === 'single') {
+              const manifestRef = getManifestIdentifier(manifestDialog.order)
+              if (!manifestRef) {
+                toast.open({
+                  message: `Manifest cannot be started for ${manifestDialog.order.order_number || manifestDialog.order.id} yet.`,
+                  severity: 'error',
+                })
+                return
+              }
+
+              const type = manifestDialog.order.type === 'b2b' ? 'b2b' : 'b2c'
+              await generateManifestService({ awbs: [manifestRef], type, ...schedule })
+              await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['b2cOrdersByUser'] }),
+                queryClient.invalidateQueries({ queryKey: ['b2bOrdersByUser'] }),
+                queryClient.invalidateQueries({ queryKey: ['orders'] }),
+              ])
+              toast.open({ message: 'Manifest generated successfully!', severity: 'success' })
+            } else {
+              await handleBulkManifest(manifestDialog.orders, schedule)
+            }
+            setManifestDialog(null)
+          } finally {
+            setBulkManifesting(false)
+          }
+        }}
+      />
     </Stack>
   )
 }
