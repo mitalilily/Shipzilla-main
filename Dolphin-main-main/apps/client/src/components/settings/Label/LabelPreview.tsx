@@ -74,6 +74,7 @@ export function LabelPreview({ values, order, preferences }: LabelPreviewProps) 
   const showInvoiceDate = isEnabled(values.orderInfo?.invoiceDate) && Boolean(order.invoiceDate)
   const showDeclaredValue = isEnabled(values.orderInfo?.declaredValue) && Boolean(declaredValue)
   const showAwb = isEnabled(values.orderInfo?.awb) && Boolean(awbNumber)
+  const showCourier = isEnabled(values.orderInfo?.courier)
   const showCodBadge = isEnabled(values.orderInfo?.cod)
   const showProductDescription = isEnabled(values.productInfo?.itemName) && productEntries.length > 0
   const showOrderSummary = isEnabled(values.productInfo?.otherCharges) && Boolean(orderValue)
@@ -106,10 +107,99 @@ export function LabelPreview({ values, order, preferences }: LabelPreviewProps) 
         bgcolor: 'white',
         color: '#1D1730',
         mx: 'auto',
+        overflow: 'hidden',
       }}
       elevation={1}
     >
       <Stack spacing={2}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '1.25fr 0.95fr',
+            border: '2px solid #052345',
+            borderRadius: 1,
+            overflow: 'hidden',
+            bgcolor: '#fff',
+          }}
+        >
+          <Box sx={{ p: 1.25 }}>
+            <Box sx={{ bgcolor: '#052345', color: '#fff', px: 1, py: 0.65, mb: 1, display: 'inline-block', minWidth: 160 }}>
+              <Typography fontWeight={900} letterSpacing={0.6}>
+                SHIPZILLA
+              </Typography>
+              <Typography sx={{ fontSize: 8, letterSpacing: 1.4 }}>THE KING OF SHIPPING</Typography>
+            </Box>
+            <Typography fontWeight={900} color="#0B2545">
+              Ship To:
+            </Typography>
+            <Typography variant="subtitle2" fontWeight={700}>
+              {order.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {order.address}
+            </Typography>
+            {showCustomerPhone && <Typography variant="body2">Mobile Number: {customerPhone}</Typography>}
+            {(showSellerName || showShipperAddress || showShipperPhone) && (
+              <Box sx={{ mt: 1 }}>
+                <Typography fontWeight={900} color="#0B2545">
+                  Ship From:
+                </Typography>
+                {showSellerName && <Typography variant="body2" fontWeight={700}>{order.shipper?.name}</Typography>}
+                {showShipperAddress && <Typography variant="body2" color="text.secondary">{order.shipper?.address}</Typography>}
+                {showShipperPhone && <Typography variant="body2">Phone: {order.shipper?.phone}</Typography>}
+              </Box>
+            )}
+          </Box>
+          <Box sx={{ bgcolor: '#052345', color: '#fff', m: 1, p: 2, textAlign: 'center', display: 'grid', alignContent: 'center' }}>
+            <Typography sx={{ fontSize: 30, fontWeight: 900, lineHeight: 1 }}>
+              SHIPZILLA
+            </Typography>
+            <Typography sx={{ fontSize: 10, letterSpacing: 1.8 }}>THE KING OF SHIPPING</Typography>
+            <Stack direction="row" gap={0.5} justifyContent="center" mt={2} flexWrap="wrap">
+              {['DELHIVERY', 'EKART', 'XPRESSBEES', 'BLUE DART'].map((name) => (
+                <Box key={name} sx={{ bgcolor: '#fff', color: '#0B2545', px: 0.7, py: 0.35, borderRadius: 0.5, fontSize: 8, fontWeight: 900 }}>
+                  {name}
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+          <Box sx={{ gridColumn: '1 / -1', borderTop: '2px solid #052345', display: 'grid', gridTemplateColumns: '1.3fr 0.9fr' }}>
+            <Box sx={{ p: 1.25 }}>
+              {showCourier && (
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  <strong>Courier:</strong> {courierName}
+                </Typography>
+              )}
+              {showAwb && (
+                <Box sx={{ width: 240, maxWidth: '100%' }}>
+                  <Barcode value={awbNumber} height={48} width={1.35} displayValue={false} />
+                  <Typography variant="body2"><strong>AWB:</strong> {awbNumber}</Typography>
+                </Box>
+              )}
+            </Box>
+            <Box sx={{ p: 1.25, borderLeft: '1px solid #D1D5DB' }}>
+              {showInvoiceNumber && <Typography variant="body2"><strong>Invoice No:</strong> {invoiceNumber}</Typography>}
+              {showInvoiceDate && <Typography variant="body2"><strong>Invoice Date:</strong> {normalize(order.invoiceDate)}</Typography>}
+              {showOrderId && <Typography variant="body2"><strong>Order:</strong> {orderId}</Typography>}
+              {showDeclaredValue && <Typography variant="body2"><strong>Declared:</strong> {declaredValue}</Typography>}
+            </Box>
+          </Box>
+          <Box sx={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.2fr' }}>
+            {['SAFE & SECURE', 'REAL TIME TRACKING', '24/7 CUSTOMER SUPPORT'].map((text) => (
+              <Box key={text} sx={{ bgcolor: '#052345', color: '#fff', p: 1, fontSize: 10, fontWeight: 900 }}>
+                {text}
+              </Box>
+            ))}
+            <Box sx={{ bgcolor: '#F97316', color: '#111827', p: 1, fontSize: 12, fontWeight: 900, textAlign: 'center' }}>
+              www.shipzilla.in
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider sx={{ borderStyle: 'dashed' }} />
+
+        {false && (
+          <>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
           <Stack spacing={0.75} flex={1}>
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -373,6 +463,8 @@ export function LabelPreview({ values, order, preferences }: LabelPreviewProps) 
           <Typography variant="caption" align="center" color="text.secondary" fontWeight="600">
             Powered by {preferences?.powered_by}
           </Typography>
+        )}
+          </>
         )}
       </Stack>
     </Paper>

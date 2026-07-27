@@ -89,6 +89,8 @@ const DEFAULT_LABEL_SETTINGS = {
     invoiceBarcode: true,
     rtoRoutingCode: true,
     declaredValue: true,
+    customerPhone: true,
+    courier: true,
     cod: true,
     awb: true,
     terms: true,
@@ -195,6 +197,7 @@ export async function generateLabelForOrder(order: any, userId: string, tx: any 
     address: order.address ?? '',
     city: order.city ?? '',
     state: order.state ?? '',
+    country: order.country ?? 'India',
     pincode: order.pincode ?? '',
     phone: order.buyer_phone ?? order.phone ?? '',
   }
@@ -229,6 +232,7 @@ export async function generateLabelForOrder(order: any, userId: string, tx: any 
   const showInvoiceBarcode = isEnabled(settings.order_info?.invoiceBarcode)
   const showRtoRoutingCode = isEnabled(settings.order_info?.rtoRoutingCode)
   const showDeclaredValue = isEnabled(settings.order_info?.declaredValue)
+  const showCourier = isEnabled(settings.order_info?.courier)
   const showCodBanner = isEnabled(settings.order_info?.cod)
   const showTerms = isEnabled(settings.order_info?.terms)
   const showCustomerPhone = isEnabled(settings.order_info?.customerPhone)
@@ -356,9 +360,476 @@ export async function generateLabelForOrder(order: any, userId: string, tx: any 
   const sellerBrandName =
     profileOfUser?.companyInfo?.companyName ||
     profileOfUser?.companyInfo?.displayName ||
+    order.company_name ||
     pickup?.warehouse_name ||
     ''
   const normalizedSortCode = String(order?.sort_code ?? '').trim()
+
+  const buildCompactLines = (...values: any[]) =>
+    values
+      .map((value) => String(value ?? '').trim())
+      .filter(Boolean)
+
+  const courierDisplayName = String(order.courier_partner || order.integration_type || 'Courier').trim()
+  const invoiceDateText = String(order.invoice_date || order.order_date || '').trim()
+  const shipToLines = buildCompactLines(
+    consignee.name,
+    consignee.address,
+    [consignee.city, consignee.state, consignee.country || 'India'].filter(Boolean).join(', '),
+    consignee.pincode,
+  )
+  const shipFromLines = buildCompactLines(
+    showBrandName ? sellerBrandName : '',
+    showShipperAddress
+      ? [
+          pickup?.address,
+          [pickup?.city, pickup?.state].filter(Boolean).join(', '),
+          pickup?.pincode,
+        ]
+          .filter(Boolean)
+          .join(' | ')
+      : '',
+    showShipperPhone && pickup?.phone ? `Phone: ${pickup.phone}` : '',
+    showShipperGst && pickup?.gst_number ? `GSTIN: ${pickup.gst_number}` : '',
+  )
+  const labelFooterText = settings.powered_by?.toString().trim() || 'Shipzilla'
+  const labelUrlText =
+    labelFooterText.toLowerCase().includes('shipzilla') || labelFooterText.toLowerCase().includes('ship')
+      ? 'www.shipzilla.in'
+      : labelFooterText
+  const awbText = String(order.awb_number || '').trim()
+  const invoiceNumberText = String(order.invoice_number || order.order_number || '').trim()
+  const orderDateText = String(order.order_date || '').trim()
+  const paymentBadgeText = paymentType === 'cod' ? 'COD' : 'PREPAID'
+
+  const brandPanelStack: any[] = []
+  if (showPlatformBranding && images.platformLogo) {
+    brandPanelStack.push({
+      image: 'platformLogo',
+      width: 132,
+      alignment: 'center',
+      margin: [0, 7, 0, 5],
+    })
+  } else {
+    brandPanelStack.push({
+      text: 'SHIPZILLA',
+      alignment: 'center',
+      bold: true,
+      color: '#FFFFFF',
+      fontSize: 25,
+      margin: [0, 24, 0, 2],
+    })
+  }
+  brandPanelStack.push({
+    text: 'THE KING OF SHIPPING',
+    alignment: 'center',
+    color: '#FFFFFF',
+    fontSize: 7,
+    characterSpacing: 1.8,
+    margin: [0, 0, 0, 8],
+  })
+  brandPanelStack.push({
+    table: {
+      widths: ['*', '*', '*', '*'],
+      body: [
+        ['DELHIVERY', 'EKART', 'XPRESSBEES', 'BLUE DART'].map((name) => ({
+          text: name,
+          alignment: 'center',
+          color: name === 'BLUE DART' ? '#0B4EA2' : '#111827',
+          fontSize: 5.2,
+          bold: true,
+          margin: [0, 3, 0, 3],
+        })),
+      ],
+    },
+    layout: {
+      hLineColor: () => '#E5E7EB',
+      vLineColor: () => '#E5E7EB',
+      fillColor: () => '#FFFFFF',
+      paddingLeft: () => 1,
+      paddingRight: () => 1,
+      paddingTop: () => 0,
+      paddingBottom: () => 0,
+    },
+    margin: [10, 0, 10, 0],
+  })
+
+  const addressRows: any[] = [
+    {
+      columns: [
+        {
+          width: 18,
+          text: 'TO',
+          color: '#F97316',
+          bold: true,
+          fontSize: 8,
+          alignment: 'center',
+          margin: [0, 3, 0, 0],
+        },
+        {
+          width: '*',
+          stack: [
+            { text: 'Ship To:', bold: true, color: '#0B2545', fontSize: 12, margin: [0, 0, 0, 2] },
+            ...shipToLines.map((line, index) => ({
+              text: trimText(line, index === 1 ? 58 : 42),
+              fontSize: 7.7,
+              color: '#111827',
+              margin: [0, 0, 0, 1],
+            })),
+          ],
+        },
+      ],
+      columnGap: 4,
+    },
+  ]
+
+  if (shipFromLines.length > 0) {
+    addressRows.push({
+      columns: [
+        {
+          width: 18,
+          text: 'FR',
+          color: '#F97316',
+          bold: true,
+          fontSize: 8,
+          alignment: 'center',
+          margin: [0, 3, 0, 0],
+        },
+        {
+          width: '*',
+          stack: [
+            { text: 'Ship From:', bold: true, color: '#0B2545', fontSize: 10, margin: [0, 0, 0, 1] },
+            ...shipFromLines.slice(0, 3).map((line, index) => ({
+              text: trimText(line, index === 1 ? 62 : 42),
+              fontSize: 6.6,
+              color: '#334155',
+              margin: [0, 0, 0, 0.6],
+            })),
+          ],
+        },
+      ],
+      columnGap: 4,
+      margin: [0, 4, 0, 0],
+    })
+  }
+
+  if (showCustomerPhone && consignee.phone) {
+    addressRows.push({
+      columns: [
+        {
+          width: 18,
+          text: 'PH',
+          color: '#F97316',
+          bold: true,
+          fontSize: 8,
+          alignment: 'center',
+          margin: [0, 1, 0, 0],
+        },
+        {
+          width: '*',
+          text: [{ text: 'Mobile Number: ', bold: true, color: '#0B2545' }, trimText(consignee.phone, 22)],
+          fontSize: 8,
+          color: '#111827',
+        },
+      ],
+      columnGap: 4,
+      margin: [0, 4, 0, 0],
+    })
+  }
+
+  const labelContent: any[] = [
+    {
+      table: {
+        widths: ['*'],
+        body: [
+          [
+            {
+              stack: [
+                {
+                  table: {
+                    widths: ['58%', '42%'],
+                    body: [
+                      [
+                        {
+                          stack: [
+                            {
+                              table: {
+                                widths: ['auto', '*'],
+                                body: [
+                                  [
+                                    showPlatformBranding && images.platformLogo
+                                      ? { image: 'platformLogo', width: 92, margin: [4, 2, 0, 1] }
+                                      : {
+                                          text: 'SHIPZILLA',
+                                          bold: true,
+                                          color: '#FFFFFF',
+                                          fontSize: 14,
+                                          margin: [8, 5, 0, 1],
+                                        },
+                                    {
+                                      text: 'THE KING OF SHIPPING',
+                                      color: '#FFFFFF',
+                                      fontSize: 5.5,
+                                      margin: [0, 16, 0, 0],
+                                    },
+                                  ],
+                                ],
+                              },
+                              layout: 'noBorders',
+                              fillColor: '#052345',
+                              margin: [0, 0, 70, 5],
+                            },
+                            { stack: addressRows, margin: [2, 0, 4, 0] },
+                          ],
+                        },
+                        {
+                          stack: brandPanelStack,
+                          fillColor: '#052345',
+                          margin: [0, 0, 0, 0],
+                        },
+                      ],
+                    ],
+                  },
+                  layout: 'noBorders',
+                  margin: [0, 0, 0, 5],
+                },
+                {
+                  table: {
+                    widths: ['58%', '42%'],
+                    body: [
+                      [
+                        {
+                          stack: [
+                            ...(showCourier
+                              ? [
+                                    {
+                                    text: [
+                                      { text: 'Courier: ', bold: true, color: '#0B2545' },
+                                      courierDisplayName || '-',
+                                      paymentBadgeText ? `  -  ${paymentBadgeText}` : '',
+                                    ],
+                                    fontSize: 8,
+                                    margin: [0, 0, 0, 5],
+                                  },
+                                ]
+                              : []),
+                            ...(awbBarcode && isValidDataUrl(awbBarcode)
+                              ? [{ image: 'awbBarcode', width: 222, height: 44, margin: [0, 0, 0, 2] }]
+                              : []),
+                            ...(awbEnabled && awbText
+                              ? [
+                                  {
+                                    text: [{ text: 'AWB: ', bold: true, color: '#0B2545' }, awbText],
+                                    fontSize: 8.5,
+                                  },
+                                ]
+                              : []),
+                          ],
+                          margin: [8, 7, 8, 4],
+                        },
+                        {
+                          stack: [
+                            ...(showInvoiceNumber && invoiceNumberText
+                              ? [
+                                  {
+                                    columns: [
+                                      { width: 24, text: 'INV', color: '#0B2545', bold: true, fontSize: 8 },
+                                      {
+                                        width: '*',
+                                        stack: [
+                                          { text: 'Invoice No:', bold: true, color: '#0B2545', fontSize: 8 },
+                                          { text: trimText(invoiceNumberText, 28), fontSize: 7.2 },
+                                        ],
+                                      },
+                                    ],
+                                    columnGap: 4,
+                                    margin: [0, 0, 0, 8],
+                                  },
+                                ]
+                              : []),
+                            ...(showInvoiceDate && invoiceDateText
+                              ? [
+                                  {
+                                    columns: [
+                                      { width: 24, text: 'DT', color: '#0B2545', bold: true, fontSize: 8 },
+                                      {
+                                        width: '*',
+                                        stack: [
+                                          { text: 'Invoice Date:', bold: true, color: '#0B2545', fontSize: 8 },
+                                          { text: trimText(invoiceDateText, 28), fontSize: 7.2 },
+                                        ],
+                                      },
+                                    ],
+                                    columnGap: 4,
+                                    margin: [0, 0, 0, 4],
+                                  },
+                                ]
+                              : []),
+                            ...(showOrderId && order.order_number
+                              ? [{ text: `Order: ${trimText(order.order_number, 32)}`, fontSize: 6.5, color: '#334155' }]
+                              : []),
+                            ...(showOrderDate && orderDateText
+                              ? [{ text: `Order Date: ${trimText(orderDateText, 28)}`, fontSize: 6.5, color: '#334155' }]
+                              : []),
+                            ...(showDeclaredValue
+                              ? [
+                                  {
+                                    text: `Declared: ${formatCurrency(order.declared_value ?? order.order_amount)}`,
+                                    fontSize: 6.5,
+                                    color: '#334155',
+                                  },
+                                ]
+                              : []),
+                            ...(showRtoRoutingCode && normalizedSortCode
+                              ? [
+                                  {
+                                    text: `Sort Code: ${normalizedSortCode}`,
+                                    fontSize: 6.5,
+                                    bold: true,
+                                    color: '#0B2545',
+                                  },
+                                ]
+                              : []),
+                          ],
+                          margin: [16, 12, 6, 4],
+                        },
+                      ],
+                    ],
+                  },
+                  layout: {
+                    hLineColor: () => '#0B2545',
+                    vLineColor: () => '#D1D5DB',
+                    paddingLeft: () => 0,
+                    paddingRight: () => 0,
+                    paddingTop: () => 0,
+                    paddingBottom: () => 0,
+                  },
+                  margin: [0, 0, 0, 0],
+                },
+                {
+                  table: {
+                    widths: ['22%', '24%', '24%', '*'],
+                    body: [
+                      [
+                        { text: 'SAFE &\nSECURE', color: '#FFFFFF', bold: true, fontSize: 6.2, margin: [7, 6, 0, 5] },
+                        { text: 'REAL TIME\nTRACKING', color: '#FFFFFF', bold: true, fontSize: 6.2, margin: [7, 6, 0, 5] },
+                        { text: '24/7 CUSTOMER\nSUPPORT', color: '#FFFFFF', bold: true, fontSize: 6.2, margin: [7, 6, 0, 5] },
+                        {
+                          text: labelUrlText,
+                          color: '#111827',
+                          bold: true,
+                          fontSize: 9,
+                          alignment: 'center',
+                          margin: [0, 10, 0, 0],
+                        },
+                      ],
+                    ],
+                  },
+                  layout: {
+                    hLineWidth: () => 0,
+                    vLineWidth: () => 0,
+                    fillColor: (_row: number, node: any, col: number) => (col === 3 ? '#F97316' : '#052345'),
+                    paddingLeft: () => 0,
+                    paddingRight: () => 0,
+                    paddingTop: () => 0,
+                    paddingBottom: () => 0,
+                  },
+                  margin: [0, 0, 0, 0],
+                },
+                ...(showTerms
+                  ? [
+                      {
+                        text: 'T&C: Verify shipment details before dispatch. Undelivered shipments return to configured RTO/ship-from address.',
+                        fontSize: 5.3,
+                        color: '#64748B',
+                        margin: [5, 3, 5, 0],
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          ],
+        ],
+      },
+      layout: {
+        hLineColor: () => '#052345',
+        vLineColor: () => '#052345',
+        hLineWidth: () => 1.4,
+        vLineWidth: () => 1.4,
+        paddingLeft: () => 2,
+        paddingRight: () => 2,
+        paddingTop: () => 2,
+        paddingBottom: () => 2,
+      },
+    },
+  ]
+
+  pages.push({ stack: labelContent })
+
+  const shipzillaDocDefinition: any = {
+    defaultStyle: { font: 'Helvetica' },
+    pageSize: settings.printer_type === 'thermal' ? { width: 432, height: 288 } : 'A4',
+    content: pages,
+    pageMargins: settings.printer_type === 'thermal' ? [8, 8, 8, 8] : [28, 28, 28, 28],
+    ...(Object.keys(images).length > 0 && { images }),
+  }
+
+  try {
+    const printer = new PdfPrinter(fonts)
+    const pdfDoc = printer.createPdfKitDocument(shipzillaDocDefinition)
+    const chunks: Buffer[] = []
+    const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
+      pdfDoc.on('data', (chunk) => chunks.push(chunk))
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)))
+      pdfDoc.on('error', (err) => reject(err))
+      pdfDoc.end()
+    })
+
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      throw new Error('PDF buffer is empty or invalid')
+    }
+
+    console.log(
+      `PDF generated successfully (${pdfBuffer.length} bytes) for order ${order?.order_number}`,
+    )
+
+    const { uploadUrl, key } = await presignUpload({
+      filename: `label-${order?.order_number ?? order?.id}.pdf`,
+      contentType: 'application/pdf',
+      userId,
+      folderKey: 'labels',
+    })
+
+    if (!uploadUrl || !key) {
+      throw new Error('Failed to get presigned URL for label upload')
+    }
+
+    const finalUploadUrl = Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl
+    const uploadResponse = await axios.put(finalUploadUrl, pdfBuffer, {
+      headers: { 'Content-Type': 'application/pdf' },
+      validateStatus: (status) => status >= 200 && status < 300,
+    })
+
+    if (uploadResponse.status < 200 || uploadResponse.status >= 300) {
+      throw new Error(`Label upload failed with status ${uploadResponse.status}`)
+    }
+
+    const finalKey = Array.isArray(key) ? key[0] : key
+    if (!finalKey || typeof finalKey !== 'string' || finalKey.trim().length === 0) {
+      throw new Error('Label key is invalid or empty after upload')
+    }
+
+    const trimmedKey = finalKey.trim()
+    console.log(`Label uploaded successfully: ${trimmedKey} (status: ${uploadResponse.status})`)
+    return trimmedKey
+  } catch (err: any) {
+    console.error(
+      `Failed to generate/upload label for order ${order?.order_number}:`,
+      err?.message || err,
+      err?.stack,
+    )
+    throw new Error(`Label generation/upload failed: ${err?.message || err}`)
+  }
 
   const headerLeftStack: any[] = []
   if (showBrandLogo && images.logo) {
@@ -403,7 +874,11 @@ export async function generateLabelForOrder(order: any, userId: string, tx: any 
     weightLines.push(
       `Chargeable Weight: ${chargeableWeightKg ? chargeableWeightKg.toFixed(3) + ' kg' : '-'}`,
     )
-    weightLines.push(`Slab: ${slabWeightKg ? (slabWeightKg * 1000).toFixed(0) + ' g' : 'from rate card'}`)
+    const slabWeightValue = Number(slabWeightKg)
+    const slabText = Number.isFinite(slabWeightValue)
+      ? `${(slabWeightValue * 1000).toFixed(0)} g`
+      : 'from rate card'
+    weightLines.push(`Slab: ${slabText}`)
     weightLines.push(`Slabs Applied: ${slabsApplied ?? '-'}`)
     weightLines.push(`Freight: ${formatCurrency(freightValue)}`)
   }

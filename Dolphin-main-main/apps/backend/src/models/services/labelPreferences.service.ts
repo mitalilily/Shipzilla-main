@@ -14,6 +14,8 @@ export const DEFAULT_PREFERENCES = {
     orderBarcode: true,
     invoiceBarcode: true,
     declaredValue: true,
+    customerPhone: true,
+    courier: true,
     cod: true,
     awb: true,
     terms: true,

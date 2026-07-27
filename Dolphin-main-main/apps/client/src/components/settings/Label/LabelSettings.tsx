@@ -43,6 +43,8 @@ const defaultValues: LabelSettingsForm = {
     orderBarcode: true,
     invoiceBarcode: true,
     declaredValue: true,
+    customerPhone: true,
+    courier: true,
     cod: true,
     awb: true,
     terms: true,

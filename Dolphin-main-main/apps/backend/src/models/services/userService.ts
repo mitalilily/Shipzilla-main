@@ -614,6 +614,8 @@ export async function createUserWithWallet(data: Partial<IUser>, txn: any = db) 
         invoiceBarcode: true,
         rtoRoutingCode: true,
         declaredValue: true,
+        customerPhone: true,
+        courier: true,
         cod: true,
         awb: true,
         terms: true,
