@@ -264,7 +264,11 @@ const getOrderDocumentReference = (order: any, type: 'label' | 'invoice' | 'mani
   }
 }
 
-const ensureOrderLabel = async (order: any, orderType: 'b2c' | 'b2b') => {
+const ensureOrderLabel = async (
+  order: any,
+  orderType: 'b2c' | 'b2b',
+  options: { forceRegenerate?: boolean } = {},
+) => {
   const existing = getOrderDocumentReference(order, 'label')
 
   const userId = String(order?.user_id || '').trim()
@@ -286,7 +290,7 @@ const ensureOrderLabel = async (order: any, orderType: 'b2c' | 'b2b') => {
       contentType: 'application/pdf',
     })
   } else {
-    if (existing.key || existing.url) return existing
+    if (!options.forceRegenerate && (existing.key || existing.url)) return existing
 
     labelKey = await generateLabelForOrder(order, userId, db)
   }
@@ -375,7 +379,7 @@ export const regenerateOrderDocumentsServiceAdmin = async ({
   let newInvoiceKey: string | null = null
 
   if (regenerateLabel) {
-    const labelRef = await ensureOrderLabel(order, orderType)
+    const labelRef = await ensureOrderLabel(order, orderType, { forceRegenerate: true })
     const labelKey = labelRef.key || labelRef.url
     if (!labelKey || typeof labelKey !== 'string' || !labelKey.trim()) {
       throw new Error('Label regeneration failed')
