@@ -639,13 +639,13 @@ const AllOrders = () => {
             : []),
           {
             key: 'regenerate-label',
-            label: 'Regenerate Label',
+            label: 'Generate Label',
             icon: <MdDescription size={18} />,
             onClick: () => handleRegenerateDocuments(row, true, false),
           },
           {
             key: 'regenerate-invoice',
-            label: 'Regenerate Invoice',
+            label: 'Generate Invoice',
             icon: <MdDescription size={18} />,
             onClick: () => handleRegenerateDocuments(row, false, true),
           },

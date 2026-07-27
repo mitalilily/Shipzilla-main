@@ -3,16 +3,28 @@ import { Alert, AlertTitle, Box, Button, Link, Stack, Typography } from '@mui/ma
 import { saveAs } from 'file-saver'
 import moment from 'moment'
 import { useState } from 'react'
-import { MdLocalShipping, MdVisibility } from 'react-icons/md'
+import { MdCancel, MdDescription, MdLocalShipping, MdVisibility } from 'react-icons/md'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { bulkDownloadOrderDocumentsService } from '../../../api/order.service'
-import { useB2BOrdersByUser, useGenerateManifest } from '../../../hooks/Orders/useOrders'
+import {
+  useB2BOrdersByUser,
+  useCancelShipment,
+  useGenerateManifest,
+  useRegenerateOrderDocuments,
+} from '../../../hooks/Orders/useOrders'
+import { usePresignedDownloadMutation } from '../../../hooks/Uploads/usePresignedDownloadUrls'
 import type { B2BOrder } from '../../../types/generic.types'
 import { toast } from '../../UI/Toast'
 import StatusChip from '../../UI/chip/StatusChip'
 import DataTable, { type Column } from '../../UI/table/DataTable'
 import TableSkeleton from '../../UI/table/TableSkeleton'
-import { getActionableErrorMessage } from '../bulkActionUtils'
+import {
+  downloadFile,
+  type DocumentType,
+  getActionableErrorMessage,
+  getDocumentReference,
+  getDownloadFileName,
+} from '../bulkActionUtils'
 import { OrderExpandedRow } from '../OrderExpandedRow'
 import OrderActionsMenu, { type OrderActionMenuItem } from '../OrderActionsMenu'
 import { buildOrderTrackingPath } from '../orderNavigation'
@@ -52,6 +64,10 @@ const B2BOrdersList = ({
   const queryClient = useQueryClient()
   const { data, isLoading, isError } = useB2BOrdersByUser(page, rowsPerPage, filters)
   const { mutate: triggerManifest, isPending: isGeneratingManifest } = useGenerateManifest()
+  const { mutateAsync: regenerateDocuments, isPending: regeneratingDocuments } =
+    useRegenerateOrderDocuments()
+  const { mutate: cancelShipment, isPending: cancellingShipment } = useCancelShipment()
+  const { mutateAsync: presignDownloads } = usePresignedDownloadMutation()
   const [manifestingAwb, setManifestingAwb] = useState<string | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<Array<B2BOrder['id']>>([])
   const [selectionResetToken, setSelectionResetToken] = useState(0)
@@ -83,6 +99,60 @@ const B2BOrdersList = ({
 
   const hasInvoiceGenerated = (row: B2BOrder) =>
     Boolean(String(row.invoice_url || row.invoice_key || row.invoice_link || '').trim())
+
+  const hasManifestGenerated = (row: B2BOrder) =>
+    Boolean(String(row.manifest_url || row.manifest_key || row.manifest || '').trim())
+
+  const isCancellable = (row: B2BOrder) => {
+    const status = String(row.order_status || '').toLowerCase()
+    const cancellableStatuses = new Set(['pending', 'booked', 'shipment_booked', 'pickup_initiated'])
+    return Boolean(row.awb_number || row.shipment_id || row.order_id) && cancellableStatuses.has(status)
+  }
+
+  const handleRegenerateDocuments = async (
+    order: B2BOrder,
+    regenerateLabel = true,
+    regenerateInvoice = true,
+  ) => {
+    await regenerateDocuments({
+      orderId: String(order.id),
+      regenerateLabel,
+      regenerateInvoice,
+    })
+  }
+
+  const handleDownloadDocument = async (order: B2BOrder, type: DocumentType) => {
+    const { key, url } = getDocumentReference({ ...order, type: 'b2b' }, type)
+
+    if (!key && !url) {
+      toast.open({
+        message: `${type[0].toUpperCase()}${type.slice(1)} is not available yet for ${order.order_number}.`,
+        severity: 'warning',
+      })
+      return
+    }
+
+    const fileName = getDownloadFileName({ ...order, type: 'b2b' }, type, key || url)
+
+    if (url) {
+      await downloadFile(url, fileName)
+      return
+    }
+
+    if (!key) return
+
+    const presignedUrls = await presignDownloads({ keys: [key] })
+    const resolvedUrl = Array.isArray(presignedUrls) ? presignedUrls[0] : null
+    if (!resolvedUrl) {
+      toast.open({
+        message: `Failed to prepare ${type} download for ${order.order_number}.`,
+        severity: 'error',
+      })
+      return
+    }
+
+    await downloadFile(resolvedUrl, fileName)
+  }
 
   const handleBulkLabelDownload = async () => {
     if (!selectedOrders.length) {
@@ -192,6 +262,10 @@ const B2BOrdersList = ({
             label={hasInvoiceGenerated(row) ? 'Invoice Generated' : 'Invoice Pending'}
             status={hasInvoiceGenerated(row) ? 'success' : 'pending'}
           />
+          <StatusChip
+            label={hasManifestGenerated(row) ? 'Manifest Generated' : 'Manifest Pending'}
+            status={hasManifestGenerated(row) ? 'success' : 'pending'}
+          />
         </Stack>
       ),
     },
@@ -246,6 +320,9 @@ const B2BOrdersList = ({
         const canManifest = Boolean(row.awb_number) && !row.manifest && (isXpressbees || isEkart)
         const trackingPath = buildOrderTrackingPath(row)
         const isThisManifesting = isGeneratingManifest && manifestingAwb === row.awb_number
+        const hasLabelDocument = hasLabelGenerated(row)
+        const hasInvoiceDocument = hasInvoiceGenerated(row)
+        const hasManifestDocument = hasManifestGenerated(row)
 
         const actions: OrderActionMenuItem[] = [
           ...(trackingPath
@@ -275,6 +352,50 @@ const B2BOrdersList = ({
                 },
               ]
             : []),
+          {
+            key: 'generate-label',
+            label: regeneratingDocuments ? 'Generating Label...' : 'Generate Label',
+            icon: <MdDescription size={18} />,
+            disabled: regeneratingDocuments,
+            onClick: () => handleRegenerateDocuments(row, true, false),
+          },
+          {
+            key: 'generate-invoice',
+            label: regeneratingDocuments ? 'Generating Invoice...' : 'Generate Invoice',
+            icon: <MdDescription size={18} />,
+            disabled: regeneratingDocuments,
+            onClick: () => handleRegenerateDocuments(row, false, true),
+          },
+          ...(hasLabelDocument
+            ? [
+                {
+                  key: 'download-label',
+                  label: 'Download Label',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'label'),
+                },
+              ]
+            : []),
+          ...(hasInvoiceDocument
+            ? [
+                {
+                  key: 'download-invoice',
+                  label: 'Download Invoice',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'invoice'),
+                },
+              ]
+            : []),
+          ...(hasManifestDocument
+            ? [
+                {
+                  key: 'download-manifest',
+                  label: 'Download Manifest',
+                  icon: <MdDescription size={18} />,
+                  onClick: () => handleDownloadDocument(row, 'manifest'),
+                },
+              ]
+            : []),
           ...(row.manifest
             ? [
                 {
@@ -283,6 +404,18 @@ const B2BOrdersList = ({
                   icon: <MdVisibility size={18} />,
                   onClick: () =>
                     window.open(String(row.manifest), '_blank', 'noopener,noreferrer'),
+                },
+              ]
+            : []),
+          ...(isCancellable(row)
+            ? [
+                {
+                  key: 'cancel-shipment',
+                  label: cancellingShipment ? 'Cancelling...' : 'Cancel Shipment',
+                  icon: <MdCancel size={18} />,
+                  danger: true,
+                  disabled: cancellingShipment,
+                  onClick: () => cancelShipment(String(row.id)),
                 },
               ]
             : []),

@@ -845,14 +845,14 @@ const B2COrdersList = () => {
             : []),
           {
             key: 'regenerate-label',
-            label: regeneratingDocuments ? 'Regenerating Label...' : 'Regenerate Label',
+            label: regeneratingDocuments ? 'Generating Label...' : 'Generate Label',
             icon: <MdDescription size={18} />,
             disabled: regeneratingDocuments,
             onClick: () => handleRegenerateDocuments(row, true, false),
           },
           {
             key: 'regenerate-invoice',
-            label: regeneratingDocuments ? 'Regenerating Invoice...' : 'Regenerate Invoice',
+            label: regeneratingDocuments ? 'Generating Invoice...' : 'Generate Invoice',
             icon: <MdDescription size={18} />,
             disabled: regeneratingDocuments,
             onClick: () => handleRegenerateDocuments(row, false, true),
