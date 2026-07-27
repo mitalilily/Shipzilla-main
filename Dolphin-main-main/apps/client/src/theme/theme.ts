@@ -146,7 +146,8 @@ const theme = createTheme({
           backgroundRepeat: 'no-repeat',
           color: brand.ink,
           fontFamily: brandFonts.body,
-          overscrollBehaviorY: 'none',
+          overflowY: 'auto',
+          overscrollBehaviorY: 'auto',
         },
         '#root': {
           minHeight: '100vh',

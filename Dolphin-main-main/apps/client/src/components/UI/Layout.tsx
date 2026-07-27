@@ -43,7 +43,7 @@ export default function Layout() {
         display: 'flex',
         width: '100%',
         minHeight: '100vh',
-        overflow: 'hidden',
+        overflowX: 'hidden',
         backgroundImage: brandGradients.page,
       }}
     >
@@ -92,23 +92,21 @@ export default function Layout() {
           bgcolor: 'transparent',
         }}
       >
-        <Stack sx={{ flexGrow: 1, minHeight: 0, bgcolor: 'transparent' }}>
+        <Stack sx={{ flexGrow: 1, minHeight: '100vh', bgcolor: 'transparent' }}>
           <Navbar handleDrawerToggle={handleDrawerToggle} pinned={pinned} />
 
           <Box
             component="main"
             sx={{
               flexGrow: 1,
-              overflowY: 'auto',
+              overflowY: 'visible',
               overflowX: 'hidden',
               WebkitOverflowScrolling: 'touch',
-              overscrollBehavior: 'contain',
-              scrollbarGutter: 'stable',
-              willChange: 'scroll-position',
+              overscrollBehaviorY: 'auto',
               bgcolor: 'transparent',
               px: { xs: 1, md: 2 },
               pb: { xs: 2, md: 3 },
-              minHeight: 0,
+              minHeight: 'calc(100vh - 72px)',
             }}
           >
             <Container
