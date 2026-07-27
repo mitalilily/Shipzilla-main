@@ -763,6 +763,116 @@ const resolveShiprocketCargoSelection = ({
   return sameIdOptions[0] || null
 }
 
+type ShiprocketCargoOrderMeta = {
+  orderId: number | null
+  modeId: number | null
+  deliveryPartnerId: number | null
+  deliveryPartnerName: string | null
+}
+
+const getObjectPathValue = (payload: any, pathSegments: string[]) =>
+  pathSegments.reduce((current, segment) => {
+    if (!current || typeof current !== 'object') return undefined
+    return current[segment]
+  }, payload)
+
+const readFirstNumberPath = (payload: any, paths: string[][]) => {
+  for (const pathSegments of paths) {
+    const value = Number(getObjectPathValue(payload, pathSegments))
+    if (Number.isFinite(value) && value > 0) return value
+  }
+  return null
+}
+
+const readFirstStringPath = (payload: any, paths: string[][]) => {
+  for (const pathSegments of paths) {
+    const value = getObjectPathValue(payload, pathSegments)
+    const normalized = String(value || '').trim()
+    if (normalized) return normalized
+  }
+  return null
+}
+
+const extractShiprocketCargoOrderMeta = (
+  cargoOrderData: any,
+  selectedCourier: ShiprocketLiveCourierOption,
+): ShiprocketCargoOrderMeta => {
+  const orderId =
+    readFirstNumberPath(cargoOrderData, [
+      ['order_id'],
+      ['id'],
+      ['data', 'order_id'],
+      ['data', 'id'],
+      ['data', 'order', 'id'],
+      ['data', 'order', 'order_id'],
+      ['order', 'id'],
+      ['order', 'order_id'],
+      ['order_details', 'id'],
+      ['order_details', 'order_id'],
+      ['result', 'id'],
+      ['result', 'order_id'],
+      ['payload', 'id'],
+      ['payload', 'order_id'],
+    ]) || null
+
+  const modeId =
+    readFirstNumberPath(cargoOrderData, [
+      ['mode_id'],
+      ['mode', 'id'],
+      ['data', 'mode_id'],
+      ['data', 'mode', 'id'],
+      ['data', 'order', 'mode_id'],
+      ['data', 'order', 'mode', 'id'],
+      ['order', 'mode_id'],
+      ['order', 'mode', 'id'],
+      ['order_details', 'mode_id'],
+      ['order_details', 'mode', 'id'],
+      ['result', 'mode_id'],
+      ['result', 'mode', 'id'],
+    ]) || (Number.isFinite(Number(selectedCourier.modeId)) ? Number(selectedCourier.modeId) : null)
+
+  const deliveryPartnerId =
+    readFirstNumberPath(cargoOrderData, [
+      ['delivery_partner_id'],
+      ['delivery_partner', 'id'],
+      ['data', 'delivery_partner_id'],
+      ['data', 'delivery_partner', 'id'],
+      ['data', 'order', 'delivery_partner_id'],
+      ['data', 'order', 'delivery_partner', 'id'],
+      ['order', 'delivery_partner_id'],
+      ['order', 'delivery_partner', 'id'],
+      ['order_details', 'delivery_partner_id'],
+      ['order_details', 'delivery_partner', 'id'],
+      ['result', 'delivery_partner_id'],
+      ['result', 'delivery_partner', 'id'],
+    ]) || (Number.isFinite(Number(selectedCourier.id)) ? Number(selectedCourier.id) : null)
+
+  const deliveryPartnerName =
+    readFirstStringPath(cargoOrderData, [
+      ['delivery_partner_name'],
+      ['delivery_partner', 'name'],
+      ['delivery_partner', 'common_name'],
+      ['data', 'delivery_partner_name'],
+      ['data', 'delivery_partner', 'name'],
+      ['data', 'delivery_partner', 'common_name'],
+      ['data', 'order', 'delivery_partner_name'],
+      ['data', 'order', 'delivery_partner', 'name'],
+      ['order', 'delivery_partner_name'],
+      ['order', 'delivery_partner', 'name'],
+      ['order_details', 'delivery_partner_name'],
+      ['order_details', 'delivery_partner', 'name'],
+      ['result', 'delivery_partner_name'],
+      ['result', 'delivery_partner', 'name'],
+    ]) || selectedCourier.name
+
+  return {
+    orderId,
+    modeId,
+    deliveryPartnerId,
+    deliveryPartnerName,
+  }
+}
+
 const extractFirstArray = (payload: any): any[] => {
   if (Array.isArray(payload)) return payload
   if (!payload || typeof payload !== 'object') return []
@@ -5630,31 +5740,43 @@ export const createB2BShipmentService = async (
         supporting_docs: supportingDocs,
       })
 
-      const cargoOrderId = Number(cargoOrderData?.order_id)
-      const cargoModeId = Number(cargoOrderData?.mode_id)
-      const cargoDeliveryPartnerId = Number(cargoOrderData?.delivery_partner_id)
-      const selectedCargoDeliveryPartnerId = Number(selectedShiprocketCargoOption.id)
-      const shipmentDeliveryPartnerId =
-        Number.isFinite(selectedCargoDeliveryPartnerId) && selectedCargoDeliveryPartnerId > 0
-          ? selectedCargoDeliveryPartnerId
-          : cargoDeliveryPartnerId
-      if (!cargoOrderId || !cargoModeId || !shipmentDeliveryPartnerId) {
+      const cargoOrderMeta = extractShiprocketCargoOrderMeta(
+        cargoOrderData,
+        selectedShiprocketCargoOption,
+      )
+      if (!cargoOrderMeta.orderId || !cargoOrderMeta.modeId || !cargoOrderMeta.deliveryPartnerId) {
+        const missingFields = [
+          !cargoOrderMeta.orderId ? 'order_id' : null,
+          !cargoOrderMeta.modeId ? 'mode_id' : null,
+          !cargoOrderMeta.deliveryPartnerId ? 'delivery_partner_id' : null,
+        ].filter(Boolean)
+        console.error('Shiprocket Cargo order creation response missing required shipment identifiers', {
+          missingFields,
+          responseKeys:
+            cargoOrderData && typeof cargoOrderData === 'object' ? Object.keys(cargoOrderData) : [],
+          selectedCourier: {
+            id: selectedShiprocketCargoOption.id,
+            name: selectedShiprocketCargoOption.name,
+            mode_id: selectedShiprocketCargoOption.modeId,
+            mode_name: selectedShiprocketCargoOption.modeName,
+          },
+        })
         throw new HttpError(
           502,
-          'Shiprocket Cargo order creation did not return the order, mode, and delivery partner identifiers required to create a shipment.',
+          `Shiprocket Cargo order creation did not return required shipment identifier(s): ${missingFields.join(', ')}.`,
         )
       }
 
       const cargoShipment = await createShiprocketCargoShipment({
         client_id: clientId,
-        order_id: cargoOrderId,
+        order_id: cargoOrderMeta.orderId,
         remarks: `Shipzilla B2B order ${normalizedOrderNumber}`,
         recipient_GST: params.consignee.gstin || null,
         // Cargo COD bookings carry the collection amount in cod_amount during order creation.
         // Shiprocket rejects non-zero to_pay_amount for COD shipments.
         to_pay_amount: '0',
-        mode_id: cargoModeId,
-        delivery_partner_id: shipmentDeliveryPartnerId,
+        mode_id: cargoOrderMeta.modeId,
+        delivery_partner_id: cargoOrderMeta.deliveryPartnerId,
         pickup_date_time: `${pickupDate} ${pickupTime}`,
         eway_bill_no:
           String(
@@ -5676,6 +5798,8 @@ export const createB2BShipmentService = async (
           mode_name: selectedShiprocketCargoOption.modeName,
           mode_id: selectedShiprocketCargoOption.modeId,
           transporter_id: selectedShiprocketCargoOption.transporterId,
+          delivery_partner_id: cargoOrderMeta.deliveryPartnerId,
+          delivery_partner_name: cargoOrderMeta.deliveryPartnerName,
           courier_option_key: makeShiprocketLiveCourierKey(selectedShiprocketCargoOption),
         },
       }
@@ -5694,7 +5818,17 @@ export const createB2BShipmentService = async (
     throw error
   }
 
-  let shipmentRecord = shipmentData?.data || shipmentData?.cargo_shipment || shipmentData || {}
+  const rawShipmentRecord = shipmentData?.cargo_shipment || shipmentData?.data || shipmentData || {}
+  let shipmentRecord =
+    rawShipmentRecord?.data?.shipment ||
+    rawShipmentRecord?.data?.shipment_p ||
+    rawShipmentRecord?.data ||
+    rawShipmentRecord?.shipment ||
+    rawShipmentRecord?.shipment_p ||
+    rawShipmentRecord?.result?.shipment ||
+    rawShipmentRecord?.result ||
+    rawShipmentRecord ||
+    {}
   const cargoOrderRecord = shipmentData?.cargo_order || cargoOrderData || {}
   const shipmentId =
     shipmentRecord?.id ||
@@ -5702,6 +5836,14 @@ export const createB2BShipmentService = async (
     shipmentRecord?.shipment_id?.toString?.() ||
     shipmentRecord?.shipment_data?.shipment_id ||
     shipmentRecord?.data?.shipment_id ||
+    rawShipmentRecord?.id ||
+    rawShipmentRecord?.shipment_id ||
+    rawShipmentRecord?.data?.id ||
+    rawShipmentRecord?.data?.shipment_id ||
+    rawShipmentRecord?.data?.shipment?.id ||
+    rawShipmentRecord?.data?.shipment_p?.id ||
+    rawShipmentRecord?.result?.id ||
+    rawShipmentRecord?.result?.shipment_id ||
     shipmentRecord?.reference_id ||
     shipmentRecord?.pickup_id ||
     shipmentRecord?.order_id ||
@@ -5715,6 +5857,16 @@ export const createB2BShipmentService = async (
     shipmentRecord?.shipment_p?.waybill_no ||
     shipmentRecord?.shipment_p?.awb_number ||
     shipmentRecord?.awb ||
+    rawShipmentRecord?.awb_number ||
+    rawShipmentRecord?.awb_code ||
+    rawShipmentRecord?.waybill_no ||
+    rawShipmentRecord?.data?.awb_number ||
+    rawShipmentRecord?.data?.awb_code ||
+    rawShipmentRecord?.data?.waybill_no ||
+    rawShipmentRecord?.data?.shipment?.awb_number ||
+    rawShipmentRecord?.data?.shipment?.waybill_no ||
+    rawShipmentRecord?.data?.shipment_p?.awb_number ||
+    rawShipmentRecord?.data?.shipment_p?.waybill_no ||
     ''
 
   if (bookingIntegrationType === 'shiprocket' && shipmentId) {
@@ -5759,6 +5911,12 @@ export const createB2BShipmentService = async (
     shipmentRecord?.shipping_label_url ??
     shipmentRecord?.labelUrl ??
     shipmentRecord?.data?.label_url ??
+    rawShipmentRecord?.label_url ??
+    rawShipmentRecord?.shipping_label_url ??
+    rawShipmentRecord?.data?.label_url ??
+    rawShipmentRecord?.data?.shipment?.label_url ??
+    rawShipmentRecord?.data?.shipment_p?.label_url ??
+    rawShipmentRecord?.result?.label_url ??
     null
   const manifestUrl = shipmentRecord?.manifest ?? shipmentRecord?.manifest_url ?? null
   let persistedLabel = labelUrl ? String(labelUrl) : null
