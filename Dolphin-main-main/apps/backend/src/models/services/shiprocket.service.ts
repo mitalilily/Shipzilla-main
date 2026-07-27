@@ -693,6 +693,76 @@ type ShiprocketLiveCourierOption = {
   raw: any
 }
 
+const normalizeShiprocketCargoModeName = (value: unknown) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  if (normalized.includes('air')) return 'air'
+  if (normalized.includes('surface')) return 'surface'
+  return normalized
+}
+
+const makeShiprocketLiveCourierKey = (courier: ShiprocketLiveCourierOption) => {
+  const modePart =
+    normalizeShiprocketCargoModeName(courier.modeName) ||
+    (courier.modeId ? `mode-${courier.modeId}` : '') ||
+    String(courier.transporterId || '').trim().toLowerCase() ||
+    'default'
+
+  return `shiprocket__${courier.id}__${modePart}`
+}
+
+const resolveShiprocketCargoSelection = ({
+  selectedCourierId,
+  selectedCourierOptionKey,
+  selectedCourierPartner,
+  options,
+}: {
+  selectedCourierId?: unknown
+  selectedCourierOptionKey?: unknown
+  selectedCourierPartner?: unknown
+  options: ShiprocketLiveCourierOption[]
+}) => {
+  const normalizedOptionKey = String(selectedCourierOptionKey || '').trim().toLowerCase()
+  const normalizedCourierId = Number(selectedCourierId)
+  const normalizedPartner = String(selectedCourierPartner || '').trim().toLowerCase()
+
+  if (normalizedOptionKey) {
+    const exact = options.find(
+      (option) => makeShiprocketLiveCourierKey(option).toLowerCase() === normalizedOptionKey,
+    )
+    if (exact) return exact
+
+    const keyParts = normalizedOptionKey.split('__')
+    const keyCourierId = Number(keyParts[1])
+    const keyMode = normalizeShiprocketCargoModeName(keyParts.slice(2).join('__'))
+    const byKeyParts = options.find((option) => {
+      const optionMode =
+        normalizeShiprocketCargoModeName(option.modeName) ||
+        (option.modeId ? `mode-${option.modeId}` : '') ||
+        String(option.transporterId || '').trim().toLowerCase()
+
+      return (
+        Number.isFinite(keyCourierId) &&
+        option.id === keyCourierId &&
+        (!keyMode || optionMode === keyMode)
+      )
+    })
+    if (byKeyParts) return byKeyParts
+  }
+
+  const sameIdOptions = Number.isFinite(normalizedCourierId)
+    ? options.filter((option) => option.id === normalizedCourierId)
+    : []
+
+  if (sameIdOptions.length === 1) return sameIdOptions[0]
+
+  if (sameIdOptions.length > 1 && normalizedPartner) {
+    const byName = sameIdOptions.find((option) => option.name.trim().toLowerCase() === normalizedPartner)
+    if (byName) return byName
+  }
+
+  return sameIdOptions[0] || null
+}
+
 const extractFirstArray = (payload: any): any[] => {
   if (Array.isArray(payload)) return payload
   if (!payload || typeof payload !== 'object') return []
@@ -2461,11 +2531,14 @@ export const fetchAvailableCouriersWithRatesB2B = async (
             const freightCharges = Math.max(0, courier.rate - courier.codCharges - courier.otherCharges)
             return {
             id: courier.id,
-            courier_option_key: `shiprocket__${courier.id}`,
+            courier_option_key: makeShiprocketLiveCourierKey(courier),
             name: courier.name,
             displayName: courier.name,
             integration_type: 'shiprocket',
             serviceProvider: 'shiprocket',
+            mode_name: courier.modeName,
+            mode_id: courier.modeId,
+            transporter_id: courier.transporterId,
             rate: courier.rate,
             freight_charges: freightCharges,
             cod_charges: courier.codCharges,
@@ -2596,15 +2669,6 @@ export const fetchAvailableCouriersWithRatesB2B = async (
     ])
 
     // Step 6: Build courier list with rates
-    const makeShiprocketLiveCourierKey = (courier: ShiprocketLiveCourierOption) => {
-      const modePart =
-        String(courier.modeName || '').trim().toLowerCase() ||
-        (courier.modeId ? `mode-${courier.modeId}` : '') ||
-        String(courier.transporterId || '').trim().toLowerCase() ||
-        'default'
-      return `shiprocket__${courier.id}__${modePart}`
-    }
-
     const courierMap = new Map<string, any>()
     const liveShiprocketById = new Map<number, ShiprocketLiveCourierOption[]>()
     for (const courier of shiprocketLiveCouriers) {
@@ -2832,6 +2896,9 @@ export const fetchAvailableCouriersWithRatesB2B = async (
         displayName: liveCourier.name,
         integration_type: 'shiprocket',
         serviceProvider: 'shiprocket',
+        mode_name: liveCourier.modeName,
+        mode_id: liveCourier.modeId,
+        transporter_id: liveCourier.transporterId,
         rate: totalRate,
         freight_charges: freightCharges,
         cod_charges: codCharges,
@@ -5175,12 +5242,16 @@ export const createB2BShipmentService = async (
     bookingIntegrationType = derivedProvider
   }
 
-  if (!['shiprocket', 'shipmozo'].includes(bookingIntegrationType)) {
+  if (!bookingIntegrationType) {
+    bookingIntegrationType = 'shiprocket'
+  }
+
+  if (bookingIntegrationType !== 'shiprocket') {
     throw new HttpError(
       400,
       `Unsupported B2B integration_type: ${
-        params.integration_type || 'unknown'
-      }. Supported values: shiprocket, shipmozo.`,
+        params.integration_type || bookingIntegrationType || 'unknown'
+      }. B2B bookings are supported only through Shiprocket Cargo.`,
     )
   }
 
@@ -5422,6 +5493,7 @@ export const createB2BShipmentService = async (
 
   let shipmentData: any
   let cargoOrderData: any = null
+  let selectedShiprocketCargoOption: ShiprocketLiveCourierOption | null = null
 
   try {
     if (bookingIntegrationType === 'shiprocket') {
@@ -5460,6 +5532,10 @@ export const createB2BShipmentService = async (
         )
       }
 
+      if (!params.courier_id && !params.courier_option_key) {
+        throw new HttpError(400, 'Select a Shiprocket Cargo courier before booking this B2B shipment.')
+      }
+
       const pickupDateInput = String(params.pickup?.pickup_date || params.pickup_date || '').trim()
       const pickupDate = /^\d{4}-\d{2}-\d{2}$/.test(pickupDateInput)
         ? pickupDateInput
@@ -5470,11 +5546,42 @@ export const createB2BShipmentService = async (
         : /^\d{2}:\d{2}:\d{2}$/.test(pickupTimeInput)
           ? pickupTimeInput
           : '10:00:00'
-      const requestedMode = String(
-        params.mode || params.shipping_mode || params.shipment_mode || params.courier_option_key || '',
-      ).toLowerCase()
-      const modeName = requestedMode.includes('air') ? 'air' : 'surface'
       const isCod = String(params.payment_type || '').toLowerCase() === 'cod'
+      const liveShiprocketOptions = await fetchShiprocketLiveB2BCouriers({
+        originPincode: params.pickup.pincode,
+        destinationPincode: params.consignee.pincode,
+        paymentType: params.payment_type ?? null,
+        orderAmount: invoiceValue,
+        weightKg: Number(params.package_weight || derivedMetrics.package_weight),
+        length: Number(params.package_length || 0) || undefined,
+        breadth: Number(params.package_breadth || 0) || undefined,
+        height: Number(params.package_height || 0) || undefined,
+        pieceCount: normalizedBoxes.reduce((total: number, box: any) => total + box.quantity, 0),
+        originCity: params.pickup.city,
+        originState: params.pickup.state,
+        destinationCity: params.consignee.city,
+        destinationState: params.consignee.state,
+      })
+
+      selectedShiprocketCargoOption = resolveShiprocketCargoSelection({
+        selectedCourierId: params.courier_id,
+        selectedCourierOptionKey: params.courier_option_key,
+        selectedCourierPartner: params.courier_partner || params.courier_name || params.courierPartner,
+        options: liveShiprocketOptions,
+      })
+
+      if (!selectedShiprocketCargoOption) {
+        throw new HttpError(
+          400,
+          'Selected Shiprocket Cargo courier is no longer available for this B2B lane. Please refresh rates and select again.',
+        )
+      }
+
+      params.courier_id = selectedShiprocketCargoOption.id
+      params.courier_partner = selectedShiprocketCargoOption.name
+      params.courier_option_key = makeShiprocketLiveCourierKey(selectedShiprocketCargoOption)
+
+      const modeName = normalizeShiprocketCargoModeName(selectedShiprocketCargoOption.modeName) || 'surface'
 
       cargoOrderData = await createShiprocketCargoOrder({
         no_of_packages: normalizedBoxes.reduce(
@@ -5526,7 +5633,7 @@ export const createB2BShipmentService = async (
       const cargoOrderId = Number(cargoOrderData?.order_id)
       const cargoModeId = Number(cargoOrderData?.mode_id)
       const cargoDeliveryPartnerId = Number(cargoOrderData?.delivery_partner_id)
-      const selectedCargoDeliveryPartnerId = Number(params.courier_id)
+      const selectedCargoDeliveryPartnerId = Number(selectedShiprocketCargoOption.id)
       const shipmentDeliveryPartnerId =
         Number.isFinite(selectedCargoDeliveryPartnerId) && selectedCargoDeliveryPartnerId > 0
           ? selectedCargoDeliveryPartnerId
@@ -5563,13 +5670,17 @@ export const createB2BShipmentService = async (
       shipmentData = {
         cargo_order: cargoOrderData,
         cargo_shipment: cargoShipment,
+        selected_courier: {
+          id: selectedShiprocketCargoOption.id,
+          name: selectedShiprocketCargoOption.name,
+          mode_name: selectedShiprocketCargoOption.modeName,
+          mode_id: selectedShiprocketCargoOption.modeId,
+          transporter_id: selectedShiprocketCargoOption.transporterId,
+          courier_option_key: makeShiprocketLiveCourierKey(selectedShiprocketCargoOption),
+        },
       }
     } else {
-      const shipmozo = new ShipmozoService()
-      shipmentData = await shipmozo.createShipment({
-        ...payload,
-        collectable_amount: payload.payment_type === 'cod' ? Number(payload.order_amount ?? 0) : 0,
-      })
+      throw new HttpError(400, 'B2B bookings are supported only through Shiprocket Cargo.')
     }
   } catch (error: any) {
     await db
@@ -5626,6 +5737,7 @@ export const createB2BShipmentService = async (
     }
   }
   const courierPartner =
+    (bookingIntegrationType === 'shiprocket' ? selectedShiprocketCargoOption?.name : null) ||
     shipmentRecord?.courier_name ||
     shipmentRecord?.courier_company_service ||
     shipmentRecord?.courier_company ||
@@ -5637,6 +5749,7 @@ export const createB2BShipmentService = async (
     shipmentRecord?.freight_charges ??
     shipmentRecord?.charge ??
     shipmentRecord?.cost ??
+    selectedShiprocketCargoOption?.rate ??
     params.courier_cost ??
     chargesBreakdown?.total ??
     null
@@ -5662,27 +5775,6 @@ export const createB2BShipmentService = async (
       console.error('Failed to persist Shiprocket Cargo B2B label URL', {
         orderNumber: normalizedOrderNumber,
         shipmentId,
-        awbNumber,
-        error: labelErr?.message || labelErr,
-      })
-      persistedLabel = null
-    }
-  }
-
-  if (
-    bookingIntegrationType === 'shipmozo' &&
-    isAmazonCourierName(courierPartner) &&
-    persistedLabel
-  ) {
-    try {
-      persistedLabel = await saveProviderLabelUrlAsR2Key({
-        labelUrl: String(persistedLabel),
-        userId,
-        orderNumber: normalizedOrderNumber,
-      })
-    } catch (labelErr: any) {
-      console.error('Failed to persist original Shipmozo Amazon B2B label', {
-        orderNumber: normalizedOrderNumber,
         awbNumber,
         error: labelErr?.message || labelErr,
       })
