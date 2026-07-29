@@ -5865,16 +5865,19 @@ export const createB2BShipmentService = async (
       error?.response?.data?.errors?.non_field_errors?.some?.(
         (entry: any) => String(entry?.recharge_required || '').toLowerCase() === 'true',
       ) || /insufficient wallet balance|recharge required|don't have sufficient wallet/i.test(providerMessage)
+    const customerMessage = rechargeRequired
+      ? 'Recharge the courier wallet to continue booking this shipment.'
+      : providerMessage
     await db
       .update(b2b_orders)
       .set({
         order_status: 'failed',
-        delivery_message: providerMessage.slice(0, 100),
+        delivery_message: customerMessage.slice(0, 100),
         updated_at: new Date(),
       })
       .where(eq(b2b_orders.id, pendingOrder.id))
     if (error instanceof HttpError) throw error
-    throw new HttpError(rechargeRequired ? 402 : 400, providerMessage)
+    throw new HttpError(rechargeRequired ? 402 : 400, customerMessage)
   }
 
   const rawShipmentRecord = shipmentData?.cargo_shipment || shipmentData?.data || shipmentData || {}
