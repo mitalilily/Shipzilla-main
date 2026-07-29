@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {
+  convertShipmozoAmazonLabelToPdf,
   extractShipmozoLabelUrl,
   isShipmozoAmazonOrder,
   shouldFetchShipmozoAmazonOriginalLabel,
@@ -65,4 +66,15 @@ assert.equal(
   'https://labels.shipmozo.example/direct.pdf',
 )
 
-console.log('Shipmozo Amazon label policy checks passed.')
+const onePixelPng =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+
+convertShipmozoAmazonLabelToPdf(onePixelPng)
+  .then((pdf) => {
+    assert.equal(pdf.subarray(0, 4).toString('ascii'), '%PDF')
+    console.log('Shipmozo Amazon label policy checks passed.')
+  })
+  .catch((error) => {
+    console.error(error)
+    process.exitCode = 1
+  })

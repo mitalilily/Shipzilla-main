@@ -22,7 +22,7 @@ import {
   loadInvoiceAssets,
   normalizePickupDetails,
 } from './invoiceHelpers'
-import { downloadAndUploadToR2, presignDownload, presignUpload } from './upload.service'
+import { presignDownload, presignUpload } from './upload.service'
 import { resolveInvoiceNumber } from './invoiceNumber.service'
 import { logTrackingEvent } from './trackingEvents.service'
 import { createNotificationService } from './notifications.service'
@@ -30,6 +30,7 @@ import { sendWebhookEvent } from '../../services/webhookDelivery.service'
 import { recordRtoEvent } from './rto.service'
 import { applyRtoChargeOnce } from './webhookProcessor'
 import {
+  convertShipmozoAmazonLabelToPdf,
   fetchShipmozoAmazonProviderLabel,
   isHttpDocumentUrl,
   isShipmozoAmazonOrder,
@@ -231,18 +232,23 @@ const ensureOrderLabel = async (
       throw new Error(`${order?.order_number || order?.id}: AWB is required to fetch the Amazon label.`)
     }
 
-    const providerLabelUrl = await fetchShipmozoAmazonProviderLabel(order.awb_number)
-    if (!providerLabelUrl) {
+    const providerLabel = await fetchShipmozoAmazonProviderLabel(order.awb_number)
+    if (!providerLabel) {
       throw new Error(`${order?.order_number || order?.id}: Shipmozo did not return the original Amazon label.`)
     }
 
-    labelKey = await downloadAndUploadToR2({
-      url: providerLabelUrl,
-      userId,
+    const providerLabelPdf = await convertShipmozoAmazonLabelToPdf(providerLabel)
+    const { uploadUrl, key } = await presignUpload({
       filename: `shipmozo-amazon-label-${order.order_number || order.id}.pdf`,
-      folderKey: 'labels',
       contentType: 'application/pdf',
+      userId,
+      folderKey: 'labels',
     })
+    await axios.put(Array.isArray(uploadUrl) ? uploadUrl[0] : uploadUrl, providerLabelPdf, {
+      headers: { 'Content-Type': 'application/pdf' },
+      timeout: 60000,
+    })
+    labelKey = Array.isArray(key) ? key[0] : key
   } else {
     if (!options.forceRegenerate && (existing.key || existing.url)) return existing
 

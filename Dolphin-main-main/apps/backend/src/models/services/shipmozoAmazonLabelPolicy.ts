@@ -1,3 +1,6 @@
+import axios from 'axios'
+import { PDFDocument } from 'pdf-lib'
+
 const AMAZON_LABEL_KEYS = [
   'label',
   'label_url',
@@ -55,7 +58,10 @@ const extractLabelUrl = (
 
   if (typeof payload === 'string') {
     const trimmed = payload.trim()
-    return acceptDirectString && isHttpDocumentUrl(trimmed) ? trimmed : null
+    if (!acceptDirectString) return null
+    if (isHttpDocumentUrl(trimmed) || /^data:[^;]+;base64,/i.test(trimmed)) return trimmed
+    // Shipmozo's Amazon label endpoint commonly returns a raw base64 PNG.
+    return trimmed.length > 100 && /^[A-Za-z0-9+/=\s]+$/.test(trimmed) ? trimmed : null
   }
 
   if (Array.isArray(payload)) {
@@ -95,4 +101,51 @@ export const fetchShipmozoAmazonProviderLabel = async (
   const { ShipmozoService } = await import('./couriers/shipmozo.service')
   const response = await new ShipmozoService().getOrderLabel(normalizedAwb)
   return extractShipmozoLabelUrl(response?.data ?? response)
+}
+
+const decodeProviderDocument = async (providerDocument: string) => {
+  const normalized = String(providerDocument || '').trim()
+  if (!normalized) throw new Error('Shipmozo returned an empty Amazon label.')
+
+  if (isHttpDocumentUrl(normalized)) {
+    const response = await axios.get(normalized, {
+      responseType: 'arraybuffer',
+      timeout: 60000,
+    })
+    return Buffer.from(response.data)
+  }
+
+  const base64 = normalized.replace(/^data:[^;]+;base64,/i, '').replace(/\s/g, '')
+  const buffer = Buffer.from(base64, 'base64')
+  if (!buffer.length) throw new Error('Shipmozo returned an invalid Amazon label.')
+  return buffer
+}
+
+export const convertShipmozoAmazonLabelToPdf = async (providerDocument: string) => {
+  const source = await decodeProviderDocument(providerDocument)
+
+  if (source.subarray(0, 4).toString('ascii') === '%PDF') return source
+
+  const pdf = await PDFDocument.create()
+  let image
+  if (
+    source.length >= 8 &&
+    source[0] === 0x89 &&
+    source.subarray(1, 4).toString('ascii') === 'PNG'
+  ) {
+    image = await pdf.embedPng(source)
+  } else if (source[0] === 0xff && source[1] === 0xd8) {
+    image = await pdf.embedJpg(source)
+  } else {
+    throw new Error('Shipmozo Amazon label is neither a PDF nor a supported image.')
+  }
+
+  const page = pdf.addPage([image.width, image.height])
+  page.drawImage(image, {
+    x: 0,
+    y: 0,
+    width: image.width,
+    height: image.height,
+  })
+  return Buffer.from(await pdf.save())
 }

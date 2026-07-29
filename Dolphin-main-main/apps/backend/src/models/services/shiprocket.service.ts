@@ -74,6 +74,7 @@ import { XpressbeesService } from './couriers/xpressbees.service'
 import { calculateOrderWeights } from './courierWeightCalculation.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
 import {
+  convertShipmozoAmazonLabelToPdf,
   fetchShipmozoAmazonProviderLabel,
   isShipmozoAmazonOrder,
   shouldFetchShipmozoAmazonOriginalLabel,
@@ -137,15 +138,10 @@ const saveProviderLabelUrlAsR2Key = async ({
   filenamePrefix?: string
 }) => {
   const normalizedUrl = String(labelUrl ?? '').trim()
-  if (!/^https?:\/\//i.test(normalizedUrl)) return normalizedUrl || null
+  if (!normalizedUrl) return null
 
-  const labelResponse = await axios.get(normalizedUrl, {
-    responseType: 'arraybuffer',
-    timeout: 60000,
-  })
-  const labelBuffer = Buffer.from(labelResponse.data)
-  const contentType =
-    String(labelResponse.headers?.['content-type'] || '').trim() || 'application/pdf'
+  const labelBuffer = await convertShipmozoAmazonLabelToPdf(normalizedUrl)
+  const contentType = 'application/pdf'
 
   const { uploadUrl, key } = await presignUpload({
     filename: `${filenamePrefix}-${orderNumber}.pdf`,

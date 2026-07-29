@@ -35,6 +35,7 @@ import { syncShopifyStatusForLocalOrder } from './shopify.service'
 import { computeB2CFreightForOrder } from './shiprocket.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
 import {
+  convertShipmozoAmazonLabelToPdf,
   fetchShipmozoAmazonProviderLabel,
   isShipmozoAmazonOrder,
 } from './shipmozoAmazonLabelPolicy'
@@ -57,15 +58,10 @@ const saveProviderLabelUrlAsR2Key = async ({
   orderNumber: string
 }) => {
   const normalizedUrl = String(labelUrl ?? '').trim()
-  if (!/^https?:\/\//i.test(normalizedUrl)) return normalizedUrl || null
+  if (!normalizedUrl) return null
 
-  const labelResponse = await axios.get(normalizedUrl, {
-    responseType: 'arraybuffer',
-    timeout: WEBHOOK_INVOICE_UPLOAD_TIMEOUT_MS,
-  })
-  const labelBuffer = Buffer.from(labelResponse.data)
-  const contentType =
-    String(labelResponse.headers?.['content-type'] || '').trim() || 'application/pdf'
+  const labelBuffer = await convertShipmozoAmazonLabelToPdf(normalizedUrl)
+  const contentType = 'application/pdf'
 
   const { uploadUrl, key } = await presignUpload({
     filename: `amazon-label-${orderNumber}.pdf`,
