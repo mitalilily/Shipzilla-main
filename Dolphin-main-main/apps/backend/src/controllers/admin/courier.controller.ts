@@ -358,6 +358,9 @@ export const getAllCouriersListController = async (req: Request, res: Response) 
     if (businessType && typeof businessType === 'string') {
       const normalizedBusinessType = businessType.trim().toLowerCase()
       if (normalizedBusinessType === 'b2c' || normalizedBusinessType === 'b2b') {
+        if (normalizedBusinessType === 'b2b') {
+          whereClauses.push(eq(couriers.serviceProvider, 'shiprocket'))
+        }
         // Construct JSONB array string - value is validated above (only 'b2c' or 'b2b')
         const jsonbArrayStr = JSON.stringify([normalizedBusinessType])
         // Match the pattern from shiprocket.service.ts - construct the full JSONB literal

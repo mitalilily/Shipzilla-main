@@ -150,6 +150,9 @@ export const getShippingRates = async (filters: ShippingRateFilters = {}) => {
 
   if (filters.business_type) {
     conditions.push(eq(shippingRates.business_type, filters.business_type))
+    if (filters.business_type === 'b2b') {
+      conditions.push(eq(shippingRates.service_provider, 'shiprocket'))
+    }
   }
 
   // Fetch all rates matching filters - explicitly select service_provider

@@ -38,12 +38,17 @@ const parseCourierScope = (req: Request) => {
   const serviceProviderParam =
     req.query?.service_provider ?? req.body?.serviceProvider ?? req.body?.service_provider
 
+  const serviceProvider =
+    typeof serviceProviderParam === 'string' && serviceProviderParam.length
+      ? serviceProviderParam.trim().toLowerCase()
+      : undefined
+  if (serviceProvider && serviceProvider !== 'shiprocket') {
+    throw new Error('B2B rate cards support Shiprocket couriers only')
+  }
+
   return {
     courierId: courierIdParam != null && courierIdParam !== '' ? Number(courierIdParam) : undefined,
-    serviceProvider:
-      typeof serviceProviderParam === 'string' && serviceProviderParam.length
-        ? serviceProviderParam
-        : undefined,
+    serviceProvider,
   }
 }
 
