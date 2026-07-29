@@ -674,7 +674,14 @@ export const listZoneToZoneRates = async (params: {
     if (b2bZoneToZoneRates.plan_id) {
       if (params.planId) {
         shouldFilterByPlan = true
-        filters.push(eq(b2bZoneToZoneRates.plan_id, params.planId))
+        // Planless rows are legacy/global rates. Include them as a fallback so rates
+        // saved before plan propagation was fixed remain usable and visible.
+        filters.push(
+          or(
+            eq(b2bZoneToZoneRates.plan_id, params.planId),
+            isNull(b2bZoneToZoneRates.plan_id),
+          ) as SQLWrapper,
+        )
       } else {
         // If no plan_id provided, only show rates without plan_id (generic rates)
         shouldFilterByPlan = true
@@ -719,6 +726,7 @@ export const listZoneToZoneRates = async (params: {
         destinationZoneId: b2bZoneToZoneRates.destination_zone_id,
         courierId: b2bZoneToZoneRates.courier_id,
         serviceProvider: b2bZoneToZoneRates.service_provider,
+        planId: b2bZoneToZoneRates.plan_id,
         // Rate per kg (only field)
         ratePerKg: b2bZoneToZoneRates.rate_per_kg,
         volumetricFactor: b2bZoneToZoneRates.volumetric_factor,
@@ -830,7 +838,20 @@ export const listZoneToZoneRates = async (params: {
       }
     }
 
-    return (rows || []).map((row: any) => {
+    const effectiveRows = params.planId
+      ? Array.from(
+          (rows || []).reduce((byZonePair: Map<string, any>, row: any) => {
+            const key = `${row.originZoneId}-${row.destinationZoneId}`
+            const current = byZonePair.get(key)
+            if (!current || (row.planId === params.planId && current.planId !== params.planId)) {
+              byZonePair.set(key, row)
+            }
+            return byZonePair
+          }, new Map<string, any>()).values(),
+        )
+      : rows || []
+
+    return effectiveRows.map((row: any) => {
       const { minCharge, maxWeightLimit } = extractZoneRateMetadata(row.metadata)
       return {
         ...row,
@@ -1079,9 +1100,11 @@ export const deleteZoneToZoneRate = async (id: string) => {
 }
 
 type ZoneRateCsvRecord = {
-  origin_zone_code: string
-  destination_zone_code: string
-  rate_per_kg: string
+  origin_zone_code?: string
+  destination_zone_code?: string
+  origin_zone?: string
+  destination_zone?: string
+  rate_per_kg?: string
   min_charge?: string
   max_weight_limit?: string
 }
@@ -1097,13 +1120,30 @@ export const importZoneRatesFromCsv = async (
   const parsed = Papa.parse<ZoneRateCsvRecord>(csv, {
     header: true,
     skipEmptyLines: true,
+    transformHeader: (header) =>
+      header
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, ''),
   })
 
   if (parsed.errors?.length) {
     throw new Error(`CSV parse error: ${parsed.errors[0].message}`)
   }
 
-  const rows = parsed.data.filter((row) => row.origin_zone_code && row.destination_zone_code)
+  const rows = parsed.data
+    .map((row) => ({
+      ...row,
+      origin_zone_code: row.origin_zone_code || row.origin_zone,
+      destination_zone_code: row.destination_zone_code || row.destination_zone,
+    }))
+    .filter((row) => row.origin_zone_code && row.destination_zone_code)
+  if (!rows.length) {
+    throw new Error(
+      'CSV contains no rate rows. Use Origin Zone, Destination Zone, and Rate Per Kg columns.',
+    )
+  }
   const zoneCache = new Map<string, string>()
 
   const resolveZoneId = async (code: string) => {
@@ -1113,7 +1153,12 @@ export const importZoneRatesFromCsv = async (
     const [zone] = await db
       .select({ id: zones.id })
       .from(zones)
-      .where(and(eq(zones.code, key), eq(zones.business_type, 'B2B')))
+      .where(
+        and(
+          or(eq(zones.code, key), ilike(zones.name, code.trim())),
+          eq(zones.business_type, 'B2B'),
+        ),
+      )
       .limit(1)
 
     if (!zone) throw new Error(`Zone code ${key} not found`)
@@ -1127,13 +1172,18 @@ export const importZoneRatesFromCsv = async (
 
   for (const row of rows) {
     try {
-      const originZoneId = await resolveZoneId(row.origin_zone_code)
-      const destinationZoneId = await resolveZoneId(row.destination_zone_code)
+      const originZoneId = await resolveZoneId(row.origin_zone_code as string)
+      const destinationZoneId = await resolveZoneId(row.destination_zone_code as string)
+
+      const ratePerKg = Number(row.rate_per_kg)
+      if (!Number.isFinite(ratePerKg) || ratePerKg <= 0) {
+        throw new Error('Rate Per Kg must be greater than zero')
+      }
 
       await upsertZoneToZoneRate({
         originZoneId,
         destinationZoneId,
-        ratePerKg: Number(row.rate_per_kg),
+        ratePerKg,
         courierScope: options.courierScope,
         planId: options.planId,
       })
@@ -1142,6 +1192,12 @@ export const importZoneRatesFromCsv = async (
     } catch (err: any) {
       skipped.push({ row, error: err.message })
     }
+  }
+
+  if (!inserted) {
+    throw new Error(
+      `No rates were imported. ${skipped[0]?.error || 'Please check the CSV values and zone names.'}`,
+    )
   }
 
   return { inserted, skipped }
@@ -3014,6 +3070,7 @@ export const bulkUpsertZoneRates = async (
     effectiveTo?: Date
   }>,
   courierScope?: CourierScope,
+  planId?: string,
 ) => {
   const { courierId, serviceProvider } = normalizeCourierScope(courierScope)
   const results = []
@@ -3026,6 +3083,7 @@ export const bulkUpsertZoneRates = async (
         ratePerKg: rate.ratePerKg ?? 0,
         volumetricFactor: rate.volumetricFactor,
         courierScope,
+        planId,
       })
 
       // Update additional fields if they exist

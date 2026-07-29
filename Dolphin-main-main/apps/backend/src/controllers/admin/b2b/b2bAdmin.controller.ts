@@ -341,12 +341,14 @@ export const listZoneRatesController = async (req: Request, res: Response) => {
 export const upsertZoneRateController = async (req: Request, res: Response) => {
   try {
     const body = req.body
+    const planId = (body.plan_id as string) ?? (body.planId as string) ?? undefined
     const rate = await upsertZoneToZoneRate({
       id: body.id ?? req.params.id,
       originZoneId: body.originZoneId ?? body.origin_zone_id,
       destinationZoneId: body.destinationZoneId ?? body.destination_zone_id,
       ratePerKg: Number(body.ratePerKg ?? body.rate_per_kg ?? 0),
       courierScope: parseCourierScope(req),
+      planId,
     })
 
     if (!rate) {
@@ -401,6 +403,12 @@ export const importZoneRatesController = async (req: Request, res: Response) => 
 
     const result = await importZoneRatesFromCsv(req.file.buffer, {
       courierScope: parseCourierScope(req),
+      planId:
+        (req.body.plan_id as string) ??
+        (req.body.planId as string) ??
+        (req.query.plan_id as string) ??
+        (req.query.planId as string) ??
+        undefined,
     })
 
     res.json({ success: true, ...result })
@@ -520,7 +528,11 @@ export const bulkUpsertZoneRatesController = async (req: Request, res: Response)
       return res.status(400).json({ success: false, error: 'Rates array is required' })
     }
 
-    const results = await bulkUpsertZoneRates(rates, parseCourierScope(req))
+    const results = await bulkUpsertZoneRates(
+      rates,
+      parseCourierScope(req),
+      (req.body.plan_id as string) ?? (req.body.planId as string) ?? undefined,
+    )
     res.json({ success: true, data: results })
   } catch (error: any) {
     res.status(400).json({ success: false, error: error?.message || 'Failed to bulk upsert rates' })

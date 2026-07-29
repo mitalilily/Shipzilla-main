@@ -116,7 +116,7 @@ const B2BRateMatrix = ({ planId }) => {
   const updateRateMutation = useMutation({
     mutationFn: (data) => b2bAdminService.upsertZoneRate(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['b2b-zone-rates'])
+      queryClient.invalidateQueries({ queryKey: ['b2b-zone-rates'] })
       toast({
         title: 'Rate saved successfully',
         status: 'success',
@@ -138,7 +138,7 @@ const B2BRateMatrix = ({ planId }) => {
   const importRatesMutation = useMutation({
     mutationFn: (formData) => b2bAdminService.importZoneRates(formData),
     onSuccess: (data) => {
-      queryClient.invalidateQueries(['b2b-zone-rates'])
+      queryClient.invalidateQueries({ queryKey: ['b2b-zone-rates'] })
       toast({
         title: 'Rates imported successfully',
         description: data.message || 'CSV file has been processed',
@@ -162,7 +162,7 @@ const B2BRateMatrix = ({ planId }) => {
   const deleteRateMutation = useMutation({
     mutationFn: (id) => b2bAdminService.deleteZoneRate(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['b2b-zone-rates'])
+      queryClient.invalidateQueries({ queryKey: ['b2b-zone-rates'] })
       toast({
         title: 'Rate deleted successfully',
         status: 'success',
@@ -226,7 +226,7 @@ const B2BRateMatrix = ({ planId }) => {
       // Generate template with all zone combinations
       zones.forEach((originZone) => {
         zones.forEach((destZone) => {
-          rows.push([originZone.name, destZone.name, '']) // Rate Per Kg only
+          rows.push([originZone.code, destZone.code, '']) // Rate Per Kg only
         })
       })
     } else {
@@ -282,7 +282,7 @@ const B2BRateMatrix = ({ planId }) => {
 
   // Sample CSV headers for template download
   // Use first zone if available, otherwise use placeholder
-  const firstZoneName = zones.length > 0 ? zones[0].name : 'N1'
+  const firstZoneName = zones.length > 0 ? zones[0].code : 'N1'
   const sampleCSVHeaders = [
     {
       'Origin Zone': firstZoneName,
@@ -309,8 +309,11 @@ const B2BRateMatrix = ({ planId }) => {
 
   const handleSave = (formData) => {
     // Handle both edit (from cell click) and add (from add modal) scenarios
+    const existingPlanId = selectedCell?.rate?.planId ?? selectedCell?.rate?.plan_id
     const payload = {
-      id: selectedCell?.rate?.id,
+      // Editing a legacy/global fallback from inside a plan must create a plan
+      // override instead of silently changing the rate for every plan.
+      id: !planId || existingPlanId === planId ? selectedCell?.rate?.id : undefined,
       originZoneId: formData.originZoneId || selectedCell?.originZone?.id,
       destinationZoneId: formData.destinationZoneId || selectedCell?.destZone?.id,
       ratePerKg: formData.ratePerKg, // Only rate per kg needed
