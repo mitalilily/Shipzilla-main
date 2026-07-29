@@ -8,18 +8,5 @@ export default defineConfig({
   build: {
     target: 'es2020',
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return
-          if (id.includes('@mui') || id.includes('@emotion')) return 'mui'
-          if (id.includes('@tanstack/react-query') || id.includes('axios')) return 'data'
-          if (id.includes('react-router') || id.includes('react-dom') || id.includes('/react/')) {
-            return 'react'
-          }
-          if (id.includes('socket.io-client')) return 'socket'
-        },
-      },
-    },
   },
 })
