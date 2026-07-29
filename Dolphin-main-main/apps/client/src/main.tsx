@@ -50,7 +50,14 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 2, // only retry failed queries once
+      refetchOnReconnect: false,
+      staleTime: 30_000,
+      gcTime: 10 * 60_000,
+      retry: (failureCount, error: any) => {
+        const status = Number(error?.response?.status || 0);
+        if (status >= 400 && status < 500) return false;
+        return failureCount < 1;
+      },
     },
   },
 });

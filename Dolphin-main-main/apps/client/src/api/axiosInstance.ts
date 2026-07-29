@@ -72,6 +72,8 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+let refreshRequest: Promise<{ accessToken: string; refreshToken: string }> | null = null
+
 api.interceptors.request.use((cfg) => {
   cfg.baseURL = normalizeApiBaseUrl(cfg.baseURL) ?? API_BASE_URL
   const { accessToken } = getAuthTokens()
@@ -84,7 +86,13 @@ api.interceptors.response.use(
   async (err) => {
     const original = err.config
     const method = String(original?.method || 'get').toLowerCase()
-    const canRetryBaseUrl = method === 'get' && !original?._baseUrlRetried
+    const status = Number(err.response?.status || 0)
+    const isTransientFailure = !err.response || status === 502 || status === 503 || status === 504
+    const canRetryBaseUrl =
+      method === 'get' &&
+      isTransientFailure &&
+      !original?._baseUrlRetried &&
+      !original?.url?.includes('/auth/refresh-token')
 
     if (canRetryBaseUrl) {
       const nextBaseUrl = getNextApiBaseUrl(original?.baseURL)
@@ -103,8 +111,6 @@ api.interceptors.response.use(
       return Promise.reject(err)
     }
 
-    original._retry = true
-
     const { refreshToken } = getAuthTokens()
     if (!refreshToken) {
       if (UI_ONLY_AUTH) {
@@ -118,22 +124,29 @@ api.interceptors.response.use(
 
     try {
       const refreshBaseUrl = normalizeApiBaseUrl(original?.baseURL) ?? API_BASE_URL
-      const { data } = await axios.post(
-        `${refreshBaseUrl}/auth/refresh-token`,
-        { refreshToken },
-        {
-          headers: {
-            'x-refresh-token': refreshToken,
-          },
-        },
-      )
+      original._retry = true
 
-      if (!data?.accessToken || !data?.refreshToken) {
-        throw new Error('Invalid response from refresh token endpoint')
+      if (!refreshRequest) {
+        refreshRequest = axios
+          .post(
+            `${refreshBaseUrl}/auth/refresh-token`,
+            { refreshToken },
+            { headers: { 'x-refresh-token': refreshToken } },
+          )
+          .then(({ data }) => {
+            if (!data?.accessToken || !data?.refreshToken) {
+              throw new Error('Invalid response from refresh token endpoint')
+            }
+            setAuthTokens(data.accessToken, data.refreshToken)
+            return data
+          })
+          .finally(() => {
+            refreshRequest = null
+          })
       }
 
-      setAuthTokens(data.accessToken, data.refreshToken)
-      original.headers.Authorization = `Bearer ${data.accessToken}`
+      const tokens = await refreshRequest
+      original.headers.Authorization = `Bearer ${tokens.accessToken}`
       return api(original)
     } catch (e) {
       if (UI_ONLY_AUTH) {

@@ -55,9 +55,41 @@ declare global {
   }
 }
 
+let razorpayScriptPromise: Promise<void> | null = null
+
+const ensureRazorpayLoaded = () => {
+  if (window.Razorpay) return Promise.resolve()
+  if (razorpayScriptPromise) return razorpayScriptPromise
+
+  razorpayScriptPromise = new Promise<void>((resolve, reject) => {
+    const source = 'https://checkout.razorpay.com/v1/checkout.js'
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${source}"]`)
+    const script = existing || document.createElement('script')
+
+    script.addEventListener('load', () => resolve(), { once: true })
+    script.addEventListener(
+      'error',
+      () => {
+        razorpayScriptPromise = null
+        reject(new Error('Unable to load the secure payment window. Please try again.'))
+      },
+      { once: true },
+    )
+
+    if (!existing) {
+      script.src = source
+      script.async = true
+      document.head.appendChild(script)
+    }
+  })
+
+  return razorpayScriptPromise
+}
+
 export const useRechargeWallet = () =>
   useMutation<void, Error, RechargeOptions>({
     mutationFn: async (options) => {
+      await ensureRazorpayLoaded()
       // Call backend → get Razorpay order details
       const orderData = await createRechargeOrder({
         amount: options.amount,
