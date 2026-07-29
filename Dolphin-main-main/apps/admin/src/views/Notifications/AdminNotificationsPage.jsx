@@ -11,10 +11,12 @@ import {
 } from '@chakra-ui/react'
 import Card from 'components/Card/Card'
 import { useEffect, useState } from 'react'
+import { useHistory } from 'react-router-dom'
 import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } from 'services/notification.service'
 import { useNotificationsStore } from 'store/useNotificationsStore'
 
 export default function AdminNotificationsPage() {
+  const history = useHistory()
   const { notifications, unreadCount, setNotifications, markAsRead, markAllAsRead } =
     useNotificationsStore()
   const [isLoading, setIsLoading] = useState(false)
@@ -117,15 +119,29 @@ export default function AdminNotificationsPage() {
                       : 'Unknown time'}
                   </Text>
                 </Box>
-                <Button
-                  size="sm"
-                  variant={notification.isRead ? 'outline' : 'solid'}
-                  onClick={() => handleRead(notification.id)}
-                  isDisabled={notification.isRead}
-                  isLoading={activeId === notification.id}
-                >
-                  {notification.isRead ? 'Read' : 'Mark as read'}
-                </Button>
+                <Stack direction={{ base: 'column', md: 'row' }}>
+                  {notification.link ? (
+                    <Button
+                      size="sm"
+                      colorScheme="purple"
+                      onClick={async () => {
+                        if (!notification.isRead) await handleRead(notification.id)
+                        history.push(notification.link)
+                      }}
+                    >
+                      Open
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    variant={notification.isRead ? 'outline' : 'solid'}
+                    onClick={() => handleRead(notification.id)}
+                    isDisabled={notification.isRead}
+                    isLoading={activeId === notification.id}
+                  >
+                    {notification.isRead ? 'Read' : 'Mark as read'}
+                  </Button>
+                </Stack>
               </Flex>
             ))}
           </Stack>

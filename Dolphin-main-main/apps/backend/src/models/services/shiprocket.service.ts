@@ -48,6 +48,7 @@ import {
 import { generateInvoicePDF, Product } from './invoice.service'
 import { presignDownload, presignUpload } from './upload.service'
 import { createWalletTransaction } from './wallet.service'
+import { createNotificationService } from './notifications.service'
 import { walletOfUser } from './walletTopupService'
 import { resolveInvoiceNumber } from './invoiceNumber.service'
 
@@ -5945,10 +5946,15 @@ export const createB2BShipmentService = async (
       order_id: cargoOrderRecord?.order_id ? String(cargoOrderRecord.order_id) : null,
       shipment_id: shipmentId ? String(shipmentId) : null,
       awb_number: String(awbNumber),
+      awb_released_at: null,
       courier_partner: String(courierPartner),
       courier_id: params.courier_id != null ? String(params.courier_id) : null,
-      label: persistedLabel ? String(persistedLabel) : null,
-      manifest: manifestUrl ? String(manifestUrl) : null,
+      provider_label: persistedLabel ? String(persistedLabel) : null,
+      label: null,
+      manifest: null,
+      label_source: null,
+      label_allotment_status: 'awaiting_awb_allotment',
+      label_allotment_note: null,
       courier_cost: courierCost != null ? String(Number(courierCost)) : null,
       delivery_message: String(
         shipmentData?.message ||
@@ -5960,45 +5966,28 @@ export const createB2BShipmentService = async (
     })
     .where(eq(b2b_orders.id, pendingOrder.id))
 
-  if (!persistedLabel) {
-    try {
-      const [freshOrder] = await db
-        .select()
-        .from(b2b_orders)
-        .where(eq(b2b_orders.id, pendingOrder.id))
-        .limit(1)
-
-      if (freshOrder) {
-        const generatedLabelKey = await generateLabelForOrder(freshOrder, userId, db)
-        if (generatedLabelKey && String(generatedLabelKey).trim()) {
-          persistedLabel = String(generatedLabelKey).trim()
-          await db
-            .update(b2b_orders)
-            .set({
-              label: persistedLabel,
-              updated_at: new Date(),
-            })
-            .where(eq(b2b_orders.id, pendingOrder.id))
-        }
-      }
-    } catch (labelErr: any) {
-      console.error('Failed to generate Shipzilla B2B label after booking', {
-        orderNumber: normalizedOrderNumber,
-        shipmentId,
-        awbNumber,
-        error: labelErr?.message || labelErr,
-      })
-    }
-  }
+  createNotificationService({
+    targetRole: 'admin',
+    title: 'B2B label required',
+    message: `New B2B shipment ${normalizedOrderNumber} requires label and AWB allotment.`,
+    link: '/admin/ops/b2b-label-allotment',
+  }).catch((error) =>
+    console.error('Failed to create B2B label allotment notification', {
+      orderNumber: normalizedOrderNumber,
+      error: error?.message || error,
+    }),
+  )
 
   return {
     order_id: pendingOrder.id,
     shipment_id: shipmentId ? String(shipmentId) : null,
-    awb_number: String(awbNumber),
+    awb_number: null,
+    awb_display: 'Waiting for AWB allotment',
+    label_allotment_status: 'awaiting_awb_allotment',
     courier_partner: String(courierPartner),
     courier_id: params.courier_id ?? null,
-    label: persistedLabel ? String(persistedLabel) : null,
-    manifest: manifestUrl ? String(manifestUrl) : null,
+    label: null,
+    manifest: null,
     courier_cost: courierCost != null ? Number(courierCost) : null,
     provider: rateScopeProvider,
     raw: shipmentData,

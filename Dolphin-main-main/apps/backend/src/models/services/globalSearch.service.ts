@@ -72,6 +72,7 @@ export const globalSearch = async (
       id: b2b_orders.id,
       order_number: b2b_orders.order_number,
       awb_number: b2b_orders.awb_number,
+      awb_released_at: b2b_orders.awb_released_at,
       buyer_name: b2b_orders.buyer_name,
       city: b2b_orders.city,
       state: b2b_orders.state,
@@ -83,7 +84,7 @@ export const globalSearch = async (
         eq(b2b_orders.user_id, userId),
         or(
           ilike(b2b_orders.order_number, searchTerm),
-          sql`COALESCE(CAST(${b2b_orders.awb_number} AS TEXT), '') ILIKE ${searchTerm}`,
+          sql`CASE WHEN ${b2b_orders.awb_released_at} IS NOT NULL THEN COALESCE(CAST(${b2b_orders.awb_number} AS TEXT), '') ELSE '' END ILIKE ${searchTerm}`,
           sql`COALESCE(CAST(${b2b_orders.order_id} AS TEXT), '') ILIKE ${searchTerm}`,
           ilike(b2b_orders.buyer_name, searchTerm),
         ),
@@ -92,6 +93,7 @@ export const globalSearch = async (
     .limit(limit)
 
   for (const order of b2bOrders) {
+    if (!order.awb_released_at) order.awb_number = null
     results.push({
       type: 'order',
       id: order.id,

@@ -91,6 +91,8 @@ const B2BOrdersList = ({
   const [downloadingLabels, setDownloadingLabels] = useState(false)
   const orders: B2BOrder[] = data?.orders || []
   const selectedOrders = orders.filter((order) => selectedOrderIds.includes(order.id))
+  const isAwaitingAllotment = (order: B2BOrder) =>
+    Boolean(order.label_allotment_status) && !order.awb_released_at
 
   const clearSelection = () => {
     setSelectedOrderIds([])
@@ -271,6 +273,14 @@ const B2BOrdersList = ({
       label: 'AWB',
       id: 'awb_number',
       render: (v, row) => {
+        if (isAwaitingAllotment(row)) {
+          return (
+            <StatusChip
+              label={row.awb_display || 'Waiting for AWB allotment'}
+              status="pending"
+            />
+          )
+        }
         const trackingPath = buildOrderTrackingPath(row)
         if (!trackingPath) return v || '-'
 
@@ -296,7 +306,13 @@ const B2BOrdersList = ({
       render: (_v, row) => (
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
           <StatusChip
-            label={hasLabelGenerated(row) ? 'Label Generated' : 'Label Pending'}
+            label={
+              isAwaitingAllotment(row)
+                ? 'Admin allotment pending'
+                : hasLabelGenerated(row)
+                  ? 'Label Generated'
+                  : 'Label Pending'
+            }
             status={hasLabelGenerated(row) ? 'success' : 'pending'}
           />
           <StatusChip
@@ -340,7 +356,12 @@ const B2BOrdersList = ({
       minWidth: 150,
       sticky: 'right',
       stickyOffset: 360,
-      render: (v) => <StatusChip label={v} status={statusColorMap[String(v)] || 'info'} />,
+      render: (v, row) => (
+        <StatusChip
+          label={row.client_shipment_status || v}
+          status={isAwaitingAllotment(row) ? 'pending' : statusColorMap[String(v)] || 'info'}
+        />
+      ),
     },
     { label: 'Order Date', id: 'order_date', render: (v) => renderDateTimeCell(v) },
     { label: 'Last Updated', id: 'updated_at', render: (v) => renderDateTimeCell(v) },
@@ -351,13 +372,14 @@ const B2BOrdersList = ({
       sticky: 'right',
       stickyOffset: 0,
       render: (_, row) => {
-        const trackingPath = buildOrderTrackingPath(row)
+        const pendingAllotment = isAwaitingAllotment(row)
+        const trackingPath = pendingAllotment ? null : buildOrderTrackingPath(row)
         const manifestRef = getB2BManifestIdentifier(row)
         const isThisManifesting = isGeneratingManifest && manifestingAwb === manifestRef
         const hasLabelDocument = hasLabelGenerated(row)
         const hasInvoiceDocument = hasInvoiceGenerated(row)
         const hasManifestDocument = hasManifestGenerated(row)
-        const canManifest = Boolean(manifestRef) && !hasManifestDocument
+        const canManifest = !pendingAllotment && Boolean(manifestRef) && !hasManifestDocument
 
         const actions: OrderActionMenuItem[] = [
           ...(trackingPath
@@ -389,9 +411,13 @@ const B2BOrdersList = ({
             : []),
           {
             key: 'generate-label',
-            label: regeneratingDocuments ? 'Generating Label...' : 'Generate Label',
+            label: pendingAllotment
+              ? 'Label pending admin allotment'
+              : regeneratingDocuments
+                ? 'Generating Label...'
+                : 'Generate Label',
             icon: <MdDescription size={18} />,
-            disabled: regeneratingDocuments,
+            disabled: pendingAllotment || regeneratingDocuments,
             onClick: () => handleRegenerateDocuments(row, true, false),
           },
           {

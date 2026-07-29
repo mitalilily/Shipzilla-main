@@ -334,6 +334,13 @@ export const regenerateOrderDocumentsServiceAdmin = async ({
   if (expectedUserId && userId !== expectedUserId) {
     throw new Error('Order not found')
   }
+  if (
+    orderType === 'b2b' &&
+    regenerateLabel &&
+    !(b2bOrder as any)?.awb_released_at
+  ) {
+    throw new Error('Label is pending admin AWB allotment')
+  }
 
   let newLabelKey: string | null = null
   let newInvoiceKey: string | null = null
@@ -553,6 +560,16 @@ export const generateBulkOrderDocumentsPdfService = async ({
     const { order, orderType } = entry
     if (String(order.user_id || '') !== expectedUserId) {
       throw new Error('One or more selected orders were not found.')
+    }
+    if (
+      orderType === 'b2b' &&
+      !order.awb_released_at &&
+      ['label', 'manifest'].includes(documentType)
+    ) {
+      warnings.push(
+        `${order.order_number || order.id}: Waiting for AWB allotment; ${documentType} excluded.`,
+      )
+      continue
     }
 
     try {

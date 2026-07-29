@@ -16,6 +16,24 @@ const buildQuery = (params = {}) => {
 }
 
 export const b2bAdminService = {
+  async getPendingLabelAllotments(params = {}) {
+    const query = buildQuery(params)
+    const { data } = await api.get(`${BASE_URL}/label-allotments${query ? `?${query}` : ''}`)
+    return { rows: data.data ?? [], pagination: data.pagination ?? {} }
+  },
+
+  async getPendingLabelAllotmentCount() {
+    const { data } = await api.get(`${BASE_URL}/label-allotments/count`)
+    return Number(data.count || 0)
+  },
+
+  async allotAwb(orderId, formData) {
+    const { data } = await api.post(`${BASE_URL}/label-allotments/${orderId}/allot`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data.data
+  },
+
   // Zones
   async getZones(params = {}) {
     const query = buildQuery(params)

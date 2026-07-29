@@ -19,6 +19,7 @@ interface CreateNotificationParams {
   userId?: string
   title: string
   message: string
+  link?: string
   targetRole: 'admin' | 'user'
   type?: NotificationType
   sendEmail?: boolean
@@ -26,7 +27,7 @@ interface CreateNotificationParams {
 }
 
 export async function createNotificationService(params: CreateNotificationParams) {
-  const { targetRole, userId, title, message } = params
+  const { targetRole, userId, title, message, link } = params
 
   if (targetRole === 'admin') {
     const adminUsers = await db.query.users.findMany({
@@ -41,6 +42,7 @@ export async function createNotificationService(params: CreateNotificationParams
       userId: admin.id,
       title,
       message,
+      link: link || null,
     }))
 
     const newNotifications = await db.insert(notifications).values(notificationsData).returning()
@@ -59,6 +61,7 @@ export async function createNotificationService(params: CreateNotificationParams
       userId: userId || null,
       title,
       message,
+      link: link || null,
     })
     .returning()
 

@@ -47,11 +47,29 @@ import {
   validateInvoiceContentController,
   validateInvoiceFileController,
 } from '../../controllers/admin/b2b/invoiceValidation.controller'
+import {
+  allotB2BAwbController,
+  listPendingB2BLabelsController,
+  pendingB2BLabelCountController,
+} from '../../controllers/admin/b2b/b2bLabelAllotment.controller'
 import { isAdminMiddleware } from '../../middlewares/isAdmin'
 import { requireAuth } from '../../middlewares/requireAuth'
 
 const router = Router()
 const upload = multer()
+
+router.get('/label-allotments', requireAuth, isAdminMiddleware, listPendingB2BLabelsController)
+router.get('/label-allotments/count', requireAuth, isAdminMiddleware, pendingB2BLabelCountController)
+router.post(
+  '/label-allotments/:orderId/allot',
+  requireAuth,
+  isAdminMiddleware,
+  upload.fields([
+    { name: 'label', maxCount: 1 },
+    { name: 'manifest', maxCount: 1 },
+  ]),
+  allotB2BAwbController,
+)
 
 // Zones
 router.get('/zones', requireAuth, isAdminMiddleware, listZonesController)

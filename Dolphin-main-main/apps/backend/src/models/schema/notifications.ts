@@ -7,6 +7,7 @@ export const notifications = pgTable('notifications', {
   targetRole: text('targetRole').notNull(), // "admin" | "client"
   title: text('title').notNull(),
   message: text('message').notNull(),
+  link: text('link'),
   read: boolean('read').default(false),
   createdAt: timestamp('createdAt').defaultNow(),
 })

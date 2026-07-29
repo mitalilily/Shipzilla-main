@@ -61,6 +61,7 @@ import ZoneMappingsPage from 'views/Zones/ZoneMappingsPage'
 const B2BPricingManagement = lazy(() => import('views/Pricing/B2BPricingManagement'))
 const B2CPricingManagement = lazy(() => import('views/Pricing/B2CPricingManagement'))
 const HolidayManagement = lazy(() => import('views/B2B/HolidayManagement'))
+const PendingLabelAllotments = lazy(() => import('views/B2B/PendingLabelAllotments'))
 
 // ------------------ ROUTES ------------------
 
@@ -101,6 +102,19 @@ const dashRoutes = [
     icon: <IconSettings size={20} />,
     layout: '/admin',
     views: [
+      {
+        path: '/ops/b2b-label-allotment',
+        name: 'Pending B2B Labels',
+        icon: <IconPackageExport />,
+        component: () => (
+          <AdminRoute>
+            <Suspense fallback={<div>Loading pending labels...</div>}>
+              <PendingLabelAllotments />
+            </Suspense>
+          </AdminRoute>
+        ),
+        layout: '/admin',
+      },
       {
         path: '/ops/ndr',
         name: 'NDR',

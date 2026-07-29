@@ -1,4 +1,4 @@
-import { boolean, jsonb, numeric, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
+import { boolean, jsonb, numeric, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
 import { users } from './users'
 
 export const b2b_orders = pgTable(
@@ -89,6 +89,13 @@ export const b2b_orders = pgTable(
   courier_partner: varchar('courier_partner', { length: 50 }),
   courier_id: numeric('courier_id'),
   awb_number: varchar('awb_number', { length: 100 }),
+  awb_released_at: timestamp('awb_released_at'),
+  provider_label: varchar('provider_label', { length: 500 }),
+  label_uploaded_at: timestamp('label_uploaded_at'),
+  label_uploaded_by: uuid('label_uploaded_by').references(() => users.id),
+  label_source: varchar('label_source', { length: 50 }),
+  label_allotment_status: varchar('label_allotment_status', { length: 50 }),
+  label_allotment_note: text('label_allotment_note'),
   shipment_id: varchar('shipment_id', { length: 100 }),
   is_insurance: boolean('is_insurance').default(false),
   // Declared/insured value and ROV charge (if insurance opted)

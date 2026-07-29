@@ -52,6 +52,22 @@ export const sanitizeOrderForCustomer = async (order: any): Promise<any> => {
   const provider = String(order?.integration_type || '').trim().toLowerCase()
 
   delete sanitized.courier_cost
+  delete sanitized.provider_label
+  delete sanitized.label_uploaded_by
+
+  const isB2BAllotmentPending =
+    Boolean(order?.label_allotment_status) && !order?.awb_released_at
+  if (isB2BAllotmentPending) {
+    sanitized.awb_number = null
+    sanitized.awb_display = 'Waiting for AWB allotment'
+    sanitized.label = null
+    sanitized.label_key = null
+    sanitized.label_url = null
+    sanitized.manifest = null
+    sanitized.manifest_key = null
+    sanitized.manifest_url = null
+    sanitized.client_shipment_status = 'Label/AWB pending'
+  }
 
   sanitized.manifest_retry_count = manifestRetryCount
   sanitized.manifest_retries_remaining = manifestRetriesRemaining
@@ -61,14 +77,14 @@ export const sanitizeOrderForCustomer = async (order: any): Promise<any> => {
     manifestRetriesRemaining > 0
 
   // Always expose stored document keys so clients can reliably use the same regenerated keys
-  if (order.label) sanitized.label_key = order.label
-  if (order.manifest) sanitized.manifest_key = order.manifest
+  if (order.label && !isB2BAllotmentPending) sanitized.label_key = order.label
+  if (order.manifest && !isB2BAllotmentPending) sanitized.manifest_key = order.manifest
   if (order.invoice_link) sanitized.invoice_key = order.invoice_link
 
   try {
     const [labelUrl, manifestUrl, invoiceUrl] = await Promise.all([
-      ensureDownloadUrl(order.label),
-      ensureDownloadUrl(order.manifest),
+      ensureDownloadUrl(isB2BAllotmentPending ? null : order.label),
+      ensureDownloadUrl(isB2BAllotmentPending ? null : order.manifest),
       ensureDownloadUrl(order.invoice_link),
     ])
 

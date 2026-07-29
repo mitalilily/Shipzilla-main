@@ -246,6 +246,10 @@ export interface B2BOrder {
   courier_id?: string | null
   shipment_id?: string
   awb_number?: string
+  awb_display?: string
+  awb_released_at?: string | null
+  label_allotment_status?: string | null
+  client_shipment_status?: string | null
   label?: string
   label_url?: string | null
   label_key?: string | null

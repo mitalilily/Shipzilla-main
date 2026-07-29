@@ -81,6 +81,9 @@ const cancelB2BShiprocketShipment = async (orderId: string) => {
     .update(b2b_orders)
     .set({
       order_status: 'cancelled',
+      label_allotment_status: order.awb_released_at
+        ? order.label_allotment_status
+        : 'allotment_cancelled',
       delivery_message: 'Cancellation requested',
       updated_at: new Date(),
     })

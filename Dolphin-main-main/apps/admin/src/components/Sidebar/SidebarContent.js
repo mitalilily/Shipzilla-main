@@ -1,7 +1,8 @@
 import { ChevronDownIcon } from '@chakra-ui/icons'
-import { Box, Button, Collapse, Flex, Stack, Text, useColorModeValue } from '@chakra-ui/react'
+import { Badge, Box, Button, Collapse, Flex, Stack, Text, useColorModeValue } from '@chakra-ui/react'
 import React, { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { b2bAdminService } from 'services/b2bAdmin.service'
 import { adminBrand } from 'theme/brand'
 
 const NAVY = adminBrand.primary
@@ -12,6 +13,7 @@ const TEAL = adminBrand.success
 const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
   const location = useLocation()
   const [state, setState] = React.useState({})
+  const [pendingB2BLabels, setPendingB2BLabels] = React.useState(0)
 
   const sidebarBg = useColorModeValue('rgba(255,255,255,0.96)', 'rgba(8, 25, 38, 0.94)')
   const sidebarBorder = useColorModeValue('rgba(93,35,148,0.1)', 'rgba(255,255,255,0.16)')
@@ -48,6 +50,21 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
       }
     })
   }, [location.pathname, routes])
+
+  useEffect(() => {
+    let active = true
+    const refresh = () =>
+      b2bAdminService
+        .getPendingLabelAllotmentCount()
+        .then((count) => active && setPendingB2BLabels(count))
+        .catch(() => {})
+    refresh()
+    const timer = setInterval(refresh, 30000)
+    return () => {
+      active = false
+      clearInterval(timer)
+    }
+  }, [])
 
   const collapsed = sidebarWidth <= 160
   const showText = !collapsed
@@ -99,9 +116,16 @@ const SidebarContent = ({ logoText, routes, sidebarWidth }) => {
             </Box>
           )}
           {showText && (
-            <Text color={isActive ? brandText : textColor} fontWeight={isActive ? '700' : '600'} fontSize="sm">
-              {prop.name}
-            </Text>
+            <>
+              <Text color={isActive ? brandText : textColor} fontWeight={isActive ? '700' : '600'} fontSize="sm">
+                {prop.name}
+              </Text>
+              {prop.name === 'Pending B2B Labels' && pendingB2BLabels > 0 && (
+                <Badge ml="auto" colorScheme="red" borderRadius="full">
+                  {pendingB2BLabels > 99 ? '99+' : pendingB2BLabels}
+                </Badge>
+              )}
+            </>
           )}
         </Flex>
       </Button>
