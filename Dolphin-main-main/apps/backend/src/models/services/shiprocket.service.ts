@@ -5213,6 +5213,76 @@ const createB2BShipmentServiceLegacy = async (
   return shipmentData
 }
 
+const getIndiaDate = (date: Date) => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}`
+}
+
+const normalizeFutureCargoPickup = (dateInput: unknown, timeInput: unknown) => {
+  const rawDate = String(dateInput || '').trim()
+  const rawTime = String(timeInput || '10:00:00').trim()
+  let date = /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
+    ? rawDate
+    : getIndiaDate(new Date(Date.now() + 24 * 60 * 60 * 1000))
+  const time = /^\d{2}:\d{2}$/.test(rawTime)
+    ? `${rawTime}:00`
+    : /^\d{2}:\d{2}:\d{2}$/.test(rawTime)
+      ? rawTime
+      : '10:00:00'
+
+  const requestedAt = new Date(`${date}T${time}+05:30`)
+  if (
+    !Number.isFinite(requestedAt.getTime()) ||
+    requestedAt.getTime() <= Date.now() + 30 * 60 * 1000
+  ) {
+    date = getIndiaDate(new Date(Date.now() + 24 * 60 * 60 * 1000))
+  }
+
+  return { date, time }
+}
+
+const extractShiprocketCargoErrorMessage = (error: any) => {
+  const responseData = error?.response?.data
+  const providerMessages: string[] = []
+  const visit = (value: unknown) => {
+    if (!value || typeof value !== 'object') return
+    if (Array.isArray(value)) {
+      value.forEach(visit)
+      return
+    }
+    const record = value as Record<string, unknown>
+    for (const key of ['error_msg', 'error', 'detail']) {
+      if (typeof record[key] === 'string' && record[key].trim()) {
+        providerMessages.push(record[key].trim())
+      }
+    }
+    Object.values(record).forEach(visit)
+  }
+  visit(responseData?.errors)
+
+  const candidates: unknown[] = [
+    ...providerMessages,
+    responseData?.error_msg,
+    responseData?.message,
+    error?.message,
+  ]
+  return String(
+    candidates.find(
+      (candidate) =>
+        typeof candidate === 'string' &&
+        candidate.trim() &&
+        !/^validation failed$/i.test(candidate.trim()) &&
+        !/^request failed with status code/i.test(candidate.trim()),
+    ) || 'Shiprocket Cargo rejected the booking request.',
+  )
+}
+
 export const createB2BShipmentService = async (
   params: ShipmentParams,
   userId: string,
@@ -5634,15 +5704,11 @@ export const createB2BShipmentService = async (
       }
 
       const pickupDateInput = String(params.pickup?.pickup_date || params.pickup_date || '').trim()
-      const pickupDate = /^\d{4}-\d{2}-\d{2}$/.test(pickupDateInput)
-        ? pickupDateInput
-        : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
       const pickupTimeInput = String(params.pickup?.pickup_time || params.pickup_time || '10:00:00').trim()
-      const pickupTime = /^\d{2}:\d{2}$/.test(pickupTimeInput)
-        ? `${pickupTimeInput}:00`
-        : /^\d{2}:\d{2}:\d{2}$/.test(pickupTimeInput)
-          ? pickupTimeInput
-          : '10:00:00'
+      const { date: pickupDate, time: pickupTime } = normalizeFutureCargoPickup(
+        pickupDateInput,
+        pickupTimeInput,
+      )
       const isCod = String(params.payment_type || '').toLowerCase() === 'cod'
       const liveShiprocketOptions = await fetchShiprocketLiveB2BCouriers({
         originPincode: params.pickup.pincode,
@@ -5794,15 +5860,21 @@ export const createB2BShipmentService = async (
       throw new HttpError(400, 'B2B bookings are supported only through Shiprocket Cargo.')
     }
   } catch (error: any) {
+    const providerMessage = extractShiprocketCargoErrorMessage(error)
+    const rechargeRequired =
+      error?.response?.data?.errors?.non_field_errors?.some?.(
+        (entry: any) => String(entry?.recharge_required || '').toLowerCase() === 'true',
+      ) || /insufficient wallet balance|recharge required|don't have sufficient wallet/i.test(providerMessage)
     await db
       .update(b2b_orders)
       .set({
         order_status: 'failed',
-        delivery_message: String(error?.message || 'B2B booking failed').slice(0, 100),
+        delivery_message: providerMessage.slice(0, 100),
         updated_at: new Date(),
       })
       .where(eq(b2b_orders.id, pendingOrder.id))
-    throw error
+    if (error instanceof HttpError) throw error
+    throw new HttpError(rechargeRequired ? 402 : 400, providerMessage)
   }
 
   const rawShipmentRecord = shipmentData?.cargo_shipment || shipmentData?.data || shipmentData || {}
