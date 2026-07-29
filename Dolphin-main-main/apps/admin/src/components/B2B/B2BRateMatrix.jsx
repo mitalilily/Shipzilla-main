@@ -139,9 +139,12 @@ const B2BRateMatrix = ({ planId }) => {
     mutationFn: (formData) => b2bAdminService.importZoneRates(formData),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['b2b-zone-rates'] })
+      const skippedCount = Array.isArray(data.skipped) ? data.skipped.length : 0
       toast({
         title: 'Rates imported successfully',
-        description: data.message || 'CSV file has been processed',
+        description: `${data.inserted || 0} rate(s) imported${
+          skippedCount ? `; ${skippedCount} row(s) skipped` : ''
+        }.`,
         status: 'success',
         duration: 5000,
       })
@@ -152,7 +155,10 @@ const B2BRateMatrix = ({ planId }) => {
       toast({
         title: 'Failed to import rates',
         description:
-          error.response?.data?.message || error.message || 'Please check your CSV format',
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.message ||
+          'Please check your CSV format',
         status: 'error',
         duration: 5000,
       })

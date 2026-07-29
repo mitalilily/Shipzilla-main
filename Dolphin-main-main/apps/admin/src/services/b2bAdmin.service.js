@@ -134,8 +134,11 @@ export const b2bAdminService = {
   },
 
   async importZoneRates(formData) {
+    // Let the browser set the multipart boundary. Full B2B matrices can contain
+    // hundreds of rows, so they need a longer timeout than normal API requests.
     const { data } = await api.post(`${BASE_URL}/zone-rates/import`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+      headers: { 'Content-Type': undefined },
     })
     return data
   },

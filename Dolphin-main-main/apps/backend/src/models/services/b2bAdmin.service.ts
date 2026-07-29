@@ -893,6 +893,7 @@ export const upsertZoneToZoneRate = async (payload: {
   planId?: string | null
   minCharge?: number | null
   maxWeightLimit?: number | null
+  skipZoneValidation?: boolean
 }) => {
   // Validate required fields
   if (!payload.originZoneId || !payload.destinationZoneId) {
@@ -953,17 +954,19 @@ export const upsertZoneToZoneRate = async (payload: {
     }
 
     // Verify that both zones exist
-    const [originZone, destZone] = await Promise.all([
-      db.select().from(zones).where(eq(zones.id, payload.originZoneId)).limit(1),
-      db.select().from(zones).where(eq(zones.id, payload.destinationZoneId)).limit(1),
-    ])
+    if (!payload.skipZoneValidation) {
+      const [originZone, destZone] = await Promise.all([
+        db.select().from(zones).where(eq(zones.id, payload.originZoneId)).limit(1),
+        db.select().from(zones).where(eq(zones.id, payload.destinationZoneId)).limit(1),
+      ])
 
-    if (!originZone[0]) {
-      throw new Error(`Origin zone not found: ${payload.originZoneId}`)
-    }
+      if (!originZone[0]) {
+        throw new Error(`Origin zone not found: ${payload.originZoneId}`)
+      }
 
-    if (!destZone[0]) {
-      throw new Error(`Destination zone not found: ${payload.destinationZoneId}`)
+      if (!destZone[0]) {
+        throw new Error(`Destination zone not found: ${payload.destinationZoneId}`)
+      }
     }
     // Check if record exists first (handles NULL values properly)
     const whereConditions = [
@@ -1170,29 +1173,38 @@ export const importZoneRatesFromCsv = async (
   let inserted = 0
   const skipped: any[] = []
 
-  for (const row of rows) {
-    try {
-      const originZoneId = await resolveZoneId(row.origin_zone_code as string)
-      const destinationZoneId = await resolveZoneId(row.destination_zone_code as string)
+  // A full matrix commonly contains 256+ rows. Process with bounded concurrency
+  // so imports finish promptly without flooding the database connection pool.
+  const concurrency = Math.min(8, rows.length)
+  let nextRowIndex = 0
+  const workers = Array.from({ length: concurrency }, async () => {
+    while (nextRowIndex < rows.length) {
+      const row = rows[nextRowIndex++]
+      try {
+        const originZoneId = await resolveZoneId(row.origin_zone_code as string)
+        const destinationZoneId = await resolveZoneId(row.destination_zone_code as string)
 
-      const ratePerKg = Number(row.rate_per_kg)
-      if (!Number.isFinite(ratePerKg) || ratePerKg <= 0) {
-        throw new Error('Rate Per Kg must be greater than zero')
+        const ratePerKg = Number(row.rate_per_kg)
+        if (!Number.isFinite(ratePerKg) || ratePerKg <= 0) {
+          throw new Error('Rate Per Kg must be greater than zero')
+        }
+
+        await upsertZoneToZoneRate({
+          originZoneId,
+          destinationZoneId,
+          ratePerKg,
+          courierScope: options.courierScope,
+          planId: options.planId,
+          skipZoneValidation: true,
+        })
+
+        inserted += 1
+      } catch (err: any) {
+        skipped.push({ row, error: err.message })
       }
-
-      await upsertZoneToZoneRate({
-        originZoneId,
-        destinationZoneId,
-        ratePerKg,
-        courierScope: options.courierScope,
-        planId: options.planId,
-      })
-
-      inserted += 1
-    } catch (err: any) {
-      skipped.push({ row, error: err.message })
     }
-  }
+  })
+  await Promise.all(workers)
 
   if (!inserted) {
     throw new Error(
