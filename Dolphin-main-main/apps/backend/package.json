@@ -27,6 +27,7 @@
     "check:shiprocket-cargo-update-warehouse": "ts-node src/scripts/checkShiprocketCargoUpdateWarehouse.ts",
     "sync:shiprocket-cargo-couriers": "ts-node src/scripts/syncShiprocketCargoCouriers.ts",
     "check:shipmozo-apis": "ts-node src/scripts/checkShipmozoApis.ts",
+    "check:shipmozo-amazon-label-policy": "ts-node src/scripts/checkShipmozoAmazonLabelPolicy.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "migrate": "drizzle-kit push",
     "migrate:invoice-generation-runs": "ts-node src/scripts/ensureInvoiceGenerationRunsTable.ts",

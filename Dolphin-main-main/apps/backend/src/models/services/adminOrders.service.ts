@@ -29,7 +29,11 @@ import { createNotificationService } from './notifications.service'
 import { sendWebhookEvent } from '../../services/webhookDelivery.service'
 import { recordRtoEvent } from './rto.service'
 import { applyRtoChargeOnce } from './webhookProcessor'
-import { ShipmozoService } from './couriers/shipmozo.service'
+import {
+  fetchShipmozoAmazonProviderLabel,
+  isHttpDocumentUrl,
+  isShipmozoAmazonOrder,
+} from './shipmozoAmazonLabelPolicy'
 
 const ADMIN_EDITABLE_ORDER_STATUSES = new Set([
   'pending',
@@ -179,88 +183,33 @@ const toNumber = (value: unknown, fallback = 0): number => {
   return Number.isFinite(n) ? n : fallback
 }
 
-const isHttpUrl = (value?: string | null) => typeof value === 'string' && /^https?:\/\//i.test(value)
-
-const isAmazonCourierName = (...values: unknown[]) =>
-  values.some((value) => /amazon/i.test(String(value ?? '')))
-
-const isShipmozoAmazonOrder = (order: any) => {
-  if (!isAmazonCourierName(order?.courier_partner, order?.courier_name, order?.courier_company)) {
-    return false
-  }
-
-  const provider = String(order?.integration_type || '').trim().toLowerCase()
-  return !provider || provider === 'shipmozo'
-}
-
-const extractHttpUrlDeep = (payload: any, keys: string[], depth = 0): string | null => {
-  if (!payload || depth > 4) return null
-
-  if (typeof payload === 'string') {
-    const trimmed = payload.trim()
-    return isHttpUrl(trimmed) ? trimmed : null
-  }
-
-  if (Array.isArray(payload)) {
-    for (const item of payload) {
-      const found = extractHttpUrlDeep(item, keys, depth + 1)
-      if (found) return found
-    }
-    return null
-  }
-
-  if (typeof payload === 'object') {
-    for (const key of keys) {
-      const found = extractHttpUrlDeep(payload[key], keys, depth + 1)
-      if (found) return found
-    }
-
-    for (const child of Object.values(payload)) {
-      const found = extractHttpUrlDeep(child, keys, depth + 1)
-      if (found) return found
-    }
-  }
-
-  return null
-}
-
-const fetchShipmozoProviderLabel = async (awbNumber?: string | number | null) => {
-  const normalizedAwb = String(awbNumber ?? '').trim()
-  if (!normalizedAwb) return null
-
-  const response = await new ShipmozoService().getOrderLabel(normalizedAwb)
-  return extractHttpUrlDeep(response?.data ?? response, [
-    'label',
-    'label_url',
-    'labelUrl',
-    'shipping_label',
-    'shipping_label_url',
-    'pdf',
-    'url',
-  ])
-}
-
 const getOrderDocumentReference = (order: any, type: 'label' | 'invoice' | 'manifest') => {
   if (type === 'label') {
     const label = String(order?.label || '').trim()
     return {
-      key: String(order?.label_key || '').trim() || (!isHttpUrl(label) ? label : ''),
-      url: String(order?.label_url || '').trim() || (isHttpUrl(label) ? label : ''),
+      key: String(order?.label_key || '').trim() || (!isHttpDocumentUrl(label) ? label : ''),
+      url: String(order?.label_url || '').trim() || (isHttpDocumentUrl(label) ? label : ''),
     }
   }
 
   if (type === 'manifest') {
     const manifest = String(order?.manifest || '').trim()
     return {
-      key: String(order?.manifest_key || '').trim() || (!isHttpUrl(manifest) ? manifest : ''),
-      url: String(order?.manifest_url || '').trim() || (isHttpUrl(manifest) ? manifest : ''),
+      key:
+        String(order?.manifest_key || '').trim() ||
+        (!isHttpDocumentUrl(manifest) ? manifest : ''),
+      url:
+        String(order?.manifest_url || '').trim() ||
+        (isHttpDocumentUrl(manifest) ? manifest : ''),
     }
   }
 
   const invoice = String(order?.invoice_link || '').trim()
   return {
-    key: String(order?.invoice_key || '').trim() || (!isHttpUrl(invoice) ? invoice : ''),
-    url: String(order?.invoice_url || '').trim() || (isHttpUrl(invoice) ? invoice : ''),
+    key: String(order?.invoice_key || '').trim() || (!isHttpDocumentUrl(invoice) ? invoice : ''),
+    url:
+      String(order?.invoice_url || '').trim() ||
+      (isHttpDocumentUrl(invoice) ? invoice : ''),
   }
 }
 
@@ -276,8 +225,13 @@ const ensureOrderLabel = async (
 
   let labelKey: string | null = null
 
-  if (isShipmozoAmazonOrder(order) && order?.awb_number) {
-    const providerLabelUrl = await fetchShipmozoProviderLabel(order.awb_number)
+  if (isShipmozoAmazonOrder(order)) {
+    if (!options.forceRegenerate && (existing.key || existing.url)) return existing
+    if (!order?.awb_number) {
+      throw new Error(`${order?.order_number || order?.id}: AWB is required to fetch the Amazon label.`)
+    }
+
+    const providerLabelUrl = await fetchShipmozoAmazonProviderLabel(order.awb_number)
     if (!providerLabelUrl) {
       throw new Error(`${order?.order_number || order?.id}: Shipmozo did not return the original Amazon label.`)
     }

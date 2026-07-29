@@ -74,6 +74,11 @@ import { XpressbeesService } from './couriers/xpressbees.service'
 import { calculateOrderWeights } from './courierWeightCalculation.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
 import {
+  fetchShipmozoAmazonProviderLabel,
+  isShipmozoAmazonOrder,
+  shouldFetchShipmozoAmazonOriginalLabel,
+} from './shipmozoAmazonLabelPolicy'
+import {
   computeB2CRateCardCharge,
   fetchResolvedB2CRateCards,
   findMatchingSlabIndex,
@@ -119,83 +124,6 @@ const truncateColumnValue = (value: string, maxLength = 255) => {
 
 const getErrorStatusCode = (error: any, fallback = 500) =>
   typeof error?.statusCode === 'number' ? error.statusCode : fallback
-
-const isAmazonCourierName = (...values: unknown[]) =>
-  values.some((value) => /amazon/i.test(String(value ?? '')))
-
-const isShipmozoAmazonOrder = (order: any) => {
-  if (!isAmazonCourierName(order?.courier_partner, order?.courier_name, order?.courier_company)) {
-    return false
-  }
-
-  const provider = String(order?.integration_type || '').trim().toLowerCase()
-  return !provider || provider === 'shipmozo'
-}
-
-export const shouldFetchShipmozoAmazonOriginalLabel = ({
-  integrationType,
-  awbNumber,
-  returnedCourierName,
-  selectedCourierName,
-  courierPartner,
-}: {
-  integrationType?: unknown
-  awbNumber?: unknown
-  returnedCourierName?: unknown
-  selectedCourierName?: unknown
-  courierPartner?: unknown
-}) =>
-  String(integrationType || '').trim().toLowerCase() === 'shipmozo' &&
-  Boolean(String(awbNumber || '').trim()) &&
-  isAmazonCourierName(returnedCourierName, selectedCourierName, courierPartner)
-
-const extractHttpUrlDeep = (payload: any, keys: string[], depth = 0): string | null => {
-  if (!payload || depth > 4) return null
-
-  if (typeof payload === 'string') {
-    const trimmed = payload.trim()
-    return /^https?:\/\//i.test(trimmed) ? trimmed : null
-  }
-
-  if (Array.isArray(payload)) {
-    for (const item of payload) {
-      const found = extractHttpUrlDeep(item, keys, depth + 1)
-      if (found) return found
-    }
-    return null
-  }
-
-  if (typeof payload === 'object') {
-    for (const key of keys) {
-      const found = extractHttpUrlDeep(payload[key], keys, depth + 1)
-      if (found) return found
-    }
-
-    for (const child of Object.values(payload)) {
-      const found = extractHttpUrlDeep(child, keys, depth + 1)
-      if (found) return found
-    }
-  }
-
-  return null
-}
-
-const fetchShipmozoProviderLabel = async (awbNumber?: string | number | null) => {
-  const normalizedAwb = String(awbNumber ?? '').trim()
-  if (!normalizedAwb) return null
-
-  const shipmozo = new ShipmozoService()
-  const response = await shipmozo.getOrderLabel(normalizedAwb)
-  return extractHttpUrlDeep(response?.data ?? response, [
-    'label',
-    'label_url',
-    'labelUrl',
-    'shipping_label',
-    'shipping_label_url',
-    'pdf',
-    'url',
-  ])
-}
 
 const saveProviderLabelUrlAsR2Key = async ({
   labelUrl,
@@ -245,8 +173,16 @@ const fetchAndSaveShipmozoAmazonLabel = async ({
   userId: string
   orderNumber: string
 }) => {
-  const providerLabelUrl =
-    String(existingLabelUrl || '').trim() || (await fetchShipmozoProviderLabel(awbNumber))
+  let providerLabelUrl: string | null = null
+  try {
+    providerLabelUrl = await fetchShipmozoAmazonProviderLabel(awbNumber)
+  } catch (error: any) {
+    console.warn('Shipmozo Amazon label endpoint was not ready; checking booking response', {
+      awbNumber,
+      error: error?.message || error,
+    })
+  }
+  providerLabelUrl = providerLabelUrl || String(existingLabelUrl || '').trim() || null
 
   if (!providerLabelUrl) {
     throw new Error('Shipmozo did not return the original Amazon label.')
@@ -7037,17 +6973,21 @@ export const generateManifestService = async (params: {
                 : null
             const requiresShipmozoProviderLabel = isShipmozoAmazonOrder(freshOrder)
 
-            if (!labelKey && requiresShipmozoProviderLabel && freshOrder.awb_number) {
+            if (requiresShipmozoProviderLabel && freshOrder.awb_number) {
               try {
-                const providerLabel = await fetchShipmozoProviderLabel(freshOrder.awb_number)
-                labelKey = providerLabel
+                const providerLabel = await fetchShipmozoAmazonProviderLabel(
+                  freshOrder.awb_number,
+                )
+                const providerLabelKey = providerLabel
                   ? await saveProviderLabelUrlAsR2Key({
                       labelUrl: providerLabel,
                       userId: freshOrder.user_id,
                       orderNumber: freshOrder.order_number,
                     })
                   : null
-                if (!labelKey) {
+                if (providerLabelKey) {
+                  labelKey = providerLabelKey
+                } else {
                   manifestWarnings.push(
                     `${freshOrder.order_number}: Amazon provider label was not returned by Shipmozo.`,
                   )
@@ -8339,9 +8279,9 @@ export const generateManifestService = async (params: {
           // 🖨️ Generate label if it doesn't exist and order has AWB
           const requiresShipmozoProviderLabel = isShipmozoAmazonOrder(order)
 
-          if (!order.label && order.awb_number && requiresShipmozoProviderLabel) {
+          if (order.awb_number && requiresShipmozoProviderLabel) {
             try {
-              const providerLabel = await fetchShipmozoProviderLabel(order.awb_number)
+              const providerLabel = await fetchShipmozoAmazonProviderLabel(order.awb_number)
               const providerLabelKey = providerLabel
                 ? await saveProviderLabelUrlAsR2Key({
                     labelUrl: providerLabel,

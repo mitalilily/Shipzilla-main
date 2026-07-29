@@ -13,7 +13,6 @@ import { wallets, walletTransactions } from '../schema/wallet'
 import { createCodRemittance } from './codRemittance.service'
 import { extractWeightProofFromWebhook } from './courierProofFetcher.service'
 import { DelhiveryService } from './couriers/delhivery.service'
-import { ShipmozoService } from './couriers/shipmozo.service'
 import {
   calculateChargedWeight,
   calculateVolumetricWeight,
@@ -35,6 +34,10 @@ import { resolveInvoiceNumber } from './invoiceNumber.service'
 import { syncShopifyStatusForLocalOrder } from './shopify.service'
 import { computeB2CFreightForOrder } from './shiprocket.service'
 import { generateLabelForOrder } from './generateCustomLabelService'
+import {
+  fetchShipmozoAmazonProviderLabel,
+  isShipmozoAmazonOrder,
+} from './shipmozoAmazonLabelPolicy'
 
 const WEBHOOK_INVOICE_UPLOAD_TIMEOUT_MS = 60000
 
@@ -43,54 +46,6 @@ const normalizeWebhookText = (...parts: unknown[]) =>
     .map((part) => String(part || '').trim().toLowerCase())
     .filter(Boolean)
     .join(' | ')
-
-const isShipmozoAmazonOrder = (order: any) => {
-  const provider = String(order?.integration_type || '').trim().toLowerCase()
-  const courier = String(order?.courier_partner || order?.courier_name || '').trim()
-  return (!provider || provider === 'shipmozo') && /amazon/i.test(courier)
-}
-
-const extractHttpUrlDeep = (payload: any, keys: string[], depth = 0): string | null => {
-  if (!payload || depth > 4) return null
-  if (typeof payload === 'string') {
-    const trimmed = payload.trim()
-    return /^https?:\/\//i.test(trimmed) ? trimmed : null
-  }
-  if (Array.isArray(payload)) {
-    for (const item of payload) {
-      const found = extractHttpUrlDeep(item, keys, depth + 1)
-      if (found) return found
-    }
-    return null
-  }
-  if (typeof payload === 'object') {
-    for (const key of keys) {
-      const found = extractHttpUrlDeep(payload[key], keys, depth + 1)
-      if (found) return found
-    }
-    for (const child of Object.values(payload)) {
-      const found = extractHttpUrlDeep(child, keys, depth + 1)
-      if (found) return found
-    }
-  }
-  return null
-}
-
-const fetchShipmozoProviderLabel = async (awbNumber?: string | number | null) => {
-  const normalizedAwb = String(awbNumber ?? '').trim()
-  if (!normalizedAwb) return null
-
-  const response = await new ShipmozoService().getOrderLabel(normalizedAwb)
-  return extractHttpUrlDeep(response?.data ?? response, [
-    'label',
-    'label_url',
-    'labelUrl',
-    'shipping_label',
-    'shipping_label_url',
-    'pdf',
-    'url',
-  ])
-}
 
 const saveProviderLabelUrlAsR2Key = async ({
   labelUrl,
@@ -469,20 +424,21 @@ const ensureOrderDocumentsAfterWebhook = async (
   let invoiceDateToStore = order.invoice_date
   let invoiceAmountToStore = order.invoice_amount
 
-  if (!nextLabelKey && order.awb_number && isShipmozoAmazonOrder(order)) {
+  if (order.awb_number && isShipmozoAmazonOrder(order)) {
     try {
       console.log(
         `Recovering original Shipmozo Amazon label for ${courierLabel} order ${order.order_number}`,
       )
-      const providerLabel = await fetchShipmozoProviderLabel(order.awb_number)
-      nextLabelKey = providerLabel
+      const providerLabel = await fetchShipmozoAmazonProviderLabel(order.awb_number)
+      const providerLabelKey = providerLabel
         ? await saveProviderLabelUrlAsR2Key({
             labelUrl: providerLabel,
             userId: order.user_id,
             orderNumber: order.order_number,
           })
         : null
-      if (nextLabelKey) {
+      if (providerLabelKey) {
+        nextLabelKey = providerLabelKey
         console.log(`Original Shipmozo Amazon label recovered for ${order.order_number}`)
       } else {
         console.warn(

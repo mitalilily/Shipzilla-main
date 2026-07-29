@@ -8,6 +8,7 @@ import { db } from '../client'
 import { labelPreferences } from '../schema/labelPreferences'
 import { userProfiles } from '../schema/userProfile'
 import { getAdminInvoicePreferences } from './invoicePreferences.service'
+import { isShipmozoAmazonOrder } from './shipmozoAmazonLabelPolicy'
 import { presignDownload, presignUpload } from './upload.service'
 
 function isValidDataUrl(str: string | null): boolean {
@@ -139,6 +140,12 @@ function mergeSettings(prefs: any) {
 }
 
 export async function generateLabelForOrder(order: any, userId: string, tx: any = db) {
+  if (isShipmozoAmazonOrder(order)) {
+    throw new Error(
+      'Shipmozo Amazon orders require the original provider label; custom label generation is blocked.',
+    )
+  }
+
   console.log('ORDER', order)
 
   // Load preferences
