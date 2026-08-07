@@ -11,6 +11,7 @@ import {
 import React from 'react'
 import { MdCheckCircle, MdClose, MdError, MdInfo, MdWarning } from 'react-icons/md'
 import { brand } from '../../theme/brand'
+import { sanitizeClientErrorMessage } from '../../utils/clientErrorMessage'
 
 let openToastFn: (options: ToastOptions) => void = () => {}
 
@@ -109,7 +110,7 @@ export const ToastProvider: React.FC = () => {
   React.useEffect(() => {
     openToastFn = (o: ToastOptions) => {
       setOpen(false)
-      setOpts((prev) => ({ ...prev, ...o }))
+      setOpts((prev) => ({ ...prev, ...o, message: sanitizeClientErrorMessage(o.message) }))
       setTimeout(() => setOpen(true), 0)
     }
   }, [])

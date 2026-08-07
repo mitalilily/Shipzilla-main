@@ -57,6 +57,7 @@ import userRoutes from './routes/userRoutes'
 import walletRoutes from './routes/walletRoutes'
 import weightReconciliationRoutes from './routes/weightReconciliation.routes'
 import shiprocketRoutes from './routes/shiprocket.routes'
+import { sanitizeClientErrorResponse } from './utils/clientErrorMessage'
 
 // Routes imports
 // import other routes here...
@@ -164,6 +165,7 @@ app.post('/api/payments/wallet/webhook', express.raw({ type: 'application/json' 
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(sanitizeClientErrorResponse)
 
 app.use('/api/user', userRoutes)
 app.use('/api/profile', profileRoutes)

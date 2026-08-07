@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { UI_ONLY_AUTH } from '../utils/authMode'
 import { withAppBasePath } from '../utils/basePath'
+import { sanitizeClientErrorPayload } from '../utils/clientErrorMessage'
 import { clearAuthTokens, getAuthTokens, setAuthTokens } from './tokenVault'
 
 const RAW_API_BASE_URL = import.meta.env.VITE_API_URL
@@ -84,6 +85,10 @@ api.interceptors.request.use((cfg) => {
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
+    if (err.response?.data) {
+      err.response.data = sanitizeClientErrorPayload(err.response.data)
+    }
+
     const original = err.config
     const method = String(original?.method || 'get').toLowerCase()
     const status = Number(err.response?.status || 0)

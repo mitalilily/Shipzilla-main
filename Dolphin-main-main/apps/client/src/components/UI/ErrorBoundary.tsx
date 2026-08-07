@@ -2,6 +2,7 @@ import { Box, Button, Stack, Typography } from '@mui/material'
 import { useTheme, type Theme } from '@mui/material/styles'
 import React, { type ErrorInfo, type ReactNode } from 'react'
 import { MdErrorOutline } from 'react-icons/md'
+import { sanitizeClientErrorMessage } from '../../utils/clientErrorMessage'
 
 /* ---------------------------   CLASS  --------------------------- */
 type InnerProps = { children: ReactNode; theme: Theme }
@@ -104,7 +105,10 @@ class ErrorBoundaryCore extends React.Component<InnerProps, State> {
           {isDev && (
             <Box sx={{ mt: 2, p: 2, bgcolor: '#FFF5F5', border: '1px solid #FEB2B2', borderRadius: 1, textAlign: 'left' }}>
               <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#C53030', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                {this.state.error?.stack || this.state.error?.message || 'Unknown error'}
+                {sanitizeClientErrorMessage(
+                  this.state.error?.stack || this.state.error?.message,
+                  'Unknown error',
+                )}
               </Typography>
             </Box>
           )}
