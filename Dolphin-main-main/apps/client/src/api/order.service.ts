@@ -136,6 +136,7 @@ export type CreateB2BShipmentParams = {
     breadthCm: number
     heightCm: number
     weightKg: number
+    quantity?: number
   }>
 
   // Invoices array

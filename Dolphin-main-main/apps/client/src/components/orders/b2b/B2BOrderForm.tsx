@@ -22,6 +22,7 @@ export type Box = {
   breadthCm: number
   heightCm: number
   weightKg: number
+  quantity: number
 }
 
 // Invoice structure - array of invoices
@@ -131,6 +132,7 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
           breadthCm: 0,
           heightCm: 0,
           weightKg: 0,
+          quantity: 1,
         },
       ],
       invoices: [
@@ -244,6 +246,7 @@ export default function B2BOrderForm({ onClose }: { onClose?: () => void }) {
             breadthCm: Number(box.breadthCm || 0),
             heightCm: Number(box.heightCm || 0),
             weightKg: Number(box.weightKg || 0),
+            quantity: Math.max(1, Number(box.quantity || 1)),
           })) ?? [],
 
         // Invoices array

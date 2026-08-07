@@ -28,6 +28,7 @@ const ProductBoxesForm = () => {
         breadthCm: 0,
         heightCm: 0,
         weightKg: 0,
+        quantity: 1,
       },
     ])
   }
@@ -66,7 +67,11 @@ const ProductBoxesForm = () => {
 
         if (!hasValidBox) {
           // If no dimensions, use total actual weight as chargeable weight
-          const totalActual = boxes.reduce((sum, box) => sum + Number(box.weightKg || 0), 0)
+          const totalActual = boxes.reduce(
+            (sum, box) =>
+              sum + Number(box.weightKg || 0) * Math.max(1, Number(box.quantity || 1)),
+            0,
+          )
           setWeightCalculations({
             totalChargeableWeight: totalActual,
             cftFactor: 5000,
@@ -79,7 +84,11 @@ const ProductBoxesForm = () => {
 
         try {
           // Calculate total actual weight for API call
-          const totalActualWeight = boxes.reduce((sum, box) => sum + Number(box.weightKg || 0), 0)
+          const totalActualWeight = boxes.reduce(
+            (sum, box) =>
+              sum + Number(box.weightKg || 0) * Math.max(1, Number(box.quantity || 1)),
+            0,
+          )
 
           // Preserve the total consignment volume through the current API shape.
           // Backend uses L*B*H for volumetric weight, so sending
@@ -90,8 +99,9 @@ const ProductBoxesForm = () => {
             const length = Number(box.lengthCm || 0)
             const breadth = Number(box.breadthCm || 0)
             const height = Number(box.heightCm || 0)
+            const quantity = Math.max(1, Number(box.quantity || 1))
             if (length > 0 && breadth > 0 && height > 0) {
-              totalVolumeCm3 += length * breadth * height
+              totalVolumeCm3 += length * breadth * height * quantity
             }
           })
 
@@ -146,7 +156,11 @@ const ProductBoxesForm = () => {
         } catch (error: unknown) {
           console.error('Error calculating weights from backend:', error)
           // Fallback if API fails - calculate locally
-          const totalActual = boxes.reduce((sum, box) => sum + Number(box.weightKg || 0), 0)
+          const totalActual = boxes.reduce(
+            (sum, box) =>
+              sum + Number(box.weightKg || 0) * Math.max(1, Number(box.quantity || 1)),
+            0,
+          )
 
           // Calculate volumetric weight locally as fallback
           let totalVolume = 0
@@ -154,8 +168,9 @@ const ProductBoxesForm = () => {
             const length = Number(box.lengthCm || 0)
             const breadth = Number(box.breadthCm || 0)
             const height = Number(box.heightCm || 0)
+            const quantity = Math.max(1, Number(box.quantity || 1))
             if (length > 0 && breadth > 0 && height > 0) {
-              totalVolume += (length * breadth * height) / 5000
+              totalVolume += ((length * breadth * height) / 5000) * quantity
             }
           })
 
@@ -181,6 +196,7 @@ const ProductBoxesForm = () => {
       { name: 'breadthCm', label: 'Breadth (cm)', type: 'number' },
       { name: 'heightCm', label: 'Height (cm)', type: 'number' },
       { name: 'weightKg', label: 'Weight (kg)', type: 'number' },
+      { name: 'quantity', label: 'No. of Boxes', type: 'number' },
     ]
 
   // Function to check if last row is valid
@@ -201,6 +217,7 @@ const ProductBoxesForm = () => {
       breadthCm: 0,
       heightCm: 0,
       weightKg: 0,
+      quantity: 1,
     })
   }
 
@@ -209,7 +226,7 @@ const ProductBoxesForm = () => {
   return (
     <Box mt={2}>
       {/* Table Header */}
-      <Box display="grid" gridTemplateColumns="repeat(5, 1fr)" gap={2} mb={1}>
+      <Box display="grid" gridTemplateColumns="repeat(6, minmax(120px, 1fr))" gap={2} mb={1}>
         {columns.map((col) => (
           <Typography key={col.name} fontWeight="bold">
             {col.label}
@@ -220,7 +237,7 @@ const ProductBoxesForm = () => {
 
       {/* Box Rows */}
       {boxFields.map((box, bIndex) => (
-        <Box key={box.id} display="grid" gridTemplateColumns="repeat(5, 1fr)" gap={2} mb={1}>
+        <Box key={box.id} display="grid" gridTemplateColumns="repeat(6, minmax(120px, 1fr))" gap={2} mb={1}>
           {columns.map((col) => (
             <Controller
               key={`${box.id}-${col.name}`}
@@ -229,7 +246,11 @@ const ProductBoxesForm = () => {
               rules={{
                 required: `${col.label} is required`,
                 min:
-                  col.type === 'number' ? { value: 0, message: 'Cannot be negative' } : undefined,
+                  col.name === 'quantity'
+                    ? { value: 1, message: 'At least 1 box is required' }
+                    : col.type === 'number'
+                      ? { value: 0, message: 'Cannot be negative' }
+                      : undefined,
               }}
               render={({ field, fieldState }) => (
                 <CustomInput
@@ -304,6 +325,17 @@ const ProductBoxesForm = () => {
               <Typography variant="caption" color="#4A5568">
                 Formula: max(Actual Weight, Volumetric Weight) | Volumetric = (L×B×H) ÷{' '}
                 {weightCalculations.cftFactor}
+              </Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography variant="body2" fontWeight={600} color="#5D2394">
+                Total Boxes
+              </Typography>
+              <Typography variant="h6" fontWeight={700} color="#5D2394">
+                {allBoxes.reduce(
+                  (sum, box) => sum + Math.max(1, Number(box.quantity || 1)),
+                  0,
+                )}
               </Typography>
             </Stack>
           </Box>
