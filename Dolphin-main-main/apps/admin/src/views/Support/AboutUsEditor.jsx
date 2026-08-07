@@ -68,7 +68,7 @@ const AboutUsEditor = () => {
       </ul>
 
       <h3>Contact</h3>
-      <p><strong>Email:</strong> support@shipzilla.in</p>
+      <p><strong>Email:</strong> admin@shipzilla.in</p>
       <p><strong>Website:</strong> www.shipzilla.in</p>
       <p><strong>Message:</strong> Ship smarter. Save more on every order.</p>
     `

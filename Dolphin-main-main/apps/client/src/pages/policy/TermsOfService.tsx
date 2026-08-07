@@ -79,8 +79,8 @@ const TermsOfService = () => {
             primary={
               <>
                 Technical support is only provided to paying account holders and is only available
-                via email (<Link href="mailto:support@shipzilla.in">support@shipzilla.in</Link>)
-                and if agreed upon earlier via phone (9217553934) and request ticketing system.
+                via email (<Link href="mailto:admin@shipzilla.in">admin@shipzilla.in</Link>) and
+                request ticketing system.
               </>
             }
           />
@@ -111,7 +111,7 @@ const TermsOfService = () => {
             primary={
               <>
                 Questions about the Terms of Service should be sent to:{' '}
-                <Link href="mailto:support@shipzilla.in">support@shipzilla.in</Link>
+                <Link href="mailto:admin@shipzilla.in">admin@shipzilla.in</Link>
               </>
             }
           />

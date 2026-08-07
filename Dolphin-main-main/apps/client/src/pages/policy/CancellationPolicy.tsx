@@ -12,7 +12,7 @@ const CancellationPolicy = () => {
             primary={
               <>
                 You may cancel your account at any time by emailing us at{' '}
-                <Link href="mailto:support@shipzilla.in">support@shipzilla.in</Link>.
+                <Link href="mailto:admin@shipzilla.in">admin@shipzilla.in</Link>.
               </>
             }
           />

@@ -1,10 +1,8 @@
 import {
-  CallRounded,
   EmailRounded,
   FacebookRounded,
   Instagram,
   LinkedIn,
-  LocationOnRounded,
 } from "@mui/icons-material";
 import { IconButton, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
@@ -27,10 +25,6 @@ export default function Footer() {
           <Typography className="site-footer__copy" variant="body2">
             {brand.subheadline}
           </Typography>
-          <div className="site-footer__meta">
-            <span>GSTIN: {brand.gstin}</span>
-            <span>Founder: {brand.founder}</span>
-          </div>
           <div className="site-footer__socials">
             {socialLinks.map((item) => (
               <IconButton
@@ -72,22 +66,10 @@ export default function Footer() {
           <Typography className="site-footer__title" variant="subtitle1">
             Contact
           </Typography>
-          <a className="site-footer__info" href={`tel:${brand.phone}`}>
-            <CallRounded fontSize="small" />
-            <span>{brand.phone}</span>
-          </a>
-          <a className="site-footer__info" href={`tel:${brand.supportPhone}`}>
-            <CallRounded fontSize="small" />
-            <span>{brand.supportPhone}</span>
-          </a>
           <a className="site-footer__info" href={`mailto:${brand.email}`}>
             <EmailRounded fontSize="small" />
             <span>{brand.email}</span>
           </a>
-          <div className="site-footer__info site-footer__info--address">
-            <LocationOnRounded fontSize="small" />
-            <span>{brand.address}</span>
-          </div>
         </div>
       </div>
 

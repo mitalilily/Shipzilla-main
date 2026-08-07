@@ -8,7 +8,7 @@ import { submitContact } from "../services/api";
 const initialForm = {
   name: "",
   email: "",
-  phone: brand.phone,
+  phone: "",
   company: "",
   message: "",
 };
@@ -60,45 +60,11 @@ export default function ContactPage() {
               <div className="contact-card__stack">
                 <div>
                   <Typography className="contact-card__label" variant="body2">
-                    Founder
-                  </Typography>
-                  <Typography variant="body1">{brand.founder}</Typography>
-                </div>
-                <div>
-                  <Typography className="contact-card__label" variant="body2">
-                    Phone
-                  </Typography>
-                  <a className="contact-card__link" href={`tel:${brand.phone}`}>
-                    {brand.phone}
-                  </a>
-                </div>
-                <div>
-                  <Typography className="contact-card__label" variant="body2">
-                    Support Phone
-                  </Typography>
-                  <a className="contact-card__link" href={`tel:${brand.supportPhone}`}>
-                    {brand.supportPhone}
-                  </a>
-                </div>
-                <div>
-                  <Typography className="contact-card__label" variant="body2">
                     Email
                   </Typography>
                   <a className="contact-card__link" href={`mailto:${brand.email}`}>
                     {brand.email}
                   </a>
-                </div>
-                <div>
-                  <Typography className="contact-card__label" variant="body2">
-                    Address
-                  </Typography>
-                  <Typography variant="body1">{brand.address}</Typography>
-                </div>
-                <div>
-                  <Typography className="contact-card__label" variant="body2">
-                    GSTIN
-                  </Typography>
-                  <Typography variant="body1">{brand.gstin}</Typography>
                 </div>
               </div>
             </Paper>
@@ -119,7 +85,6 @@ export default function ContactPage() {
                   <input className="field-input" onChange={handleChange("email")} placeholder="Email" required type="email" value={formValues.email} />
                 </div>
                 <div className="form-grid">
-                  <input className="field-input" onChange={handleChange("phone")} placeholder="Phone" value={formValues.phone} />
                   <input className="field-input" onChange={handleChange("company")} placeholder="Company" value={formValues.company} />
                 </div>
                 <textarea

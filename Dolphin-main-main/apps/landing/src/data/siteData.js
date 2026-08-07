@@ -2,12 +2,7 @@ export const brand = {
   name: "Shipzilla",
   logoSrc: "/brand/shipzilla-logo.png",
   logoAlt: "Shipzilla logo",
-  phone: "8116858367",
-  supportPhone: "9064255724",
-  address: "Parulia, Purbasthali, Purba Barddhaman, West Bengal 713513",
-  email: "shipzilla05@gmail.com",
-  gstin: "19IWAPS4685D1Z0",
-  founder: "Suman Sarkar",
+  email: "admin@shipzilla.in",
   headline: "Ship Smarter with Shipzilla",
   subheadline:
     "Compare courier partners, automate dispatch, and keep every delivery visible from one premium logistics dashboard.",

@@ -94,7 +94,7 @@ const TermsOfService = () => {
         <li>Shipzilla may refuse or remove any content at its discretion.</li>
         <li>
           Questions about Terms of Service should be sent to{' '}
-          <Link href="mailto:support@shipzilla.in">support@shipzilla.in</Link>
+          <Link href="mailto:admin@shipzilla.in">admin@shipzilla.in</Link>
         </li>
       </ul>
 

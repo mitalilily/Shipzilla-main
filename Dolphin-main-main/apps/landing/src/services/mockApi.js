@@ -2,7 +2,7 @@ import { trackingSamples } from "../data/siteData";
 import { buildRateSummary, generateCourierQuotes } from "../utils/calculators";
 
 const validCredentials = {
-  email: "shipzilla05@gmail.com",
+  email: "admin@shipzilla.in",
   password: "Shipzilla@123",
 };
 

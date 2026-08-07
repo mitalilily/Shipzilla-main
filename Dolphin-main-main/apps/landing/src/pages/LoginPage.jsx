@@ -7,7 +7,7 @@ import { useAppData } from "../context/AppDataContext";
 export default function LoginPage() {
   const { authLoading, session, signIn, signOut } = useAppData();
   const [credentials, setCredentials] = useState({
-    email: "shipzilla05@gmail.com",
+    email: "admin@shipzilla.in",
     password: "Shipzilla@123",
   });
   const [status, setStatus] = useState({ type: "", message: "" });
@@ -51,7 +51,7 @@ export default function LoginPage() {
               </Typography>
               <div className="login-panel__credential">
                 <span>Email</span>
-                <strong>shipzilla05@gmail.com</strong>
+                <strong>admin@shipzilla.in</strong>
               </div>
               <div className="login-panel__credential">
                 <span>Password</span>

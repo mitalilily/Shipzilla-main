@@ -53,7 +53,7 @@ const PrivacyPolicy = () => {
               <>
                 Your Privacy Rights: You may review, update, or correct your details, or withdraw
                 consent by contacting us at{' '}
-                <Link href="mailto:support@shipzilla.in">support@shipzilla.in</Link>.
+                <Link href="mailto:admin@shipzilla.in">admin@shipzilla.in</Link>.
               </>
             }
           />
@@ -73,10 +73,10 @@ const PrivacyPolicy = () => {
               <>
                 Grievance Officer: If you have queries or complaints, reach out to us at{' '}
                 <a
-                  href="mailto:support@shipzilla.in"
+                  href="mailto:admin@shipzilla.in"
                   style={{ color: '#5D2394', textDecoration: 'none' }}
                 >
-                  support@shipzilla.in
+                  admin@shipzilla.in
                 </a>
                 .
               </>
