@@ -1,6 +1,7 @@
 // src/schema/schema.ts
 export * from '../models/schema/b2bOrders'
 export * from '../models/schema/b2bLabelAllotmentAudit'
+export * from '../models/schema/b2cLabelAllotmentAudit'
 export * from '../models/schema/b2cOrders'
 export * from '../models/schema/bankAccounts'
 export * from '../models/schema/billingInvoices'

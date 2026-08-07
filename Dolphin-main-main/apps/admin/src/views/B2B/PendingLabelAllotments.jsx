@@ -49,10 +49,18 @@ export default function PendingLabelAllotments() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await b2bAdminService.getPendingLabelAllotments({ search, limit: 100 })
-      setRows(result.rows)
+      const [b2bResult, b2cResult] = await Promise.all([
+        b2bAdminService.getPendingLabelAllotments({ search, limit: 100 }),
+        b2bAdminService.getPendingB2CAmazonLabelAllotments({ search, limit: 100 }),
+      ])
+      setRows(
+        [
+          ...b2bResult.rows.map((row) => ({ ...row, shipment_type: 'B2B' })),
+          ...b2cResult.rows.map((row) => ({ ...row, shipment_type: 'B2C Amazon' })),
+        ].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)),
+      )
     } catch (error) {
-      toast({ title: 'Could not load pending B2B labels', status: 'error' })
+      toast({ title: 'Could not load pending labels', status: 'error' })
     } finally {
       setLoading(false)
     }
@@ -88,7 +96,11 @@ export default function PendingLabelAllotments() {
     if (form.manifest) body.append('manifest', form.manifest)
     setSaving(true)
     try {
-      await b2bAdminService.allotAwb(selected.id, body)
+      if (selected.shipment_type === 'B2C Amazon') {
+        await b2bAdminService.allotB2CAmazonAwb(selected.id, body)
+      } else {
+        await b2bAdminService.allotAwb(selected.id, body)
+      }
       toast({ title: `AWB allotted to ${selected.order_number}`, status: 'success' })
       onClose()
       await load()
@@ -105,9 +117,9 @@ export default function PendingLabelAllotments() {
 
   return (
     <Box pt={{ base: '130px', md: '100px' }} px={{ base: 3, md: 6 }}>
-      <Heading size="lg">B2B Pending Label Allotment</Heading>
+      <Heading size="lg">Pending Label Allotment</Heading>
       <Text color="gray.600" mt={2}>
-        Upload the courier label to release the real AWB to the client.
+        Upload the courier label to release the real AWB for B2B and Amazon B2C shipments.
       </Text>
       <Input
         mt={5}
@@ -123,22 +135,23 @@ export default function PendingLabelAllotments() {
         ) : (
           <Table size="sm">
             <Thead><Tr>
-              <Th>Order / Client</Th><Th>Booked</Th><Th>Courier IDs</Th><Th>Route</Th>
+              <Th>Type</Th><Th>Order / Client</Th><Th>Booked</Th><Th>Courier IDs</Th><Th>Route</Th>
               <Th>Boxes / Weight</Th><Th>Status</Th><Th>Action</Th>
             </Tr></Thead>
             <Tbody>
               {rows.map((row) => (
                 <Tr key={row.id}>
+                  <Td><Badge colorScheme={row.shipment_type === 'B2C Amazon' ? 'blue' : 'purple'}>{row.shipment_type}</Badge></Td>
                   <Td><Text fontWeight="700">{row.order_number}</Text><Text>{row.company_name || row.client_email || '-'}</Text></Td>
                   <Td>{row.created_at ? new Date(row.created_at).toLocaleString('en-IN') : '-'}</Td>
                   <Td><Text>{row.courier_partner || 'Shiprocket'}</Text><Text fontSize="xs">Shipment: {row.shipment_id || '-'}</Text><Text fontSize="xs">Internal AWB: {row.provider_awb || 'Pending'}</Text></Td>
                   <Td>{row.pickup_details?.pincode || '-'} → {row.destination_pincode || '-'}</Td>
-                  <Td>{Array.isArray(row.packages) ? row.packages.length : 0} / {row.weight || '-'} kg<br />{row.payment_mode || '-'}</Td>
+                  <Td>{row.shipment_type === 'B2C Amazon' ? '1' : (Array.isArray(row.packages) ? row.packages.length : 0)} / {row.weight || '-'} kg<br />{row.payment_mode || '-'}</Td>
                   <Td><Badge colorScheme={row.label_allotment_status === 'allotment_failed' ? 'red' : 'orange'}>{pendingLabel(row.label_allotment_status)}</Badge></Td>
                   <Td><Button size="sm" colorScheme="purple" onClick={() => openAllotment(row)}>Upload & allot</Button></Td>
                 </Tr>
               ))}
-              {!rows.length && <Tr><Td colSpan={7} textAlign="center" py={10}>No B2B labels are pending.</Td></Tr>}
+              {!rows.length && <Tr><Td colSpan={8} textAlign="center" py={10}>No labels are pending.</Td></Tr>}
             </Tbody>
           </Table>
         )}

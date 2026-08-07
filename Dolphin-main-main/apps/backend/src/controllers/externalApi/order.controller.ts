@@ -369,6 +369,10 @@ export const cancelOrderController = async (req: any, res: Response) => {
         .update(b2c_orders)
         .set({
           order_status: 'cancelled',
+          label_allotment_status:
+            order.label_allotment_status && !order.awb_released_at
+              ? 'allotment_cancelled'
+              : order.label_allotment_status,
           updated_at: new Date(),
         })
         .where(eq(b2c_orders.id, order.id))
@@ -380,7 +384,7 @@ export const cancelOrderController = async (req: any, res: Response) => {
     await sendWebhookEvent(userId, 'order.cancelled', {
       order_id: order.id,
       order_number: order.order_number,
-      awb_number: order.awb_number,
+      awb_number: order.awb_released_at || !order.label_allotment_status ? order.awb_number : null,
       status: 'cancelled',
       cancellation_reason: reason || 'Cancelled via API',
       cancelled_at: new Date().toISOString(),

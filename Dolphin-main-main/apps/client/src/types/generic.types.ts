@@ -181,6 +181,9 @@ export interface B2COrder {
   manifest_retries_remaining?: number | null
   can_retry_manifest?: boolean
   awb_number?: string | null
+  awb_display?: string | null
+  awb_released_at?: string | null
+  label_allotment_status?: string | null
 
   // Pickup & RTO info
   pickup_location_id?: string | null

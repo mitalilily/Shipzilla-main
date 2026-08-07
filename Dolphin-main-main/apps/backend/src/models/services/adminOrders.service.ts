@@ -335,9 +335,9 @@ export const regenerateOrderDocumentsServiceAdmin = async ({
     throw new Error('Order not found')
   }
   if (
-    orderType === 'b2b' &&
     regenerateLabel &&
-    !(b2bOrder as any)?.awb_released_at
+    Boolean((order as any)?.label_allotment_status) &&
+    !(order as any)?.awb_released_at
   ) {
     throw new Error('Label is pending admin AWB allotment')
   }
@@ -562,7 +562,7 @@ export const generateBulkOrderDocumentsPdfService = async ({
       throw new Error('One or more selected orders were not found.')
     }
     if (
-      orderType === 'b2b' &&
+      Boolean(order.label_allotment_status) &&
       !order.awb_released_at &&
       ['label', 'manifest'].includes(documentType)
     ) {

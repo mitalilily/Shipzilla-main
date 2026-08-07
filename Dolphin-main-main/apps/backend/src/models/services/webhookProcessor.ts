@@ -412,6 +412,12 @@ const ensureOrderDocumentsAfterWebhook = async (
   if (!order) return
 
   let nextLabelKey = typeof order.label === 'string' && order.label.trim() ? order.label.trim() : null
+  let nextProviderLabelKey =
+    typeof order.provider_label === 'string' && order.provider_label.trim()
+      ? order.provider_label.trim()
+      : null
+  const manualAllotmentPending =
+    Boolean(order.label_allotment_status) && !order.awb_released_at
   let nextInvoiceKey =
     typeof order.invoice_link === 'string' && order.invoice_link.trim()
       ? order.invoice_link.trim()
@@ -434,8 +440,14 @@ const ensureOrderDocumentsAfterWebhook = async (
           })
         : null
       if (providerLabelKey) {
-        nextLabelKey = providerLabelKey
-        console.log(`Original Shipmozo Amazon label recovered for ${order.order_number}`)
+        if (manualAllotmentPending) {
+          nextProviderLabelKey = providerLabelKey
+          nextLabelKey = null
+          console.log(`Amazon provider label retained internally for ${order.order_number}`)
+        } else {
+          nextLabelKey = providerLabelKey
+          console.log(`Original Shipmozo Amazon label recovered for ${order.order_number}`)
+        }
       } else {
         console.warn(
           `Shipmozo did not return an Amazon label for ${order.order_number}; skipping custom label recovery.`,
@@ -485,6 +497,7 @@ const ensureOrderDocumentsAfterWebhook = async (
 
   if (
     nextLabelKey !== order.label ||
+    nextProviderLabelKey !== order.provider_label ||
     nextInvoiceKey !== order.invoice_link ||
     invoiceNumberToStore !== order.invoice_number ||
     invoiceDateToStore !== order.invoice_date ||
@@ -494,6 +507,7 @@ const ensureOrderDocumentsAfterWebhook = async (
       .update(b2c_orders)
       .set({
         label: nextLabelKey ?? undefined,
+        provider_label: nextProviderLabelKey ?? undefined,
         invoice_link: nextInvoiceKey ?? undefined,
         invoice_number: invoiceNumberToStore ?? undefined,
         invoice_date: invoiceDateToStore ?? undefined,

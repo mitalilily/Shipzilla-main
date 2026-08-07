@@ -55,9 +55,9 @@ export const sanitizeOrderForCustomer = async (order: any): Promise<any> => {
   delete sanitized.provider_label
   delete sanitized.label_uploaded_by
 
-  const isB2BAllotmentPending =
+  const isLabelAllotmentPending =
     Boolean(order?.label_allotment_status) && !order?.awb_released_at
-  if (isB2BAllotmentPending) {
+  if (isLabelAllotmentPending) {
     sanitized.awb_number = null
     sanitized.awb_display = 'Waiting for AWB allotment'
     sanitized.label = null
@@ -77,14 +77,14 @@ export const sanitizeOrderForCustomer = async (order: any): Promise<any> => {
     manifestRetriesRemaining > 0
 
   // Always expose stored document keys so clients can reliably use the same regenerated keys
-  if (order.label && !isB2BAllotmentPending) sanitized.label_key = order.label
-  if (order.manifest && !isB2BAllotmentPending) sanitized.manifest_key = order.manifest
+  if (order.label && !isLabelAllotmentPending) sanitized.label_key = order.label
+  if (order.manifest && !isLabelAllotmentPending) sanitized.manifest_key = order.manifest
   if (order.invoice_link) sanitized.invoice_key = order.invoice_link
 
   try {
     const [labelUrl, manifestUrl, invoiceUrl] = await Promise.all([
-      ensureDownloadUrl(isB2BAllotmentPending ? null : order.label),
-      ensureDownloadUrl(isB2BAllotmentPending ? null : order.manifest),
+      ensureDownloadUrl(isLabelAllotmentPending ? null : order.label),
+      ensureDownloadUrl(isLabelAllotmentPending ? null : order.manifest),
       ensureDownloadUrl(order.invoice_link),
     ])
 

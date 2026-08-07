@@ -734,7 +734,7 @@ const B2COrdersList = () => {
       id: 'awb_number',
       render: (v, row) => {
         const trackingPath = buildOrderTrackingPath(row)
-        if (!trackingPath) return v || '—'
+        if (!trackingPath) return row.awb_display || v || '—'
 
         return (
           <Link

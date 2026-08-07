@@ -3251,6 +3251,7 @@ export interface InsertB2COrderParams {
   shippingMode?: string | null
   selectedMaxSlabWeight?: number | null
   manifestError?: string | null
+  requiresManualLabelAllotment?: boolean
 }
 
 export async function createB2COrder({
@@ -3271,6 +3272,7 @@ export async function createB2COrder({
   shippingMode,
   selectedMaxSlabWeight,
   manifestError,
+  requiresManualLabelAllotment = false,
 }: InsertB2COrderParams) {
   const orderAmount = Number(params.order_amount ?? 0)
   const normalizedOrderNumber = await ensureUniqueMerchantOrderNumber(tx, userId, params.order_number)
@@ -3365,8 +3367,20 @@ export async function createB2COrder({
         selected_max_slab_weight: selectedMaxSlabWeight ?? null,
         shipment_id: shipmentData?.shipment_id?.toString() ?? null,
         awb_number: shipmentData?.awb_number ?? null,
-        // Store courier-provided label key/identifier if available
-        label: typeof shipmentData?.label === 'string' ? shipmentData.label : null,
+        awb_released_at: requiresManualLabelAllotment ? null : undefined,
+        provider_label:
+          requiresManualLabelAllotment && typeof shipmentData?.label === 'string'
+            ? shipmentData.label
+            : null,
+        // Amazon/Shipmozo labels are released only after an administrator uploads them.
+        label:
+          !requiresManualLabelAllotment && typeof shipmentData?.label === 'string'
+            ? shipmentData.label
+            : null,
+        label_allotment_status: requiresManualLabelAllotment
+          ? 'awaiting_awb_allotment'
+          : null,
+        label_allotment_note: null,
         manifest:
           typeof shipmentData?.manifest === 'string' && shipmentData?.manifest.length <= 100
             ? shipmentData.manifest
@@ -4504,32 +4518,13 @@ export const createB2CShipmentService = async (
 
 
     // 🔹 Recalculate freight using slab pricing (ignore incoming freight_charges)
-    if (shouldFetchShipmozoAmazonOriginalLabel({
+    const requiresManualAmazonLabelAllotment = shouldFetchShipmozoAmazonOriginalLabel({
       integrationType,
       awbNumber: shipmentMeta?.awb_number,
       returnedCourierName: shipmentMeta?.courier_name,
       selectedCourierName: params.courier_name,
       courierPartner: params.courier_partner || params.courierPartner,
-    })) {
-      try {
-        const providerLabelKey = await fetchAndSaveShipmozoAmazonLabel({
-          awbNumber: shipmentMeta.awb_number,
-          existingLabelUrl: shipmentMeta.label ? String(shipmentMeta.label) : null,
-          userId,
-          orderNumber: params.order_number,
-        })
-        if (providerLabelKey) {
-          shipmentMeta.label = providerLabelKey
-        }
-      } catch (labelErr: any) {
-        console.error('Failed to persist original Shipmozo Amazon label', {
-          orderNumber: params.order_number,
-          awbNumber: shipmentMeta?.awb_number,
-          error: labelErr?.message || labelErr,
-        })
-        shipmentMeta.label = undefined
-      }
-    }
+    })
 
     const pickupPincode =
       (params.pickup as any)?.pincode ||
@@ -4720,6 +4715,7 @@ export const createB2CShipmentService = async (
         chargedSlabs: slabbedFreight.slabs ?? undefined,
         shippingMode: selectedDelhiveryShippingMode ?? null,
         selectedMaxSlabWeight,
+        requiresManualLabelAllotment: requiresManualAmazonLabelAllotment,
       })
 
       if (selectedDelhiveryShippingMode && selectedDelhiveryCourierId !== null) {
@@ -4898,8 +4894,11 @@ export const createB2CShipmentService = async (
       sendWebhookEvent(userId, 'order.created', {
         order_id: newOrder.id,
         order_number: params.order_number,
-        awb_number: shipmentMeta.awb_number,
-        status: webhookStatus,
+        awb_number: requiresManualAmazonLabelAllotment ? null : shipmentMeta.awb_number,
+        awb_display: requiresManualAmazonLabelAllotment
+          ? 'Waiting for AWB allotment'
+          : shipmentMeta.awb_number,
+        status: requiresManualAmazonLabelAllotment ? 'awaiting_awb_allotment' : webhookStatus,
         courier_partner: shipmentMeta.courier_name,
         courier_id: shipmentMeta.courier_id,
         shipment_id: shipmentMeta.shipment_id,
@@ -4911,7 +4910,36 @@ export const createB2CShipmentService = async (
         // Don't fail the main flow if webhook fails
       })
 
-      return { order: newOrder, shipment: shipmentData }
+      if (requiresManualAmazonLabelAllotment) {
+        createNotificationService({
+          targetRole: 'admin',
+          title: 'Amazon B2C label required',
+          message: `New Amazon B2C shipment ${params.order_number} requires label and AWB allotment.`,
+          link: '/admin/ops/b2b-label-allotment',
+        }).catch((error) =>
+          console.error('Failed to create Amazon B2C label allotment notification', {
+            orderNumber: params.order_number,
+            error: error?.message || error,
+          }),
+        )
+      }
+
+      return requiresManualAmazonLabelAllotment
+        ? {
+            order: newOrder,
+            shipment: {
+              status: true,
+              message: 'Waiting for AWB allotment',
+              data: {
+                order_id: newOrder.id,
+                awb_number: null,
+                label: null,
+                manifest: null,
+                label_allotment_status: 'awaiting_awb_allotment',
+              },
+            },
+          }
+        : { order: newOrder, shipment: shipmentData }
     })
 
     rollbackActions.length = 0
@@ -7032,8 +7060,10 @@ export const generateManifestService = async (params: {
                 ? freshOrder.label.trim()
                 : null
             const requiresShipmozoProviderLabel = isShipmozoAmazonOrder(freshOrder)
+            const manualAllotmentPending =
+              Boolean(freshOrder.label_allotment_status) && !freshOrder.awb_released_at
 
-            if (requiresShipmozoProviderLabel && freshOrder.awb_number) {
+            if (requiresShipmozoProviderLabel && freshOrder.awb_number && !manualAllotmentPending) {
               try {
                 const providerLabel = await fetchShipmozoAmazonProviderLabel(
                   freshOrder.awb_number,
@@ -7061,6 +7091,13 @@ export const generateManifestService = async (params: {
                   `${freshOrder.order_number}: Amazon provider label could not be fetched from Shipmozo.`,
                 )
               }
+            }
+
+            if (manualAllotmentPending) {
+              labelKey = null
+              manifestWarnings.push(
+                `${freshOrder.order_number}: waiting for admin AWB and label allotment.`,
+              )
             }
 
             if (!labelKey && freshOrder.awb_number && !requiresShipmozoProviderLabel) {
@@ -8338,8 +8375,10 @@ export const generateManifestService = async (params: {
 
           // 🖨️ Generate label if it doesn't exist and order has AWB
           const requiresShipmozoProviderLabel = isShipmozoAmazonOrder(order)
+          const manualAllotmentPending =
+            Boolean(order.label_allotment_status) && !order.awb_released_at
 
-          if (order.awb_number && requiresShipmozoProviderLabel) {
+          if (order.awb_number && requiresShipmozoProviderLabel && !manualAllotmentPending) {
             try {
               const providerLabel = await fetchShipmozoAmazonProviderLabel(order.awb_number)
               const providerLabelKey = providerLabel
@@ -8372,7 +8411,7 @@ export const generateManifestService = async (params: {
                 labelErr?.message || labelErr,
               )
             }
-          } else if (!order.label && order.awb_number) {
+          } else if (!order.label && order.awb_number && !manualAllotmentPending) {
             try {
               console.log(
                 `🖨️ Generating label for order ${order.order_number} during manifest (AWB: ${order.awb_number})`,

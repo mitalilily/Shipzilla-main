@@ -104,7 +104,7 @@ const dashRoutes = [
     views: [
       {
         path: '/ops/b2b-label-allotment',
-        name: 'Pending B2B Labels',
+        name: 'Pending Labels',
         icon: <IconPackageExport />,
         component: () => (
           <AdminRoute>

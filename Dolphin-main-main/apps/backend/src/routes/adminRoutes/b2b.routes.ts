@@ -52,6 +52,11 @@ import {
   listPendingB2BLabelsController,
   pendingB2BLabelCountController,
 } from '../../controllers/admin/b2b/b2bLabelAllotment.controller'
+import {
+  allotB2CAmazonAwbController,
+  listPendingB2CAmazonLabelsController,
+  pendingB2CAmazonLabelCountController,
+} from '../../controllers/admin/b2b/b2cAmazonLabelAllotment.controller'
 import { isAdminMiddleware } from '../../middlewares/isAdmin'
 import { requireAuth } from '../../middlewares/requireAuth'
 
@@ -69,6 +74,18 @@ router.post(
     { name: 'manifest', maxCount: 1 },
   ]),
   allotB2BAwbController,
+)
+router.get('/b2c-label-allotments', requireAuth, isAdminMiddleware, listPendingB2CAmazonLabelsController)
+router.get('/b2c-label-allotments/count', requireAuth, isAdminMiddleware, pendingB2CAmazonLabelCountController)
+router.post(
+  '/b2c-label-allotments/:orderId/allot',
+  requireAuth,
+  isAdminMiddleware,
+  upload.fields([
+    { name: 'label', maxCount: 1 },
+    { name: 'manifest', maxCount: 1 },
+  ]),
+  allotB2CAmazonAwbController,
 )
 
 // Zones

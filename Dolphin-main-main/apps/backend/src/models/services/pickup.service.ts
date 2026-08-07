@@ -201,7 +201,14 @@ export async function cancelOrderShipment(orderId: string) {
   await db.transaction(async (tx) => {
     await tx
       .update(b2c_orders)
-      .set({ order_status: finalStatus, updated_at: new Date() })
+      .set({
+        order_status: finalStatus,
+        label_allotment_status:
+          order.label_allotment_status && !order.awb_released_at
+            ? 'allotment_cancelled'
+            : order.label_allotment_status,
+        updated_at: new Date(),
+      })
       .where(eq(b2c_orders.id, orderId))
 
     await applyCancellationRefundOnce(tx, order, 'pickup_cancel_api')

@@ -34,6 +34,28 @@ export const b2bAdminService = {
     return data.data
   },
 
+  async getPendingB2CAmazonLabelAllotments(params = {}) {
+    const query = buildQuery(params)
+    const { data } = await api.get(
+      `${BASE_URL}/b2c-label-allotments${query ? `?${query}` : ''}`,
+    )
+    return { rows: data.data ?? [], pagination: data.pagination ?? {} }
+  },
+
+  async getPendingB2CAmazonLabelAllotmentCount() {
+    const { data } = await api.get(`${BASE_URL}/b2c-label-allotments/count`)
+    return Number(data.count || 0)
+  },
+
+  async allotB2CAmazonAwb(orderId, formData) {
+    const { data } = await api.post(
+      `${BASE_URL}/b2c-label-allotments/${orderId}/allot`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    return data.data
+  },
+
   // Zones
   async getZones(params = {}) {
     const query = buildQuery(params)
