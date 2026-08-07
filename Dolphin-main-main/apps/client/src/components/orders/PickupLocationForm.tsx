@@ -32,6 +32,7 @@ const PickupLocationForm = () => {
 
   const pickupDate = watch('pickupDate') as string | undefined
   const pickupTime = watch('pickupTime') as string | undefined
+  const selectedPickupLocationId = watch('pickupLocationId') as string | undefined
 
   const toggleRto = (id: string) => {
     setOpenRto((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -49,7 +50,7 @@ const PickupLocationForm = () => {
   }, [pickupDate, pickupTime, setValue])
 
   useEffect(() => {
-    if (primaryLocation) {
+    if (primaryLocation && !selectedPickupLocationId) {
       setValue('pickupLocationId', primaryLocation?.pickupId)
       setValue('pickupLocationPincode', primaryLocation.pickup?.pincode)
       setValue('pickupLocationName', primaryLocation.pickup?.addressNickname)
@@ -88,7 +89,7 @@ const PickupLocationForm = () => {
         setValue('rtoState', '')
       }
     }
-  }, [primaryLocation, setValue])
+  }, [primaryLocation, selectedPickupLocationId, setValue])
 
   if (isLoading) return <Typography>Loading pickup locations...</Typography>
   if (isError) return <Typography color="error">Failed to load pickup locations</Typography>

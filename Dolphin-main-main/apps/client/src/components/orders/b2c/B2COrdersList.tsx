@@ -13,7 +13,14 @@ import {
 import { saveAs } from 'file-saver'
 import moment from 'moment'
 import { useState } from 'react'
-import { MdCancel, MdDescription, MdLocalShipping, MdRefresh, MdVisibility } from 'react-icons/md'
+import {
+  MdCancel,
+  MdContentCopy,
+  MdDescription,
+  MdLocalShipping,
+  MdRefresh,
+  MdVisibility,
+} from 'react-icons/md'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import {
   bulkDownloadOrderDocumentsService,
@@ -42,6 +49,7 @@ import TableSkeleton from '../../UI/table/TableSkeleton'
 import CustomSelect from '../../UI/inputs/CustomSelect'
 import ManifestScheduleDialog, { type ManifestSchedulePayload } from '../ManifestScheduleDialog'
 import OrderActionsMenu, { type OrderActionMenuItem } from '../OrderActionsMenu'
+import { buildB2CCloneInitialValues } from '../cloneB2COrder'
 import { buildOrderTrackingParams, buildOrderTrackingPath } from '../orderNavigation'
 import {
   BULK_MANIFEST_LIMIT,
@@ -151,6 +159,7 @@ const B2COrdersList = () => {
   else if (isLgUp) drawerWidth = 1200 // large desktop fixed width
   const [page, setPage] = useState(1)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [cloneInitialValues, setCloneInitialValues] = useState<ReturnType<typeof buildB2CCloneInitialValues> | null>(null)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [selectedOrderIds, setSelectedOrderIds] = useState<Array<B2COrder['id']>>([])
   const [selectionResetToken, setSelectionResetToken] = useState(0)
@@ -357,7 +366,19 @@ const B2COrdersList = () => {
 
   const handleCreateB2COrder = () => {
     guardOrderCreation(() => {
+      setCloneInitialValues(null)
       setDrawerOpen(true)
+    })
+  }
+
+  const handleCloneOrder = (order: B2COrder) => {
+    guardOrderCreation(() => {
+      setCloneInitialValues(buildB2CCloneInitialValues(order))
+      setDrawerOpen(true)
+      toast.open({
+        message: `Cloning ${order.order_number}. Review details and book the new order.`,
+        severity: 'info',
+      })
     })
   }
 
@@ -847,6 +868,12 @@ const B2COrdersList = () => {
         )
 
         const actions: OrderActionMenuItem[] = [
+          {
+            key: 'clone-order',
+            label: 'Clone Order',
+            icon: <MdContentCopy size={18} />,
+            onClick: () => handleCloneOrder(row),
+          },
           ...(trackingPath
             ? [
                 {
@@ -1178,10 +1205,19 @@ const B2COrdersList = () => {
       <CustomDrawer
         width={drawerWidth}
         open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        title="Create New B2C Order"
+        onClose={() => {
+          setDrawerOpen(false)
+          setCloneInitialValues(null)
+        }}
+        title={cloneInitialValues ? 'Clone B2C Order' : 'Create New B2C Order'}
       >
-        <B2COrderFormSteps onClose={() => setDrawerOpen(false)} />
+        <B2COrderFormSteps
+          cloneInitialValues={cloneInitialValues}
+          onClose={() => {
+            setDrawerOpen(false)
+            setCloneInitialValues(null)
+          }}
+        />
       </CustomDrawer>
     </Stack>
   )

@@ -3,7 +3,14 @@ import { Alert, AlertTitle, Box, Button, Link, Stack, Typography } from '@mui/ma
 import { saveAs } from 'file-saver'
 import moment from 'moment'
 import { useEffect, useState } from 'react'
-import { MdCancel, MdDescription, MdLocalShipping, MdRefresh, MdVisibility } from 'react-icons/md'
+import {
+  MdCancel,
+  MdContentCopy,
+  MdDescription,
+  MdLocalShipping,
+  MdRefresh,
+  MdVisibility,
+} from 'react-icons/md'
 import { TbFilter, TbPlus, TbRefresh } from 'react-icons/tb'
 import { Link as RouterLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -26,6 +33,7 @@ import StatusChip from '../UI/chip/StatusChip'
 import DataTable, { type Column } from '../UI/table/DataTable'
 import TableSkeleton from '../UI/table/TableSkeleton'
 import { statusColorMap } from './b2c/B2COrdersList'
+import { buildB2CCloneInitialValues } from './cloneB2COrder'
 import ManifestScheduleDialog, { type ManifestSchedulePayload } from './ManifestScheduleDialog'
 import OrderActionsMenu, { type OrderActionMenuItem } from './OrderActionsMenu'
 import { buildOrderTrackingPath, buildOrderTrackingParams } from './orderNavigation'
@@ -565,6 +573,20 @@ const AllOrders = () => {
     await downloadFile(resolvedUrl, fileName)
   }
 
+  const handleCloneB2COrder = (order: Order) => {
+    guardOrderCreation(() => {
+      navigate('/orders/create', {
+        state: {
+          cloneB2COrder: buildB2CCloneInitialValues(order),
+        },
+      })
+      toast.open({
+        message: `Cloning ${order.order_number || order.id}. Review details and book the new order.`,
+        severity: 'info',
+      })
+    })
+  }
+
   const columns: Column<Order>[] = [
     { id: 'order_number', label: 'Order ID' },
     {
@@ -640,6 +662,16 @@ const AllOrders = () => {
         const canCancel = isOrderCancellable(row)
 
         const actions: OrderActionMenuItem[] = [
+          ...(row.type === 'b2c'
+            ? [
+                {
+                  key: 'clone-order',
+                  label: 'Clone Order',
+                  icon: <MdContentCopy size={18} />,
+                  onClick: () => handleCloneB2COrder(row),
+                },
+              ]
+            : []),
           ...(trackingPath
             ? [
                 {

@@ -1,5 +1,5 @@
 import { Alert, Box, Button, Chip, Paper, Stack, Typography, alpha } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FormProvider, useFieldArray, useForm, type FieldErrors } from 'react-hook-form'
 import { BiRupee } from 'react-icons/bi'
 import { FaBox, FaTruck, FaUser } from 'react-icons/fa'
@@ -90,10 +90,17 @@ export type B2CFormData = {
   zoneId?: string
 }
 
-export default function B2COrderFormSteps({ onClose }: { onClose?: () => void }) {
+export default function B2COrderFormSteps({
+  onClose,
+  cloneInitialValues,
+}: {
+  onClose?: () => void
+  cloneInitialValues?: Partial<B2CFormData> | null
+}) {
   const createShipmentMutation = useCreateShipment(onClose)
   const navigate = useNavigate()
   const location = useLocation()
+  const cloneApplyKeyRef = useRef('')
   const [currentStep, setCurrentStep] = useState(0)
   const steps = ['Order & Delivery', 'Pickup Location', 'Courier Selection']
   const { data: paymentOptions } = usePaymentOptions()
@@ -107,6 +114,13 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
     if (paymentOptions.prepaidEnabled) return 'prepaid'
     return 'prepaid' // Final fallback
   }
+
+  const locationCloneInitialValues = (location.state as { cloneB2COrder?: Partial<B2CFormData> } | null)
+    ?.cloneB2COrder
+  const effectiveCloneInitialValues = useMemo(
+    () => cloneInitialValues || locationCloneInitialValues || null,
+    [cloneInitialValues, locationCloneInitialValues],
+  )
 
   const methods = useForm<B2CFormData>({
     defaultValues: {
@@ -133,6 +147,31 @@ export default function B2COrderFormSteps({ onClose }: { onClose?: () => void })
     formState: { errors },
   } = methods
   const { fields, append, remove } = useFieldArray({ control, name: 'products' })
+
+  useEffect(() => {
+    if (!effectiveCloneInitialValues) return
+
+    const cloneKey = `${effectiveCloneInitialValues.orderId || ''}-${effectiveCloneInitialValues.buyerPhone || ''}`
+    if (cloneApplyKeyRef.current === cloneKey) return
+    cloneApplyKeyRef.current = cloneKey
+
+    window.setTimeout(() => {
+      methods.reset({
+        products: [{ productName: '', price: 0, quantity: 1 }],
+        weight: 0,
+        length: 0,
+        breadth: 0,
+        height: 0,
+        courierPartnerId: '',
+        pickupDate: defaultPickupDate,
+        pickupTime: '',
+        orderType: getDefaultOrderType(),
+        selectedMaxSlabWeight: null,
+        ...effectiveCloneInitialValues,
+      } as B2CFormData)
+      setCurrentStep(0)
+    }, 0)
+  }, [defaultPickupDate, effectiveCloneInitialValues, methods])
 
   const shippingCharges = Number(watch('shippingCharges') || 0)
   const transactionFee = Number(watch('transactionFee') || 0)
